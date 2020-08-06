@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'import_export',
     'rest_framework',
     'rest_framework.authtoken',
+    'workshop',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -150,3 +152,5 @@ CONSTANTS = {
     "PAGINATION_NUMBER": 50,
 
 }
+
+ASGI_APPLICATION = 'workshop_backend.routing.application'

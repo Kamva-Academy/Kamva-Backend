@@ -54,3 +54,14 @@ REGISTRATION_FEE = get_environment_var('REGISTRATION_FEE', '500')
 # Activate Django-Heroku.
 django_heroku.settings(locals(), test_runner=False)
 DOMAIN = get_environment_var('DOMAIN', 'http://kabaraamadalapeste.herokuapp.com')
+
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
+}

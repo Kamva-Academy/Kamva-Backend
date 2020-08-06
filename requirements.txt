@@ -1,5 +1,8 @@
 appdirs==1.4.3
 asgiref==3.2.10
+channels==2.4.0
+channels-redis==2.4.1
+uvicorn==0.11.8
 CacheControl==0.12.6
 certifi==2019.11.28
 chardet==3.0.4
