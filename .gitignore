@@ -6,5 +6,6 @@ a.idea/*
 .venv/*
 .env/*
 static/*
+staticfiles/*
 media/*
 venv/*
