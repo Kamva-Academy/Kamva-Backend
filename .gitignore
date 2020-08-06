@@ -1,4 +1,4 @@
-.idea/*
+a.idea/*
 *.pyc
 *__pychache__*
 *.sqlite3
@@ -7,3 +7,4 @@
 .env/*
 static/*
 media/*
+venv/*
