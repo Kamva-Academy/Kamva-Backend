@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'import_export',
     'rest_framework',
     'rest_framework.authtoken',
+    'fsm'
 ]
 
 MIDDLEWARE = [

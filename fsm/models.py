@@ -62,5 +62,8 @@ class ProblemBigAnswer(Problem):
     answer = models.ForeignKey(BigAnswer, on_delete=models.CASCADE, related_name='problem')
 
 class ProblemMultiChoice(Problem):
-    choices = models.ListField(child=models.TextField())
     answer = models.ForeignKey(MultiChoiceAnswer, on_delete=models.CASCADE, related_name='problem')
+
+class Choice(models.Model):
+    problem = models.ForeignKey(ProblemMultiChoice, on_delete=models.CASCADE, related_name='choices')
+    text = models.TextField()
