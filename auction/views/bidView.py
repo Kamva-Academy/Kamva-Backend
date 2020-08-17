@@ -6,15 +6,20 @@ from django.shortcuts import render
 from auction.serializers import *
 from auction.models import *
 from auction.views.permisions import *
-def newBid(request, bid):
+def save_one_time_bid(request, auction, bid):
     try:
-        member = Member.object.filter(user_pk = request.user.pk)[0]
+        team = request.user.account.team
+        auction = OneTimeAuction.objects.filter(pk=auction)[0]
+        bidder = OneTimeBidder.objects.filter(team=team, auction=auction)
     except:
-        pass
+        return False
 
-    bidder = OneTimeBidder.object.filter(member=member)[0] 
     bidder.bid = bid
     bidder.save()
+    if auction.winner.bid < bid:
+        auction.winner = bidder
+        auction.save()
+    return True
 
 @api_view(['POST'])
 @permission_classes([BidPermission])
@@ -23,9 +28,7 @@ def new_one_time_bid(request):
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     data = serializer.validated_data
-    newBid(request, **data)
-    return Response(status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-def new_british_bid(request):
-    pass
+    if save_one_time_bid(request, **data):
+        return Response(status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)

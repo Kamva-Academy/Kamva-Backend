@@ -12,4 +12,4 @@ DELET = DELET
 """
 class BidPermission(BasePermission):
     def has_permission(self, request, view):
-        return True
+        return not request.user.is_anonymous()
