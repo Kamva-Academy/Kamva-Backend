@@ -17,9 +17,9 @@ def newBid(request, bid):
     bidder.save()
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def one_time_bid(request):
-    serializer = OneTimeBidderSerializer(data=request.data)
+@permission_classes([BidPermission])
+def new_one_time_bid(request):
+    serializer = OneTimeBidSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     data = serializer.validated_data
@@ -27,5 +27,5 @@ def one_time_bid(request):
     return Response(status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-def british_bid(request):
+def new_british_bid(request):
     pass

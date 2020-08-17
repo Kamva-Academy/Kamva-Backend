@@ -2,7 +2,6 @@ from rest_framework import serializers
 from auction.models import *
 
 
-class OneTimeBidderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OneTimeBidder
-        fields = ['bid']
+class OneTimeBidSerializer(serializers.Serializer):
+    auction = serializers.IntegerField()
+    bid = serializers.IntegerField()

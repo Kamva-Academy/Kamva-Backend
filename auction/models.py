@@ -11,7 +11,8 @@ class Account(models.Model):
 class OneTimeAuction(models.Model):
     winner =  models.ForeignKey(Account, null=True, on_delete=models.CASCADE)
     max_bid = models.IntegerField(default=0)
-
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
 
 class OneTimeBidder(models.Model):
     auction = models.ForeignKey(OneTimeAuction, on_delete=models.CASCADE, related_name='bidders')
@@ -24,6 +25,8 @@ class BritishAuction(models.Model):
     winner =  models.ForeignKey(Account, null=True, on_delete=models.CASCADE)
     max_bid = models.IntegerField(default=0)
     Increaseـrate = models.IntegerField(default=0)
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
 
 class BritishBidder(models.Model):
     auction = models.ForeignKey(BritishAuction, on_delete=models.CASCADE, related_name='bidders')
