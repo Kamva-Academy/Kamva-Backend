@@ -1,0 +1,115 @@
+from django.contrib.auth.models import User
+from rest_framework import serializers
+from fsm.models import *
+
+
+class AbilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ability
+        fields = '__all__'
+
+class FSMEdgeSerializer(serializers.ModelSerializer):
+    abilities = AbilitySerializer(many=True)
+    class Meta:
+        model = FSMEdge
+        fields = '__all__'
+
+class FSMStateSerializer(serializers.ModelSerializer):
+    outward_edges = FSMEdgeSerializer(many=True)
+    class Meta:
+        model = FSMState
+        fields = '__all__'
+
+class FSMSerializer(serializers.ModelSerializer):
+    #states = FSMStateSerializer(many=True)
+    class Meta:
+        model = FSM
+        fields = '__all__'
+
+class GameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Game
+        fields = '__all__'
+class DescriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Description
+        fields = '__all__'
+
+class SmallAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SmallAnswer
+        fields = '__all__'
+
+class BigAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BigAnswer
+        fields = '__all__'
+
+class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultiChoiceAnswer
+        fields = '__all__'
+
+
+class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
+    answer = SmallAnswerSerializer
+    class Meta:
+        model = ProblemSmallAnswer
+        fields = '__all__'
+
+class ProblemBigAnswerSerializer(serializers.ModelSerializer):
+    answer = BigAnswerSerializer
+    class Meta:
+        model = ProblemBigAnswer
+        fields = '__all__'
+
+class ChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Choice
+        fields = '__all__'
+
+class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
+    choices = ChoiceSerializer(many=True)
+    answer = MultiChoiceAnswerSerializer
+    class Meta:
+        model = ProblemMultiChoice
+        fields = '__all__'
+
+class ProblemSerializer(serializers.ModelSerializer):
+
+    @classmethod
+    def get_serializer(cls, model):
+        if model == ProblemSmallAnswer:
+            return ProblemSmallAnswerSerializer
+        elif model == ProblemBigAnswer:
+            return ProblemBigAnswerSerializer
+        elif model == ProblemMultiChoice:
+            return ProblemMultiChoiceSerializer
+         
+
+    def to_representation(self, instance):
+        serializer = self.get_serializer(instance.__class__)
+        return serializer(instance, context=self.context).data
+
+class WidgetSerializer(serializers.ModelSerializer):
+
+    @classmethod
+    def get_serializer(cls, model):
+        if model == Game:
+            return GameSerializer
+        elif model == Description:
+            return DescriptionSerializer
+        elif issubclass(model, Problem):
+            return ProblemSerializer
+
+    def to_representation(self, instance):
+        serializer = self.get_serializer(instance.__class__)
+        return serializer(instance, context=self.context).data
+
+class FSMPageSerializer(serializers.ModelSerializer):
+    widgets = WidgetSerializer(many=True)
+    class Meta:
+        model = FSMPage
+        fields = '__all__'
+
+
