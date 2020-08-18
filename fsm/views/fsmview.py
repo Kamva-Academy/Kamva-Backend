@@ -6,13 +6,18 @@ from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.decorators import api_view, permission_classes
 
-from fsm.models import FSMPage
+from fsm.models import FSM
 from fsm.views import permissions
-from fsm.serializers import FSMPageSerializer
+from fsm.serializers import FSMSerializer, FSMGetSerializer
 
 
-class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
+class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
     permission_classes = []
-    queryset = FSMPage.objects.all()
-    serializer_class = FSMPageSerializer
+    queryset = FSM.objects.all()
+    serializer_class = FSMSerializer
+
+    def get_serializer_class(self):
+        return FSMGetSerializer \
+            if self.request.method == 'GET' \
+            else FSMSerializer

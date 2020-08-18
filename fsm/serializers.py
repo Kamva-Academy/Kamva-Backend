@@ -14,14 +14,49 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
         model = FSMEdge
         fields = '__all__'
 
+    def create(self, validated_data):
+        abilities_data = validated_data.pop('abilities')
+        instance = FSMEdge.objects.create(**validated_data)
+        for ability_data in abilities_data:
+            ability = Ability.objects.create(**ability_data)
+            ability.edge = instance
+            ability.save()
+    
+        return instance
+
+    def update(self, instance, validated_data):
+        validated_data['pk'] = instance.pk
+        abilities = Ability.objects.filter(edge=instance)
+        index = 0
+        for ability in abilities:
+            try:
+                validated_data['abilities'][index]['pk'] = ability.pk
+            except:
+                pass
+            ability.delete()
+            index+=1
+        instance.delete()
+        instance = self.create(validated_data)
+        return instance
+
 class FSMStateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FSMState
+        fields = '__all__'
+
+class FSMStateGetSerializer(serializers.ModelSerializer):
     outward_edges = FSMEdgeSerializer(many=True)
+    inward_edges = FSMEdgeSerializer(many=True)
     class Meta:
         model = FSMState
         fields = '__all__'
 
 class FSMSerializer(serializers.ModelSerializer):
-    #states = FSMStateSerializer(many=True)
+    class Meta:
+        model = FSM
+        fields = '__all__'
+class FSMGetSerializer(serializers.ModelSerializer):
+    states = FSMStateSerializer(many=True)
     class Meta:
         model = FSM
         fields = '__all__'
