@@ -1,11 +1,18 @@
 from django.db import models
+from model_utils.managers import InheritanceManager
 
 class FSM(models.Model):
     name = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.name
+
 class FSMState(models.Model):
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
     name = models.CharField(max_length=150)
+
+    def __str__(self):
+        return self.name
 
 class FSMEdge(models.Model):
     tail = models.ForeignKey(FSMState, on_delete=models.CASCADE, related_name='outward_edges')
@@ -17,17 +24,23 @@ class Ability(models.Model):
     name = models.CharField(max_length=150)
     value = models.BooleanField()
 
+    def __str__(self):
+        return self.name
+
 class FSMPage(models.Model):
     state = models.OneToOneField(FSMState, null=True, on_delete=models.CASCADE, unique=True, related_name='page')
     page_type = models.CharField(max_length=20)
 
-class Widget(models.Model):
-    page = models.ForeignKey(FSMEdge, on_delete=models.CASCADE, related_name='widgets')
-    widget_type = models.CharField(max_length=20)
-    
-    class Meta:
-        abstract = True
+    def widgets(self):
+        return Widget.objects.filter(page=self).select_subclasses()
 
+class Widget(models.Model):
+    page = models.ForeignKey(FSMPage, on_delete=models.CASCADE, related_name='%(class)s')
+    priority = models.IntegerField()
+    widget_type = models.CharField(max_length=20)
+    objects = InheritanceManager()
+
+    
 class Description(Widget):
     text = models.TextField()
 
@@ -35,6 +48,9 @@ class Game(Widget):
     name = models.CharField(max_length=100)
     link = models.TextField()
     answer = models.TextField()
+
+    def __str__(self):
+        return self.name
 
 class Answer(models.Model):
     class Meta:
@@ -53,13 +69,17 @@ class Problem(Widget):
     name = models.CharField(max_length=100)
     text = models.TextField()
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         abstract = True
+
 class ProblemSmallAnswer(Problem):
     answer = models.ForeignKey(SmallAnswer, on_delete=models.CASCADE, related_name='problem')
 
 class ProblemBigAnswer(Problem):
-    answer = models.ForeignKey(BigAnswer, on_delete=models.CASCADE, related_name='problem')
+    answer = models.ForeignKey(BigAnswer, null=True, on_delete=models.CASCADE, related_name='problem')
 
 class ProblemMultiChoice(Problem):
     answer = models.ForeignKey(MultiChoiceAnswer, on_delete=models.CASCADE, related_name='problem')
