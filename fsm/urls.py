@@ -6,6 +6,7 @@ from .views.fsmview import *
 from .views.fsmstateview import *
 from .views.fsmedgeview import *
 from .views.abilityview import *
+from .views.widgetview import *
 
 router = DefaultRouter()
 router.register('page', FSMPageView)
@@ -18,6 +19,8 @@ router.register('edge', FSMEdgeView)
 router.register('edge/<int:pk>', FSMEdgeView)
 router.register('ability', AbilityView)
 router.register('ability/<int:pk>', AbilityView)
+router.register('widget', WidgetView)
+router.register('widget/<int:pk>', WidgetView)
 urlpatterns = [
 ]
 

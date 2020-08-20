@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from fsm.models import *
-
+import sys
 
 class AbilitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,6 +65,7 @@ class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = '__all__'
+
 class DescriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Description
@@ -127,8 +128,8 @@ class ProblemSerializer(serializers.ModelSerializer):
         return serializer(instance, context=self.context).data
 
 class WidgetSerializer(serializers.ModelSerializer):
-
-    @classmethod
+    
+    @classmethod    
     def get_serializer(cls, model):
         if model == Game:
             return GameSerializer
@@ -136,15 +137,20 @@ class WidgetSerializer(serializers.ModelSerializer):
             return DescriptionSerializer
         elif issubclass(model, Problem):
             return ProblemSerializer
-
+    
+    def set_model(self, widget_type):
+        self.Meta.model = getattr(sys.modules[__name__], widget_type)
+        return self
+    
     def to_representation(self, instance):
         serializer = self.get_serializer(instance.__class__)
         return serializer(instance, context=self.context).data
 
+    
 class FSMPageSerializer(serializers.ModelSerializer):
     widgets = WidgetSerializer(many=True)
     class Meta:
         model = FSMPage
         fields = '__all__'
-
-
+    
+    
