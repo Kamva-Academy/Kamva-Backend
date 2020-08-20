@@ -34,22 +34,15 @@ class ChatDetailView(RetrieveAPIView):
 
 
 class ChatCreateView(CreateAPIView):
-    # queryset = Chat.objects.all()
+    queryset = Chat.objects.all()
     serializer_class = ChatSerializer
     # permission_classes = (permissions.IsAuthenticated, )
-    def get_queryset(self):
-        print("----------create ---------------------")
-        return Chat.objects.all()
+
 
 class ChatUpdateView(UpdateAPIView):
     queryset = Chat.objects.all()
     serializer_class = ChatSerializer
     # permission_classes = (permissions.IsAuthenticated, )
-
-    def get_queryset(self):
-        queryset = Chat.objects.all()
-        print("----------updating ---------------------")
-        return queryset
 
 
 class ChatDeleteView(DestroyAPIView):
