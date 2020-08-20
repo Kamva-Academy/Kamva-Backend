@@ -38,9 +38,17 @@ INSTALLED_APPS = [
     'import_export',
     'rest_framework',
     'rest_framework.authtoken',
+    'django.contrib.sites',
     'workshop',
     'channels',
+    'chat',
 ]
+
+# may need for auth in installed apps
+# 'rest_auth.registration',
+# 'allauth',
+# 'allauth.account',
+# 'allauth.socialaccount',
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

@@ -10,3 +10,12 @@ application = ProtocolTypeRouter({
         )
     )
 })
+
+
+'''    # WebSocket chat handler
+    "websocket": AuthMiddlewareStack(
+        URLRouter([
+            url(r"^chat/admin/$", AdminChatConsumer),
+            url(r"^chat/$", PublicChatConsumer),
+        ])
+    ),'''
