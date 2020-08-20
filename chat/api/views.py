@@ -30,18 +30,21 @@ class ChatListView(ListAPIView):
 class ChatDetailView(RetrieveAPIView):
     queryset = Chat.objects.all()
     serializer_class = ChatSerializer
-    permission_classes = (permissions.AllowAny, )
+    # permission_classes = (permissions.AllowAny, )
 
 
 class ChatCreateView(CreateAPIView):
-    queryset = Chat.objects.all()
+    # queryset = Chat.objects.all()
     serializer_class = ChatSerializer
-    permission_classes = (permissions.IsAuthenticated, )
+    # permission_classes = (permissions.IsAuthenticated, )
+    def get_queryset(self):
+        print("----------create ---------------------")
+        return Chat.objects.all()
 
 class ChatUpdateView(UpdateAPIView):
     queryset = Chat.objects.all()
     serializer_class = ChatSerializer
-    permission_classes = (permissions.IsAuthenticated, )
+    # permission_classes = (permissions.IsAuthenticated, )
 
     def get_queryset(self):
         queryset = Chat.objects.all()
@@ -52,4 +55,4 @@ class ChatUpdateView(UpdateAPIView):
 class ChatDeleteView(DestroyAPIView):
     queryset = Chat.objects.all()
     serializer_class = ChatSerializer
-    permission_classes = (permissions.IsAuthenticated, )
+    # permission_classes = (permissions.IsAuthenticated, )
