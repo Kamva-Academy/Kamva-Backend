@@ -24,7 +24,7 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
     
         return instance
 
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data):    
         validated_data['pk'] = instance.pk
         abilities = Ability.objects.filter(edge=instance)
         index = 0
@@ -98,9 +98,20 @@ class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
         instance = ProblemSmallAnswer.objects.create(**validated_data)
         answer = SmallAnswer.objects.create(**answer_data)
         answer.problem = instance
-        print(answer)
         answer.save()
     
+        return instance
+    
+    def update(self, instance, validated_data):
+        validated_data['pk'] = instance.pk
+        try:
+            answer = SmallAnswer.objects.filter(problem=instance)[0]
+            validated_data['answer']['pk'] = answer.pk
+            answer.delete()
+        except:
+            pass
+        instance.delete()
+        instance = self.create(validated_data)
         return instance
 
 class ProblemBigAnswerSerializer(serializers.ModelSerializer):
