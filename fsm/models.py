@@ -20,7 +20,7 @@ class FSMEdge(models.Model):
     priority = models.IntegerField()
 
 class Ability(models.Model):
-    edge = models.ForeignKey(FSMEdge, on_delete=models.CASCADE, related_name='abilities')
+    edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.CASCADE, related_name='abilities')
     name = models.CharField(max_length=150)
     value = models.BooleanField()
 
@@ -57,12 +57,15 @@ class Answer(models.Model):
         abstract = True
 
 class SmallAnswer(Answer):
+    problem = models.OneToOneField('ProblemSmallAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
     text = models.TextField()
 
 class BigAnswer(Answer):
+    problem = models.OneToOneField('ProblemBigAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
     text = models.TextField()
 
 class MultiChoiceAnswer(Answer):
+    problem = models.OneToOneField('ProblemMultiChoice', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
     text = models.IntegerField()
 
 class Problem(Widget):
@@ -76,13 +79,13 @@ class Problem(Widget):
         abstract = True
 
 class ProblemSmallAnswer(Problem):
-    answer = models.ForeignKey(SmallAnswer, on_delete=models.CASCADE, related_name='problem')
+    pass
 
 class ProblemBigAnswer(Problem):
-    answer = models.ForeignKey(BigAnswer, null=True, on_delete=models.CASCADE, related_name='problem')
+    pass
 
 class ProblemMultiChoice(Problem):
-    answer = models.ForeignKey(MultiChoiceAnswer, on_delete=models.CASCADE, related_name='problem')
+    pass
 
 class Choice(models.Model):
     problem = models.ForeignKey(ProblemMultiChoice, on_delete=models.CASCADE, related_name='choices')

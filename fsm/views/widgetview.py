@@ -15,15 +15,20 @@ import sys
 class WidgetView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
     permission_classes = []
-    queryset = Widget.objects.all()
+    queryset = Widget.objects.all().select_subclasses()
     serializer_class = WidgetSerializer
 
     def get_serializer_class(self):
         class WidgetInstanceSerializer(WidgetSerializer): 
             class Meta:
-                model =  getattr(sys.modules[__name__], 
-                    self.request.data['widget_type']
-                )
+                try:
+                    model =  getattr(sys.modules[__name__], 
+                        self.request.data['widget_type']
+                    ) if self.request.data['widget_type'] else Widget
+                except:
+                    model = Widget
+                    
                 fields = '__all__'
+                
         return WidgetInstanceSerializer
     

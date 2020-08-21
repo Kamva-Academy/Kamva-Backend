@@ -7,6 +7,7 @@ from .views.fsmstateview import *
 from .views.fsmedgeview import *
 from .views.abilityview import *
 from .views.widgetview import *
+from .views.problemsmallanswerview import *
 
 router = DefaultRouter()
 router.register('page', FSMPageView)
@@ -21,6 +22,8 @@ router.register('ability', AbilityView)
 router.register('ability/<int:pk>', AbilityView)
 router.register('widget', WidgetView)
 router.register('widget/<int:pk>', WidgetView)
+router.register('small', SmallView)
+router.register('small/<int:pk>', SmallView)
 urlpatterns = [
 ]
 

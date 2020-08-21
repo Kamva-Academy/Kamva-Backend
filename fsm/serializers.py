@@ -88,13 +88,23 @@ class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
 
 
 class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
-    answer = SmallAnswerSerializer
+    answer = SmallAnswerSerializer()
     class Meta:
         model = ProblemSmallAnswer
         fields = '__all__'
+    
+    def create(self, validated_data):
+        answer_data = validated_data.pop('answer')
+        instance = ProblemSmallAnswer.objects.create(**validated_data)
+        answer = SmallAnswer.objects.create(**answer_data)
+        answer.problem = instance
+        print(answer)
+        answer.save()
+    
+        return instance
 
 class ProblemBigAnswerSerializer(serializers.ModelSerializer):
-    answer = BigAnswerSerializer
+    answer = BigAnswerSerializer()
     class Meta:
         model = ProblemBigAnswer
         fields = '__all__'
@@ -124,9 +134,14 @@ class ProblemSerializer(serializers.ModelSerializer):
          
 
     def to_representation(self, instance):
-        serializer = self.get_serializer(instance.__class__)
+        serializer = ProblemSerializer.get_serializer(instance.__class__)
         return serializer(instance, context=self.context).data
 
+    def create(self, validated_data):
+        return ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['widget_type']))\
+            .create(self, validated_data)
+    
 class WidgetSerializer(serializers.ModelSerializer):
     
     @classmethod    
@@ -136,14 +151,19 @@ class WidgetSerializer(serializers.ModelSerializer):
         elif model == Description:
             return DescriptionSerializer
         elif issubclass(model, Problem):
-            return ProblemSerializer
+            return ProblemSerializer.get_serializer(model)
+    
+    def create(self, validated_data):
+        return WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['widget_type']))\
+            .create(self, validated_data)
     
     def set_model(self, widget_type):
         self.Meta.model = getattr(sys.modules[__name__], widget_type)
         return self
     
     def to_representation(self, instance):
-        serializer = self.get_serializer(instance.__class__)
+        serializer = WidgetSerializer.get_serializer(instance.__class__)
         return serializer(instance, context=self.context).data
 
     
