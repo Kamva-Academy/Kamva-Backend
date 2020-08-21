@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from chat.models import Chat, Contact
-from chat.views import get_user_contact
+from workshop.models import Chat, Contact
+from workshop.views import get_user_contact
 
 
 class ContactSerializer(serializers.StringRelatedField):
@@ -29,10 +29,6 @@ class ChatSerializer(serializers.ModelSerializer):
         chat.save()
         return chat
 
-    # TODO
-    def get_chat_range_messages(self):
-        chat = Chat.objects.get(id=1)
-        return chat
 
 
 # from chat.models import Chat

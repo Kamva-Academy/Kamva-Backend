@@ -47,7 +47,6 @@ INSTALLED_APPS = [
 
     'workshop',
     'channels',
-    'chat',
 ]
 
 # SITE_ID=1

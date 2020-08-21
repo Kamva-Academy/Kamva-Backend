@@ -7,8 +7,8 @@ from rest_framework.generics import (
     DestroyAPIView,
     UpdateAPIView
 )
-from chat.models import Chat, Contact
-from chat.views import get_user_contact
+from workshop.models import Chat, Contact
+from workshop.views import get_user_contact
 from .serializers import ChatSerializer
 
 User = get_user_model()
@@ -39,10 +39,10 @@ class ChatCreateView(CreateAPIView):
     # permission_classes = (permissions.IsAuthenticated, )
 
 
-class ChatUpdateView(UpdateAPIView):
-    queryset = Chat.objects.all()
-    serializer_class = ChatSerializer
-    # permission_classes = (permissions.IsAuthenticated, )
+# class ChatUpdateView(UpdateAPIView):
+#     queryset = Chat.objects.all()
+#     serializer_class = ChatSerializer
+#     # permission_classes = (permissions.IsAuthenticated, )
 
 
 class ChatDeleteView(DestroyAPIView):

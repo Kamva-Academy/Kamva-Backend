@@ -10,3 +10,4 @@ static/*
 staticfiles/*
 media/*
 venv/*
+db.sqlite3
