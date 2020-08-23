@@ -15,7 +15,7 @@ from django.urls import path, re_path
 
 from django.urls import path
 from rest_framework_simplejwt import views as jwt_views
-from .views import ObtainTokenPair, GroupSignup, IndividualSignup, activate, ChangePass, logout
+from .views import ObtainTokenPair, GroupSignup, IndividualSignup, activate, ChangePass, logout,UploadAnswerView
 
 urlpatterns = [
     path('groupSignup/', GroupSignup.as_view(), name="group_signup"),
@@ -25,6 +25,7 @@ urlpatterns = [
 
     path('token/obtain/', ObtainTokenPair.as_view(), name='token_create'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    path('answerFile/', UploadAnswerView.as_view()),
     re_path(r'activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/',
             activate, name='activate')
 ]

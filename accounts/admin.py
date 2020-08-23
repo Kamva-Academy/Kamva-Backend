@@ -8,4 +8,5 @@ admin.site.register(Member, CustomUserAdmin)
 admin.site.register(Participant)
 admin.site.register(Team)
 
+
 # Register your models here.

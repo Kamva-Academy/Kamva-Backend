@@ -1,7 +1,7 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from .models import Member
+from .models import Member, Participant
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

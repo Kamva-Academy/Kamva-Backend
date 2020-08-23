@@ -1,25 +1,17 @@
+import json
 import string
-
 from django.contrib.auth.decorators import login_required
-
 from .models import Team
-import re
 import random
-
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import render, redirect, get_object_or_404
-from rest_framework import status
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view
+from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
-
+from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
-from .forms import SignUpForm\
-    # , strip_spaces_between_tags, render_to_string
 from .models import Member, Participant
 
 
@@ -42,7 +34,6 @@ from .models import Member, Participant
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import MyTokenObtainPairSerializer, MemberSerializer
@@ -56,6 +47,8 @@ class GroupSignup(APIView):
 
     def post(self, request, format='json'):
         members_info = request.data['data']
+        if type(members_info) is str:
+            members_info = json.loads(members_info)
 
         for member_info in members_info:
             if Member.objects.filter(email__exact=member_info['email']).count() > 0:
@@ -70,6 +63,16 @@ class GroupSignup(APIView):
         if not (members_info[0]['gender'] == members_info[1]['gender']
                 and members_info[2]['gender'] == members_info[1]['gender']):
             return Response({'success':False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'document1' not in request.data:
+            raise ParseError("Empty content document1")
+        doc0 = request.data['document1']
+        if 'document2' not in request.data:
+            raise ParseError("Empty content document2")
+        doc1 = request.data['document2']
+        if 'document3' not in request.data:
+            raise ParseError("Empty content document3")
+        doc2 = request.data['document3']
 
         member0 = Member.objects.create(
             first_name=members_info[0]['name'],
@@ -86,7 +89,7 @@ class GroupSignup(APIView):
             school=members_info[0]['school'],
             grade=members_info[0]['grade'],
             phone_number=members_info[0]['phone'],
-            # document=form.cleaned_data['document']
+            document=doc0
         )
 
         member1 = Member.objects.create(
@@ -105,7 +108,7 @@ class GroupSignup(APIView):
             school=members_info[1]['school'],
             grade=members_info[1]['grade'],
             phone_number=members_info[1]['phone'],
-            # document=form.cleaned_data['document']
+            document=doc1
         )
         member2 = Member.objects.create(
             first_name=members_info[2]['name'],
@@ -122,7 +125,7 @@ class GroupSignup(APIView):
             school=members_info[2]['school'],
             grade=members_info[2]['grade'],
             phone_number=members_info[2]['phone'],
-            # document=form.cleaned_data['document']
+            document=doc2
         )
 
         team = Team()
@@ -143,33 +146,29 @@ class GroupSignup(APIView):
         member1.send_signup_email(absolute_uri, password1)
         member2.send_signup_email(absolute_uri, password2)
 
-
-
         return Response({'success': True}, status=status.HTTP_200_OK)
 
 
-
-
-        # serializer = MemberSerializer(data=request.data)
-        # if serializer.is_valid():
-        #     user = serializer.save()
-        #     if user:
-        #         json = serializer.data
-        #         return Response(json, status=status.HTTP_201_CREATED)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class IndividualSignup(APIView):
+    parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, format='json'):
+    def post(self, request):
         if Member.objects.filter(email__exact=request.data['email']).count() > 0:
             return Response({'success': False, "error": "فردی با ایمیل " + request.data['email'] + "قبلا ثبت‌نام کرده"},
                             status=status.HTTP_400_BAD_REQUEST)
+        
+        if 'document' not in request.data:
+            raise ParseError("Empty Document content")
+
+        doc = request.data['document']
+
         member = Member.objects.create(
             first_name=request.data['name'],
             username=request.data['email'],
             email=request.data['email'],
             is_active=False,
+
         )
         member.set_password(request.data['password'])
         participant = Participant.objects.create(
@@ -179,12 +178,11 @@ class IndividualSignup(APIView):
             school=request.data['school'],
             grade=request.data['grade'],
             phone_number=request.data['phone'],
-            # document=form.cleaned_data['document']
+            document=doc
         )
         member.save()
         participant.save()
 
-        #TODO response (with tokem)
         return Response({'success': True}, status=status.HTTP_200_OK)
 
 @login_required
@@ -196,7 +194,7 @@ def logout(request):
 def get_random_alphanumeric_string(length):
     letters_and_digits = string.ascii_letters + string.digits
     result_str = ''.join((random.choice(letters_and_digits) for i in range(length)))
-    return (result_str)
+    return result_str
 
 
 def _redirect_homepage_with_action_status(action='payment', status=settings.OK_STATUS):
@@ -217,8 +215,8 @@ def activate(request, uidb64, token):
         member_team = member.participant.team
         if member_team is not None:
             team_active = True
-            for participant in member_team.participant_set:
-                if not(participant.member.is_active):
+            for participant in member_team.participant_set.all():
+                if not participant.member.is_active:
                     team_active = False
             member_team.active = team_active
             member_team.save()
@@ -233,12 +231,27 @@ def activate(request, uidb64, token):
 
 
 class ChangePass(APIView):
+
     def post(self, request):
         new_pass = request.POST.get('newPass')
         username = request.POST.get('username')
         member = get_object_or_404(Member, username=username)
         member.set_password(new_pass)
         member.save()
+
         return Response({'success': True},status=status.HTTP_200_OK)
 
 
+class UploadAnswerView(APIView):
+    parser_class = (FileUploadParser,)
+
+    def post(self, request):
+        if 'file' not in request.data:
+            raise ParseError("Empty content")
+
+        file = request.data['file']
+        username = request.data['username']
+        participant = get_object_or_404(Member, username = username).participant
+        participant.ent_answer = file
+        participant.save()
+        return Response({'success': True}, status=status.HTTP_201_CREATED)

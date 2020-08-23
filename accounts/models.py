@@ -71,7 +71,7 @@ class Member(AbstractUser):
 
 
 class Participant(models.Model):
-    member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE)
+    member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
     school = models.CharField(max_length=50)
     grade = models.CharField(max_length=10, choices=[(tag.value, tag.name) for tag in Grade])
     city = models.CharField(max_length=20)
@@ -80,8 +80,9 @@ class Participant(models.Model):
     phone_number = models.CharField(max_length=12, blank=True, null=True)
     is_activated = models.BooleanField(default=False)
     team = models.ForeignKey('Team', models.SET_NULL,
-        blank=True,null=True )
+        blank=True, null=True)
     accepted = models.BooleanField(default=False)
+    ent_answer = models.FileField(blank=True, null=True, upload_to='ent_answers')
 
     def __str__(self):
         return str(self.member)
