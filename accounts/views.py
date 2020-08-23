@@ -141,7 +141,6 @@ class GroupSignup(APIView):
         participant2.save()
 
         absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
-        print(absolute_uri)
         member0.send_signup_email(absolute_uri)
         member1.send_signup_email(absolute_uri, password1)
         member2.send_signup_email(absolute_uri, password2)
@@ -182,6 +181,9 @@ class IndividualSignup(APIView):
         )
         member.save()
         participant.save()
+
+        absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
+        member.send_signup_email(absolute_uri)
 
         return Response({'success': True}, status=status.HTTP_200_OK)
 
