@@ -54,6 +54,9 @@ class Member(AbstractUser):
         }
         if password != '':
             options['password'] = password
+        if self.participant.team is not None:
+            options['team'] = self.participant.team.id
+
         html_content = strip_spaces_between_tags(render_to_string('auth/signup_email.html', options))
         text_content = re.sub('<style[^<]+?</style>', '', html_content)
         text_content = strip_tags(text_content)
@@ -78,6 +81,7 @@ class Participant(models.Model):
     is_activated = models.BooleanField(default=False)
     team = models.ForeignKey('Team', models.SET_NULL,
         blank=True,null=True )
+    accepted = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.member)
@@ -86,3 +90,4 @@ class Participant(models.Model):
 class Team(models.Model):
     # participants = models.ManyToManyField(Participant, blank=False)
     group_name = models.CharField(max_length=30, blank=True)
+    active = models.BooleanField(default=False)

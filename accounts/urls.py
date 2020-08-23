@@ -15,15 +15,16 @@ from django.urls import path, re_path
 
 from django.urls import path
 from rest_framework_simplejwt import views as jwt_views
-from .views import ObtainTokenPair, GroupSignup, IndividualSignup, activate
+from .views import ObtainTokenPair, GroupSignup, IndividualSignup, activate, ChangePass, logout
 
 urlpatterns = [
     path('groupSignup/', GroupSignup.as_view(), name="group_signup"),
     path('individualSignup/', IndividualSignup.as_view(), name="individual_signup"),
+    path('changePass/', ChangePass.as_view(), name="change_password"),
+    path('logout/', logout, name="logout"),
+
     path('token/obtain/', ObtainTokenPair.as_view(), name='token_create'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
     re_path(r'activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/',
             activate, name='activate')
-    # path('hello/', HelloWorldView.as_view(), name='hello_world'),
-    # path('verify/', verify, name='verify'),
 ]

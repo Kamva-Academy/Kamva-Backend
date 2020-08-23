@@ -1,5 +1,7 @@
 import string
 
+from django.contrib.auth.decorators import login_required
+
 from .models import Team
 import re
 import random
@@ -9,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
@@ -94,6 +96,7 @@ class GroupSignup(APIView):
             is_active=False,
         )
         password1 = get_random_alphanumeric_string(8)
+
         member1.set_password(password1)
         participant1 = Participant.objects.create(
             member=member1,
@@ -155,7 +158,6 @@ class GroupSignup(APIView):
         #         return Response(json, status=status.HTTP_201_CREATED)
         # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class IndividualSignup(APIView):
     permission_classes = (permissions.AllowAny,)
 
@@ -182,78 +184,20 @@ class IndividualSignup(APIView):
         member.save()
         participant.save()
 
-        #TODO send verify email
-
         #TODO response (with tokem)
         return Response({'success': True}, status=status.HTTP_200_OK)
+
+@login_required
+def logout(request):
+    auth_logout(request)
+    return redirect('homepage:homepage')
 
 
 def get_random_alphanumeric_string(length):
     letters_and_digits = string.ascii_letters + string.digits
     result_str = ''.join((random.choice(letters_and_digits) for i in range(length)))
-    print("Random alphanumeric String is:", result_str)
+    return (result_str)
 
-#
-# @api_view(['POST'])
-# def signup(request):
-#     if request.user.is_authenticated:
-#         pass
-#     # if not SiteConfiguration.get_solo().is_signup_enabled:
-#     #     return redirect('homepage:homepage')
-#     if request.method == 'POST' :
-#         data = request.data
-#             # and check_bibot_response(request):
-#         form = SignUpForm(request.POST, request.FILES)
-#         if not form.is_valid():
-#             messages.add_message(request, messages.ERROR, 'ایمیل تکراری')
-#             return render(request, 'auth/signup.html')
-#
-#         # file = open('animals.txt', 'r', encoding='UTF-8')
-#         # animals = file.read().strip().split('\n')
-#         # file.close()
-#         # file = open('adjectives.txt', 'r', encoding='UTF-8')
-#         # adjectives = file.read().strip().split('\n')
-#         # file.close()
-#
-#         # username = random.choice(animals) + ' ' + random.choice(adjectives)
-#         # while Member.objects.filter(username__exact=username).count() > 0:
-#             # username = random.choice(animals) + ' ' + random.choice(adjectives)
-#
-#         member = Member.objects.create(
-#             first_name=request.POST['name'],
-#             username=request.POST['email'],
-#             email=request.POST['email'],
-#             is_active=False,
-#         )
-#         member.set_password(request.POST['password'])
-#         participant = Participant.objects.create(
-#             member=member,
-#             gender=request.POST['gender'],
-#             city=request.POST['city'],
-#             school=request.POST['school'],
-#             grade=request.POST['grade'],
-#             phone_number=request.POST['phone'],
-#             document=form.cleaned_data['document']
-#         )
-#         member.save()
-#         participant.save()
-#         token = account_activation_token.make_token(member)
-#         html_content = strip_spaces_between_tags(render_to_string('auth/signup_email.html', {
-#             'user': member,
-#             'base_url': request.build_absolute_uri(reverse('homepage:homepage'))[:-1],
-#             'token': token,
-#             'uid': urlsafe_base64_encode(force_bytes(member.pk))
-#         }))
-#         text_content = re.sub('<style[^<]+?</style>', '', html_content)
-#         text_content = strip_tags(text_content)
-#
-#         msg = EmailMultiAlternatives('تایید ثبت‌نام اولیه', text_content, 'Rastaiha <info@rastaiha.ir>', [member.email])
-#         msg.attach_alternative(html_content, "text/html")
-#         msg.send()
-#         # return _redirect_homepage_with_action_status('signup', settings.OK_STATUS)
-#     # return render(request, 'auth/signup.html')
-#     token = Token.objects.create(user=accounts.models.Member)
-#     return Response({'token': token.key}, status=status.HTTP_201_CREATED)
 
 def _redirect_homepage_with_action_status(action='payment', status=settings.OK_STATUS):
     response = redirect('/')
@@ -270,6 +214,15 @@ def activate(request, uidb64, token):
     if member is not None and account_activation_token.check_token(member, token):
         member.is_active = True
         member.save()
+        member_team = member.participant.team
+        if member_team is not None:
+            team_active = True
+            for participant in member_team.participant_set:
+                if not(participant.member.is_active):
+                    team_active = False
+            member_team.active = team_active
+            member_team.save()
+
         auth_login(request, member)
         # return redirect('home')
         return _redirect_homepage_with_action_status('activate', settings.OK_STATUS)
@@ -277,3 +230,15 @@ def activate(request, uidb64, token):
         return _redirect_homepage_with_action_status('activate', settings.HELP_STATUS)
     else:
         return _redirect_homepage_with_action_status('activate', settings.ERROR_STATUS)
+
+
+class ChangePass(APIView):
+    def post(self, request):
+        new_pass = request.POST.get('newPass')
+        username = request.POST.get('username')
+        member = get_object_or_404(Member, username=username)
+        member.set_password(new_pass)
+        member.save()
+        return Response({'success': True},status=status.HTTP_200_OK)
+
+
