@@ -4,9 +4,12 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags, strip_spaces_between_tags
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_text
+from accounts.tokens import account_activation_token
 
 from enum import Enum
 
@@ -41,6 +44,22 @@ class ParticipantStatus(Enum):
 class Member(AbstractUser):
     is_participant = models.BooleanField(default=True)
 
+    
+    def send_signup_email(self, base_url, password=''):
+        options = {
+            'user': self,
+            'base_url': base_url,
+            'token': account_activation_token.make_token(self),
+            'uid': urlsafe_base64_encode(force_bytes(self.pk))
+        }
+        if password != '':
+            options['password'] = password
+        html_content = strip_spaces_between_tags(render_to_string('auth/signup_email.html', options))
+        text_content = re.sub('<style[^<]+?</style>', '', html_content)
+        text_content = strip_tags(text_content)
+        msg = EmailMultiAlternatives('تایید ثبت‌نام اولیه', text_content, 'Rastaiha <info@rastaiha.ir>', [self.email])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
     class Meta:
         db_table = "auth_user"
 

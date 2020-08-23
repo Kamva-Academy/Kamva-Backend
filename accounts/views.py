@@ -1,16 +1,10 @@
 import string
 
-from django.urls import reverse
-from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags, strip_spaces_between_tags
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_text
 from .models import Team
 import re
 import random
 
-
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import render
 from rest_framework import status
@@ -72,7 +66,6 @@ class GroupSignup(APIView):
             return Response({'success':False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."}, status=status.HTTP_400_BAD_REQUEST)
 
         member0 = Member.objects.create(
-
             first_name=members_info[0]['name'],
             username=members_info[0]['email'],
             email=members_info[0]['email'],
@@ -137,9 +130,9 @@ class GroupSignup(APIView):
         member2.save()
         participant2.save()
 
-
-        # TODO send email to member1
-        #TODO send email to member 2 & 3
+        member0.send_signup_email('url')
+        member1.send_signup_email('url', password1)
+        member2.send_signup_email('url', password2)
 
 
 
@@ -255,3 +248,26 @@ def get_random_alphanumeric_string(length):
 #     # return render(request, 'auth/signup.html')
 #     token = Token.objects.create(user=accounts.models.Member)
 #     return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+
+def _redirect_homepage_with_action_status(action='payment', status=settings.OK_STATUS):
+    response = redirect('/')
+    response['Location'] += '?%s=%s' % (action, status)
+    return response
+
+
+def activate(request, uidb64, token):
+    try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
+        member = Member.objects.get(pk=uid)
+    except(TypeError, ValueError, OverflowError, Member.DoesNotExist):
+        member = None
+    if member is not None and account_activation_token.check_token(member, token):
+        member.is_active = True
+        member.save()
+        auth_login(request, member)
+        # return redirect('home')
+        return _redirect_homepage_with_action_status('activate', settings.OK_STATUS)
+    elif member is not None and member.is_active:
+        return _redirect_homepage_with_action_status('activate', settings.HELP_STATUS)
+    else:
+        return _redirect_homepage_with_action_status('activate', settings.ERROR_STATUS)
