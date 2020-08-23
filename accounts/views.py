@@ -6,12 +6,16 @@ import random
 
 from django.conf import settings
 from django.contrib import messages
-from django.shortcuts import render
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.utils.encoding import force_text
+from django.utils.http import urlsafe_base64_decode
+from django.shortcuts import render, redirect
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from accounts.tokens import account_activation_token
 from .forms import SignUpForm\
     # , strip_spaces_between_tags, render_to_string
 from .models import Member, Participant
@@ -130,9 +134,11 @@ class GroupSignup(APIView):
         member2.save()
         participant2.save()
 
-        member0.send_signup_email('url')
-        member1.send_signup_email('url', password1)
-        member2.send_signup_email('url', password2)
+        absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
+        print(absolute_uri)
+        member0.send_signup_email(absolute_uri)
+        member1.send_signup_email(absolute_uri, password1)
+        member2.send_signup_email(absolute_uri, password2)
 
 
 
