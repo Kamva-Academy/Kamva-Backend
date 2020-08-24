@@ -244,7 +244,6 @@ class ChangePass(APIView):
         return Response({'success': True},status=status.HTTP_200_OK)
 
 
-@login_required
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
 
