@@ -1,4 +1,5 @@
 import json
+import os
 import string
 from django.contrib.auth.decorators import login_required
 from .models import Team
@@ -255,6 +256,8 @@ class ChangePass(APIView):
 
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
+    permission_classes = (permissions.AllowAny,)
+
 
     def post(self, request):
         if 'file' not in request.data:
@@ -262,8 +265,15 @@ class UploadAnswerView(APIView):
 
         file = request.data['file']
         user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
-        username = user.username
-        participant = get_object_or_404(Member, username = username).participant
+        participant = user.participant
+
+        old_file = None
+        if participant.ent_answer:
+            old_file = participant.ent_answer
         participant.ent_answer = file
         participant.save()
+        if old_file is not None:
+            if os.path.isfile(old_file.path):
+                os.remove(old_file.path)
+
         return Response({'success': True}, status=status.HTTP_201_CREATED)
