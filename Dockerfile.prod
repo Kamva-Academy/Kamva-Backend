@@ -43,8 +43,8 @@ COPY . /usr/src/app/
 
 RUN adduser -D workshop
 
-RUN mkdir -p /usr/src/app/logging && chown workshop /usr/src/app/logging \
-	&& mkdir -p /usr/src/app/staticfiles && chown workshop /usr/src/app/staticfiles \
+RUN mkdir -p /usr/src/app/logging && chown -R workshop /usr/src/app/logging \
+	&& mkdir -p /usr/src/app/staticfiles && chown -R workshop /usr/src/app/staticfiles \
 	&& mkdir -p /usr/src/app/media && chown -R workshop /usr/src/app/media
 
 RUN chown -R workshop /usr/src/app/
