@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
 from .models import Member, Participant
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 # def check_bibot_response(request):
@@ -183,9 +185,10 @@ class IndividualSignup(APIView):
         participant.save()
 
         absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
-        member.send_signup_email(absolute_uri)
 
+        member.send_signup_email(absolute_uri)
         return Response({'success': True}, status=status.HTTP_200_OK)
+
 
 @login_required
 def logout(request):
@@ -224,6 +227,7 @@ def activate(request, uidb64, token):
             member_team.save()
 
         auth_login(request, member)
+        token = MyTokenObtainPairSerializer.get_token(member)
         # return redirect('home')
         return _redirect_homepage_with_action_status('activate', settings.OK_STATUS)
     elif member is not None and member.is_active:
@@ -235,11 +239,13 @@ def activate(request, uidb64, token):
 class ChangePass(APIView):
 
     def post(self, request):
-        new_pass = request.POST.get('newPass')
-        username = request.POST.get('username')
-        member = get_object_or_404(Member, username=username)
-        member.set_password(new_pass)
-        member.save()
+        user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
+        new_pass = request.data['newPass']
+        # username = request.POST.get('username')
+        # member = get_object_or_404(Member, username=username)
+        user.set_password(new_pass)
+        user.save()
+
 
         return Response({'success': True},status=status.HTTP_200_OK)
 
@@ -252,7 +258,8 @@ class UploadAnswerView(APIView):
             raise ParseError("Empty content")
 
         file = request.data['file']
-        username = request.data['username']
+        user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
+        username = user.username
         participant = get_object_or_404(Member, username = username).participant
         participant.ent_answer = file
         participant.save()
