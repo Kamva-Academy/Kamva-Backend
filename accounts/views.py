@@ -52,7 +52,7 @@ class GroupSignup(APIView):
 
         for member_info in members_info:
             if Member.objects.filter(email__exact=member_info['email']).count() > 0:
-                return Response({'success': False, "error":  "فردی با ایمیل "+ member_info['email']+ "قبلا ثبت‌نام کرده"},
+                return Response({'success': False, "error":  "فردی با ایمیل "+ member_info['email']+ " قبلا ثبت‌نام کرده"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         if(members_info[0]['email'] == members_info[1]['email']
