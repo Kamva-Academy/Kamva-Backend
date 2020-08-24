@@ -190,7 +190,7 @@ class IndividualSignup(APIView):
 @login_required
 def logout(request):
     auth_logout(request)
-    return redirect('homepage:homepage')
+    return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 def get_random_alphanumeric_string(length):
