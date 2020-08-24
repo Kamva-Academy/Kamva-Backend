@@ -28,7 +28,7 @@ RUN apk update \
 RUN apk add --no-cache jpeg-dev zlib-dev
 
 # install dependencies
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip setuptools
 
 # copy requirements
 COPY requirements.txt /usr/src/requirements.txt
