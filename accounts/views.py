@@ -247,6 +247,7 @@ class ChangePass(APIView):
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
 
+    @login_required
     def post(self, request):
         if 'file' not in request.data:
             raise ParseError("Empty content")
