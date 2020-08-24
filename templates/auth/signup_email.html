@@ -23,6 +23,14 @@
 <br>
 ثبت‌نام اولیه‌ت با موفقیت انجام شد!
 
+{% if password %}
+<div>
+	<div>چون دوستت تیم شما رو ثبت کرده، برای شما به صورت خودکار رمز عبور ساختیم.</div>
+	<label>رمز عبور شما: </label>
+	<b>{{ password }}</b>
+</div>
+{% endif %}
+
 <br><br>
 با <a href="{{ base_url }}{% url "accounts:activate" uidb64=uid token=token %}">این لینک</a> می‌تونی حسابت رو فعال کنی.
 <br>
