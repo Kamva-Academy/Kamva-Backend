@@ -74,6 +74,7 @@ urllib3==1.25.8
 uvicorn==0.11.8
 uvloop==0.14.0
 webencodings==0.5.1
+gunicorn==20.0.4
 websockets==8.1
 whitenoise==5.1.0
 xlrd==1.2.0
