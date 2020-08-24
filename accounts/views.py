@@ -3,6 +3,7 @@ import string
 from django.contrib.auth.decorators import login_required
 from .models import Team
 import random
+from django.db import transaction
 from django.conf import settings
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.utils.encoding import force_text
@@ -45,6 +46,7 @@ class ObtainTokenPair(TokenObtainPairView):
 class GroupSignup(APIView):
     permission_classes = (permissions.AllowAny,)
 
+    @transaction.atomic
     def post(self, request, format='json'):
         members_info = request.data['data']
         if type(members_info) is str:
@@ -152,6 +154,7 @@ class IndividualSignup(APIView):
     parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
 
+    @transaction.atomic
     def post(self, request):
         if Member.objects.filter(email__exact=request.data['email']).count() > 0:
             return Response({'success': False, "error": "فردی با ایمیل " + request.data['email'] + "قبلا ثبت‌نام کرده"},
