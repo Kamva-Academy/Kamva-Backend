@@ -12,7 +12,8 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev
 
 # install python-dev
 RUN apk update \
-    && apk add --virtual .build-deps gcc libc-dev libxslt-dev
+    && apk add --virtual .build-deps gcc libc-dev libxslt-dev \
+    && apk install libffi-dev openssl-dev
 #    && apk add --no-cache libxslt \
 #    && pip install lxml==4.5.0
 
