@@ -205,9 +205,9 @@ def get_random_alphanumeric_string(length):
     return result_str
 
 
-def _redirect_homepage_with_action_status(action='payment', status=settings.OK_STATUS):
-    response = redirect('/')
-    response['Location'] += '?%s=%s' % (action, status)
+def _redirect_login_with_action_status(action='payment', status=settings.OK_STATUS):
+    response = redirect('/login')
+    # response['Location'] += '?%s=%s' % (action, status)
     return response
 
 
@@ -232,11 +232,11 @@ def activate(request, uidb64, token):
         auth_login(request, member)
         token = MyTokenObtainPairSerializer.get_token(member)
         # return redirect('home')
-        return _redirect_homepage_with_action_status('activate', settings.OK_STATUS)
+        return _redirect_login_with_action_status('activate', settings.OK_STATUS)
     elif member is not None and member.is_active:
-        return _redirect_homepage_with_action_status('activate', settings.HELP_STATUS)
+        return _redirect_login_with_action_status('activate', settings.HELP_STATUS)
     else:
-        return _redirect_homepage_with_action_status('activate', settings.ERROR_STATUS)
+        return _redirect_login_with_action_status('activate', settings.ERROR_STATUS)
 
 
 class ChangePass(APIView):
