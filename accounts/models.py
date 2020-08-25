@@ -87,29 +87,17 @@ class Participant(models.Model):
     def __str__(self):
         return str(self.member)
 
-    # def auto_delete_file_on_change(sender, instance, **kwargs):
-    #     """
-    #     Deletes old file from filesystem
-    #     when corresponding `MediaFile` object is updated
-    #     with new file.
-    #     """
-    #     if not instance.pk:
-    #         return False
-    #
-    #     try:
-    #         old_file = self.objects.get(pk=instance.pk).file
-    #     except MediaFile.DoesNotExist:
-    #         return False
-    #
-    #     new_file = instance.file
-    #     if not old_file == new_file:
-    #         if os.path.isfile(old_file.path):
-    #             os.remove(old_file.path)
-
-
-
 
 class Team(models.Model):
     # participants = models.ManyToManyField(Participant, blank=False)
     group_name = models.CharField(max_length=30, blank=True)
     active = models.BooleanField(default=False)
+
+    def __str__(self):
+        s = self.group_name + " ("
+        for p in self.participant_set.all():
+            s+= str(p) + ", "
+        s += ")"
+        return s
+
+
