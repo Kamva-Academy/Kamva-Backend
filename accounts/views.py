@@ -72,12 +72,15 @@ class GroupSignup(APIView):
         if 'document1' not in request.data:
             raise ParseError("Empty content document1")
         doc0 = request.data['document1']
+        doc0.name = str(members_info[0]['email']) + "-" + doc0.name
         if 'document2' not in request.data:
             raise ParseError("Empty content document2")
         doc1 = request.data['document2']
+        doc1.name = str(members_info[1]['email']) + "-" + doc1.name
         if 'document3' not in request.data:
             raise ParseError("Empty content document3")
         doc2 = request.data['document3']
+        doc2.name = str(members_info[2]['email']) + "-" + doc2.name
 
         member0 = Member.objects.create(
             first_name=members_info[0]['name'],
@@ -106,6 +109,7 @@ class GroupSignup(APIView):
         password1 = get_random_alphanumeric_string(8)
 
         member1.set_password(password1)
+
         participant1 = Participant.objects.create(
             member=member1,
             gender=members_info[1]['gender'],
@@ -167,6 +171,7 @@ class IndividualSignup(APIView):
             raise ParseError("Empty Document content")
 
         doc = request.data['document']
+        doc.name = str(request.data['email']) + "-" + doc.name
 
         member = Member.objects.create(
             first_name=request.data['name'],
@@ -250,14 +255,12 @@ class ChangePass(APIView):
         user.set_password(new_pass)
         user.save()
 
-
         return Response({'success': True},status=status.HTTP_200_OK)
 
 
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
-    permission_classes = (permissions.AllowAny,)
-
+    # permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         if 'file' not in request.data:
@@ -265,6 +268,7 @@ class UploadAnswerView(APIView):
 
         file = request.data['file']
         user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
+        file.name = str(user.username) + "-" + file.name
         participant = user.participant
 
         old_file = None
