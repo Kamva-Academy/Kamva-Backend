@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 import string
@@ -14,9 +15,12 @@ from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
-from .models import Member, Participant
+from .models import Member, Participant, Payment
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.authentication import SessionAuthentication
+from accounts import zarinpal
+from django.urls import reverse
+from rest_framework.permissions import IsAuthenticated
 
 
 # def check_bibot_response(request):
@@ -41,6 +45,8 @@ from rest_framework import status, permissions
 from rest_framework.views import APIView
 
 from .serializers import MyTokenObtainPairSerializer, MemberSerializer
+
+logger = logging.getLogger(__name__)
 
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -255,7 +261,7 @@ class ChangePass(APIView):
         user.set_password(new_pass)
         user.save()
 
-        return Response({'success': True},status=status.HTTP_200_OK)
+        return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 class UploadAnswerView(APIView):
@@ -281,3 +287,118 @@ class UploadAnswerView(APIView):
                 os.remove(old_file.path)
 
         return Response({'success': True}, status=status.HTTP_201_CREATED)
+
+
+class PayView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = [SessionAuthentication]
+    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+
+    def __get_amount(self, user):
+        x = Participant.objects.get(member=user)
+        if x.accepted:
+            if x.team:
+                return self.ZARINPAL_CONFIG['TEAM_FEE']
+            else:
+                return self.ZARINPAL_CONFIG['PERSON_FEE']
+        return -1
+
+    def get(self, request, *args, **kwargs):
+        amount = self.__get_amount(request.user)
+        if amount == -1:
+            return Response({'status': 'این کاربر توسط تیم ارزیابی فعال نشده است.'}, status=status.HTTP_400_BAD_REQUEST)
+        response = zarinpal.send_request(amount=amount,
+                                         call_back_url=request.build_absolute_uri('verify-payment'))
+        return response
+
+        # logger.warning(f'Zarinpal callback: {request.GET}')
+        # response = zarinpal.verify(status=request.GET.get('Status'), authority=request.GET['Authority'], amount=amount)
+        #
+        # logger.warning(f'zarinpal.verify: {response}')
+        # if 200 <= response.status_code <= 299:
+        #     serializer = AnswersSheetSerializer(data=temp_ans.data)
+        #     serializer.is_valid(raise_exception=True)
+        #     answers_sheet = serializer.save()
+        #
+        #     temp_ans.delete()
+        #
+        #     return redirect(
+        #         f'{settings.REACT_APP_HOST}{settings.SUCCESSFUL_PAYMENT_REDIRECT_ROUTE}{answers_sheet.applicant.uuid}'
+        #     )
+        # else:
+        #     return redirect(
+        #         f'{settings.REACT_APP_HOST}{settings.FAILED_PAYMENT_REDIRECT_ROUTE}'
+        #     )
+
+
+class VerifyPayView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = [SessionAuthentication]
+    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+
+    def __get_amount(self, user):
+        x = Participant.objects.get(member=user)
+        if x.accepted:
+            if x.team:
+                return self.ZARINPAL_CONFIG['TEAM_FEE']
+            else:
+                return self.ZARINPAL_CONFIG['PERSON_FEE']
+        return -1
+
+    def get(self, request, *args, **kwargs):
+        amount = self.__get_amount(request.user)
+        if amount == -1:
+            return Response({'status': 'این کاربر توسط تیم ارزیابی فعال نشده است.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        logger.warning(f'Zarinpal callback: {request.GET}')
+        response = zarinpal.verify(status=request.GET.get('Status'), authority=request.GET['Authority'], amount=amount)
+
+        logger.warning(f'zarinpal.verify: {response}')
+        if 200 <= response.status_code <= 299:
+            print("hoooora")
+            # serializer = AnswersSheetSerializer(data=temp_ans.data)
+            # serializer.is_valid(raise_exception=True)
+            # answers_sheet = serializer.save()
+            #
+            # temp_ans.delete()
+
+            return redirect(
+                f'https://google.com/'
+            )
+        # else:
+        #     return redirect(
+        #         f'{settings.REACT_APP_HOST}{settings.FAILED_PAYMENT_REDIRECT_ROUTE}'
+        #     )
+
+    # def post(self, request, *args, **kwargs):
+    #     data = request.data
+    #
+    #     code = data.get('code')
+    #
+    #     amount = self.__get_amount(code)
+    #
+    #     serializer = AnswersSheetSerializer(data=data)
+    #     try:
+    #         serializer.is_valid(raise_exception=True)
+    #     except ValidationError as ve:
+    #         logger.error(f'Applicant info validation error: {ve} -- data: {data}')
+    #         raise ve
+    #
+    #     if amount:
+    #
+    #         temp_ans = TemporaryAnswersSheet.objects.create(data=data)
+    #
+    #         response = zarinpal.send_request(
+    #             amount=amount,
+    #             call_back_url=request.build_absolute_uri(reverse('verify-payment', kwargs={'uuid': temp_ans.uuid}))
+    #         )
+    #
+    #         return response
+    #
+    #     else:
+    #         self.__mark_code_as_used(code)
+    #
+    #         serializer.save()
+    #
+    #         return Response({'uuid': serializer.data['applicant']['uuid']})
+

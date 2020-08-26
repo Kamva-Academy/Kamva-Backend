@@ -101,3 +101,10 @@ class Team(models.Model):
         return s
 
 
+class Payment(models.Model):
+    user = models.ForeignKey(Member, on_delete=models.CASCADE)
+    amount = models.IntegerField()
+    ref_id = models.CharField(blank=False, max_length=100)
+    authority = models.CharField(blank=False, max_length=37)
+    status = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)

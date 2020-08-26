@@ -50,7 +50,6 @@ LOGGING = {
 
 TESTING = sys.argv[1] == 'test'
 # TESTING = True
-REGISTRATION_FEE = get_environment_var('REGISTRATION_FEE', '500')
 
 # Activate Django-Heroku.
 django_heroku.settings(locals(), test_runner=False)
@@ -69,4 +68,11 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
+ZARINPAL_CONFIG = {
+    'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
+    'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
+    'MERCHANT': '8b469980-683d-11ea-806a-000c295eb8fc',  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا»'  # Required
 }

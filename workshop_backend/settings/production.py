@@ -83,3 +83,10 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
+
+ZARINPAL_CONFIG = {
+    'TEAM_FEE': int(get_environment_var('TEAM_FEE', '2550000')),  # Required
+    'PERSON_FEE': int(get_environment_var('PERSON_FEE', '1000000')),  # Required
+    'MERCHANT': '8b469980-683d-11ea-806a-000c295eb8fc',  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا»'  # Required
+}
