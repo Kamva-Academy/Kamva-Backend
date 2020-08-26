@@ -23,6 +23,10 @@ class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cre
         if not serializer.is_valid(raise_exception=True):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         data = serializer.validated_data
+        try:
+            data['pk'] = request.data['pk']
+        except:
+            pass
         instance = serializer.create(data)
         for widget_data in widgets_data:
             widgetSerializer = WidgetSerializer()

@@ -120,6 +120,27 @@ class ProblemBigAnswerSerializer(serializers.ModelSerializer):
         model = ProblemBigAnswer
         fields = '__all__'
 
+    def create(self, validated_data):
+        answer_data = validated_data.pop('answer')
+        instance = ProblemBigAnswer.objects.create(**validated_data)
+        answer = BigAnswer.objects.create(**answer_data)
+        answer.problem = instance
+        answer.save()
+    
+        return instance
+    
+    def update(self, instance, validated_data):
+        validated_data['pk'] = instance.pk
+        try:
+            answer = BigAnswer.objects.filter(problem=instance)[0]
+            validated_data['answer']['pk'] = answer.pk
+            answer.delete()
+        except:
+            pass
+        instance.delete()
+        instance = self.create(validated_data)
+        return instance
+
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
@@ -131,6 +152,43 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProblemMultiChoice
         fields = '__all__'
+
+    def create(self, validated_data):
+        answer_data = validated_data.pop('answer')
+        choices_data = validated_data.pop('choices')
+        instance = ProblemMultiChoice.objects.create(**validated_data)
+        for choice_data in choices_data:
+            choice = Choice.objects.create(**choice_data)
+            choice.problem = instance
+            choice.save()
+        answer = MultiChoiceAnswer.objects.create(**answer_data)
+        answer.problem = instance
+        answer.save()
+    
+        return instance
+
+    def update(self, instance, validated_data):    
+        validated_data['pk'] = instance.pk
+        choices = Choice.objects.filter(problem=instance)
+        index = 0
+        for choice in choices:
+            try:
+                validated_data['choices'][index]['pk'] = choice.pk
+            except:
+                pass
+            choice.delete()
+            index+=1    
+        try:
+            answer = MultiChoiceAnswer.objects.filter(problem=instance)[0]
+            validated_data['answer']['pk'] = answer.pk
+            answer.delete()
+        except:
+            pass
+        
+        instance.delete()
+        instance = self.create(validated_data)
+        return instance
+
 
 class ProblemSerializer(serializers.ModelSerializer):
 

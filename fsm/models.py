@@ -88,5 +88,5 @@ class ProblemMultiChoice(Problem):
     pass
 
 class Choice(models.Model):
-    problem = models.ForeignKey(ProblemMultiChoice, on_delete=models.CASCADE, related_name='choices')
+    problem = models.ForeignKey(ProblemMultiChoice, null=True, on_delete=models.CASCADE, related_name='choices')
     text = models.TextField()
