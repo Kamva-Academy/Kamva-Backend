@@ -149,11 +149,21 @@ class ProblemSerializer(serializers.ModelSerializer):
         return serializer(instance, context=self.context).data
 
     def create(self, validated_data):
-        return ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['widget_type']))\
-            .create(self, validated_data)
+        serializerClass = ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['widget_type']))
+        serializer = serializerClass(validated_data)
+        return serializer.create(validated_data)
+    
+    def update(self, instance, validated_data):    
+        serializerClass = ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['widget_type']))
+        serializer = serializerClass(validated_data)
+        return serializer.update(instance, validated_data)
     
 class WidgetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Widget
+        fields = '__all__'
     
     @classmethod    
     def get_serializer(cls, model):
@@ -165,13 +175,16 @@ class WidgetSerializer(serializers.ModelSerializer):
             return ProblemSerializer.get_serializer(model)
     
     def create(self, validated_data):
-        return WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['widget_type']))\
-            .create(self, validated_data)
+        serializerClass = WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['widget_type']))
+        serializer = serializerClass(validated_data)
+        return serializer.create(validated_data)
     
-    def set_model(self, widget_type):
-        self.Meta.model = getattr(sys.modules[__name__], widget_type)
-        return self
+    def update(self, instance, validated_data):    
+        serializerClass = WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['widget_type']))
+        serializer = serializerClass(validated_data)
+        return serializer.update(instance, validated_data)
     
     def to_representation(self, instance):
         serializer = WidgetSerializer.get_serializer(instance.__class__)
@@ -184,4 +197,14 @@ class FSMPageSerializer(serializers.ModelSerializer):
         model = FSMPage
         fields = '__all__'
     
+    def create(self, validated_data):
+        validated_data.pop('widgets')
+        instance = FSMPage.objects.create(**validated_data)
+        return instance
     
+    def update(self, instance, validated_data):  
+        validated_data.pop('widgets')  
+        validated_data['pk'] = instance.pk
+        instance.delete()
+        instance = self.create(validated_data)
+        return instance

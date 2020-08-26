@@ -35,7 +35,7 @@ class FSMPage(models.Model):
         return Widget.objects.filter(page=self).select_subclasses()
 
 class Widget(models.Model):
-    page = models.ForeignKey(FSMPage, on_delete=models.CASCADE, related_name='%(class)s')
+    page = models.ForeignKey(FSMPage, null =True, on_delete=models.CASCADE, related_name='%(class)s')
     priority = models.IntegerField()
     widget_type = models.CharField(max_length=20)
     objects = InheritanceManager()

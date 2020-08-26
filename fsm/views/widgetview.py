@@ -19,6 +19,13 @@ class WidgetView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Crea
     serializer_class = WidgetSerializer
 
     def get_serializer_class(self):
+        if self.request.method == 'POST':
+            try:
+                return WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
+                    self.request.data['widget_type']))
+            except:
+                pass
+        
         class WidgetInstanceSerializer(WidgetSerializer): 
             class Meta:
                 try:
