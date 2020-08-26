@@ -1,6 +1,10 @@
 from django.contrib import admin
 from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
+import sys
+
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 
 from .models import Member, Participant, Team
 
@@ -11,11 +15,10 @@ import csv
 from django.http import HttpResponse
 
 
-class ParticioantResource(resources.ModelResource):
+class ParticipantResource(resources.ModelResource):
     name = Field()
     email = Field()
     email_verified = Field()
-
 
     class Meta:
         model = Participant
@@ -79,6 +82,61 @@ class ParticioantResource(resources.ModelResource):
     dehydrate_member.short_description = 'email'
 
 
+class IsPaidFilter(admin.SimpleListFilter):
+    title = 'is_paid'
+    parameter_name = 'is_paid'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('Yes', 'Yes'),
+            ('No', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'Yes':
+            return queryset.filter(is_activated=True)
+        elif value == 'No':
+            return queryset.exclude(is_activated=True)
+        return queryset
+
+
+class IsEmailVerifiedFilter(admin.SimpleListFilter):
+    title = 'is_email_verify'
+    parameter_name = 'is_email_verify'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('Yes', 'Yes'),
+            ('No', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'Yes':
+            return queryset.filter(is_email_verify=True)
+        elif value == 'No':
+            return queryset.exclude(is_email_verify=True)
+        return queryset
+
+
+class IsAcceptedFilter(admin.SimpleListFilter):
+    title = 'is_accepted'
+    parameter_name = 'is_accepted'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('Yes', 'Yes'),
+            ('No', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'Yes':
+            return queryset.filter(accepted=True)
+        elif value == 'No':
+            return queryset.exclude(accepted=True)
+        return queryset
 
 
 class CustomUserAdmin(admin.ModelAdmin):
@@ -88,9 +146,11 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 
 class ParticipantInline(ExportActionMixin, admin.ModelAdmin):
-    resource_class = ParticioantResource
+    resource_class = ParticipantResource
     readonly_fields = ['document', 'gender', 'grade']
-    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name', 'is_accepted', 'is_doc_verify', 'is_email_verify']
+    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verify']
+    # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verify']
+    list_filter = ("gender", IsEmailVerifiedFilter, IsAcceptedFilter, IsPaidFilter)
     # inlines = [CustomUserAdmin]
 
     def get_name(self, obj):
@@ -105,7 +165,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin):
         except:
             return False
 
-    def is_doc_verify(self, obj):
+    def is_paid(self, obj):
         try:
             return obj.is_activated
         except:
@@ -117,27 +177,53 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin):
         except:
             return False
 
+    def get_team(self, obj):
+        try:
+            return obj.team
+        except:
+            return False
+
 
     get_name.short_description = 'name'
-    is_doc_verify.short_description = 'تایید مدارک'
     is_email_verify.short_description = 'تایید ایمیل'
+    is_paid.short_description = 'تایید پرداخت'
     is_accepted.short_description = 'accepted'
+    get_team.short_description = 'team'
     is_accepted.boolean = True
     is_email_verify.boolean = True
-    is_doc_verify.boolean = True
-
-    # inlines = [ParticipantPropertyItemInline]
+    is_paid.boolean = True
+    list_per_page = sys.maxsize
 
 
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['active']
-    # inlines = [
-    #     ParticipantInline,
-    # ]
+    list_display = ['get_group_name','active', 'group_members_display',]
+
+
+    def get_group_name(self, obj):
+        name = str(obj.id) + "  " + str(obj.group_name)
+        return name
+
+    def group_members_display(self, obj):
+        display_text = ", ".join([
+            "<a href={}>{}</a>".format(
+                reverse('admin:{}_{}_change'.format(Participant._meta.app_label, Participant._meta.model_name),
+                        args=(member.pk,)),
+                member.member.email)
+            for member in obj.participant_set.all()
+        ])
+        if display_text:
+            return mark_safe(display_text)
+        return "-"
+    # # inlines = [
+    # #     ParticipantInline,
+    # # ]
+    group_members_display.short_description = "اعضای تیم"
+    get_group_name.short_description = "تیم "
+
 
 
 # Register your models here.
 admin.site.register(Member, CustomUserAdmin)
 admin.site.register(Participant, ParticipantInline)
-admin.site.register(Team,)
+admin.site.register(Team, TeamAdmin)

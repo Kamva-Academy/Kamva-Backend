@@ -94,7 +94,8 @@ class Team(models.Model):
     active = models.BooleanField(default=False)
 
     def __str__(self):
-        s = self.group_name + " ("
+        s = str(self.id) + "-" +self.group_name + " ("
+
         for p in self.participant_set.all():
             s+= str(p) + ", "
         s += ")"
