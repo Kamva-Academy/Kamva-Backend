@@ -102,7 +102,7 @@ class IsPaidFilter(admin.SimpleListFilter):
 
 
 class IsEmailVerifiedFilter(admin.SimpleListFilter):
-    title = 'is_email_verify'
+    title = 'is_email_verified'
     parameter_name = 'is_email_verify'
 
     def lookups(self, request, model_admin):
@@ -114,9 +114,9 @@ class IsEmailVerifiedFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value == 'Yes':
-            return queryset.filter(is_email_verify=True)
+            return queryset.filter(member__is_active=True)
         elif value == 'No':
-            return queryset.exclude(is_email_verify=True)
+            return queryset.exclude(member__is_active=True)
         return queryset
 
 
@@ -139,17 +139,17 @@ class IsAcceptedFilter(admin.SimpleListFilter):
         return queryset
 
 
-class CustomUserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(admin.ModelAdmin,):
     model = Member
     readonly_fields = ['password', 'first_name', 'email', 'username']
     list_display = ['email', 'first_name', 'is_active']
 
 
-class ParticipantInline(ExportActionMixin, admin.ModelAdmin):
+class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     resource_class = ParticipantResource
     readonly_fields = ['document', 'gender', 'grade']
-    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verify']
-    # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verify']
+    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
+    # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
     list_filter = ("gender", IsEmailVerifiedFilter, IsAcceptedFilter, IsPaidFilter)
     # inlines = [CustomUserAdmin]
 
@@ -159,7 +159,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin):
         except:
             return False
 
-    def is_email_verify(self, obj):
+    def is_email_verified(self, obj):
         try:
             return obj.member.is_active
         except:
@@ -185,12 +185,12 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin):
 
 
     get_name.short_description = 'name'
-    is_email_verify.short_description = 'تایید ایمیل'
+    is_email_verified.short_description = 'تایید ایمیل'
     is_paid.short_description = 'تایید پرداخت'
     is_accepted.short_description = 'accepted'
     get_team.short_description = 'team'
     is_accepted.boolean = True
-    is_email_verify.boolean = True
+    is_email_verified.boolean = True
     is_paid.boolean = True
     list_per_page = sys.maxsize
 
