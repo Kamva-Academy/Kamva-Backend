@@ -12,7 +12,7 @@ class CustomUserAdmin(admin.ModelAdmin):
 class ParticipantInline(admin.ModelAdmin):
     readonly_fields = ['document', 'gender', 'grade']
     model = Participant
-    list_display = ['member','document','gender', 'grade', 'school', 'city']
+    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city']
     # inlines = [ParticipantPropertyItemInline]
 
 # class TeamAdmin(admin.ModelAdmin):
