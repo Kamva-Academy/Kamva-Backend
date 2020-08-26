@@ -36,7 +36,7 @@ class ParticioantResource(resources.ModelResource):
 
     def dehydrate_email_verified(self, participant):
         try:
-            return participant.member.is_activated
+            return participant.member.is_active
         except Exception:
             return False
 
