@@ -8,6 +8,7 @@ class FSM(models.Model):
         return self.name
 
 class FSMState(models.Model):
+    page = models.OneToOneField('FSMPage', null=True, on_delete=models.CASCADE, unique=True, related_name='state')
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
     name = models.CharField(max_length=150)
 
@@ -28,7 +29,6 @@ class Ability(models.Model):
         return self.name
 
 class FSMPage(models.Model):
-    state = models.OneToOneField(FSMState, null=True, on_delete=models.CASCADE, unique=True, related_name='page')
     page_type = models.CharField(max_length=20)
 
     def widgets(self):

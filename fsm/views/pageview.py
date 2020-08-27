@@ -6,13 +6,13 @@ from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.decorators import api_view, permission_classes
 
-from fsm.models import FSMPage, Widget
+from fsm.models import FSMPage, Widget, FSMState
 from fsm.views import permissions
-from fsm.serializers import FSMPageSerializer, WidgetSerializer
+from fsm.serializers import FSMPageSerializer, WidgetSerializer, FSMStateSerializer
 
 
 class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
-                   mixins.UpdateModelMixin):
+                   mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     permission_classes = []
     queryset = FSMPage.objects.all()
     serializer_class = FSMPageSerializer
@@ -34,23 +34,42 @@ class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cre
             widget.page = instance
             widget.save()
         
+        fsmStateSerializer = FSMStateSerializer(data=request.data['state'])
+        if not fsmStateSerializer.is_valid(raise_exception=True):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        data = fsmStateSerializer.validated_data
+        try:
+            data['pk'] = request.data['state']['pk']
+        except:
+            pass
+        state = fsmStateSerializer.create(data)
+        state.page = instance
+        state.save()
+        
         response = serializer.to_representation(instance)
         return Response(response) 
 
-    def update(self, request, *args, **kwargs):  
+    def update(self, request, *args, **kwargs):
+        serializer = FSMPageSerializer(data=request.data)
+        if not serializer.is_valid(raise_exception=True):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
         instance = FSMPage.objects.filter(id=request.parser_context['kwargs'].get('pk', -1))[0]
         widgets = instance.widgets()
+        request.data['state']['pk'] = instance.state.pk
+        instance.state.delete()
         for widget in widgets:
             widget.delete()
         index = 0
         while True:
             try:
-                request.data['widgets'][index]['pk'] = request.data['widgets'][index]['id']
+                widget_id = request.data['widgets'][index]['id']
+                # check is not exist
+                request.data['widgets'][index]['pk'] = widget_id
             except:
                 break
             index+=1
         request.data['pk'] = instance.pk
-        print(request.data)
         instance.delete()
         return self.create(request, *args, **kwargs)
 

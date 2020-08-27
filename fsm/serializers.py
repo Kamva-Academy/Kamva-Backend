@@ -250,6 +250,7 @@ class WidgetSerializer(serializers.ModelSerializer):
 
     
 class FSMPageSerializer(serializers.ModelSerializer):
+    state = FSMStateSerializer()
     widgets = WidgetSerializer(many=True)
     class Meta:
         model = FSMPage
@@ -257,6 +258,7 @@ class FSMPageSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         validated_data.pop('widgets')
+        validated_data.pop('state')
         instance = FSMPage.objects.create(**validated_data)
         return instance
     
