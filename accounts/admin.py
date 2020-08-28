@@ -202,7 +202,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
         try:
             if obj.accepted :
                 return mark_safe('<a class="button" href="' + reverse('admin:unaccept_member',
-                                                                      args=[obj.pk]) + '">عدم قبول</a>' + '&nbsp;')
+                                                                      args=[obj.pk]) + '">رد </a>' + '&nbsp;')
 
             else:
                 return mark_safe('<a class="button" href="' + reverse('admin:accept_member',
