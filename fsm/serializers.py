@@ -262,20 +262,20 @@ class WidgetSerializer(serializers.ModelSerializer):
     
 class FSMPageSerializer(serializers.ModelSerializer):
     state = FSMStateSerializer()
-    # widgets = WidgetSerializer(many=True)
+    widgets = WidgetSerializer(many=True)
 
     class Meta:
         model = FSMPage
         fields = '__all__'
     
     def create(self, validated_data):
-        # validated_data.pop('widgets')
+        validated_data.pop('widgets')
         validated_data.pop('state')
         instance = FSMPage.objects.create(**validated_data)
         return instance
     
     def update(self, instance, validated_data):  
-        # validated_data.pop('widgets')
+        validated_data.pop('widgets')
         validated_data['pk'] = instance.pk
         instance.delete()
         instance = self.create(validated_data)

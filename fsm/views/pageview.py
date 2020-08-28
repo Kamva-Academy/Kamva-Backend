@@ -16,8 +16,8 @@ from fsm.serializers import FSMPageSerializer, WidgetSerializer, FSMStateSeriali
 
 class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin, mixins.DestroyModelMixin):
-    permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission, ]
-    # permission_classes = [permissions.AllowAny]
+    #permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission, ]
+    permission_classes = [permissions.AllowAny]
     queryset = FSMPage.objects.all()
     serializer_class = FSMPageSerializer
 
