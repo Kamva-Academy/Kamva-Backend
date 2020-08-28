@@ -179,9 +179,19 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 
     def get_team(self, obj):
         try:
-            return obj.team
+            if(obj.team):
+                display_text = str(obj.team.id) + obj.team.group_name + " (" + ", ".join([
+                    "<a href={}>{}</a>".format(
+                        reverse('admin:{}_{}_change'.format(Participant._meta.app_label, Participant._meta.model_name),
+                                args=(member.pk,)),
+                        member.member.email)
+                    for member in obj.team.participant_set.all()
+                ]) + ")"
+                if display_text:
+                    return mark_safe(display_text)
+                return "-"
         except:
-            return False
+            return ''
 
 
     get_name.short_description = 'name'
@@ -197,7 +207,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['get_group_name','active', 'group_members_display',]
+    list_display = ['get_group_name','active', 'group_members_display', 'team_members_count', 'team_status']
 
 
     def get_group_name(self, obj):
@@ -215,11 +225,30 @@ class TeamAdmin(admin.ModelAdmin):
         if display_text:
             return mark_safe(display_text)
         return "-"
+
+    def team_members_count(self, obj):
+        return obj.participant_set.all().count()
+    
+    def team_status(self, obj):
+        accept_count = 0
+        for p in obj.participant_set.all():
+            if p.accepted:
+                accept_count += 1  
+        if accept_count == 0: return False
+        elif accept_count == obj.participant_set.all().count(): return True
+        else: return None
+            
+ 
     # # inlines = [
     # #     ParticipantInline,
     # # ]
     group_members_display.short_description = "اعضای تیم"
     get_group_name.short_description = "تیم "
+    team_members_count.short_description = "تعداد اعضا"
+    team_status.short_description = "وضعیت قبولی تیم"
+    team_status.boolean = True
+
+    
 
 
 

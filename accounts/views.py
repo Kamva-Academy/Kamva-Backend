@@ -261,7 +261,7 @@ class ChangePass(APIView):
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
     # permission_classes = (permissions.AllowAny,)
-
+    @transaction.atomic
     def post(self, request):
         if 'file' not in request.data:
             raise ParseError("Empty content")
