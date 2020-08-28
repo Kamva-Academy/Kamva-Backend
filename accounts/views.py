@@ -42,6 +42,7 @@ from rest_framework.views import APIView
 
 from .serializers import MyTokenObtainPairSerializer, MemberSerializer
 
+
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 

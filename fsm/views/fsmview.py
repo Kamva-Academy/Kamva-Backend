@@ -5,15 +5,15 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework import permissions
 
 from fsm.models import FSM
-from fsm.views import permissions
+from fsm.views import permissions as customPermissions
 from fsm.serializers import FSMSerializer, FSMGetSerializer
-
 
 class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
-    permission_classes = []
+    permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
 

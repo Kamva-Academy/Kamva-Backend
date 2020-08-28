@@ -43,6 +43,7 @@ class ParticipantStatus(Enum):
 
 class Member(AbstractUser):
     is_participant = models.BooleanField(default=True)
+    is_mentor = models.BooleanField(default=False)
 
     
     def send_signup_email(self, base_url, password=''):
@@ -68,6 +69,38 @@ class Member(AbstractUser):
 
     def __str__(self):
         return self.username
+
+class MentorManager(models.Manager):
+    @transaction.atomic
+    def create_mentor(self, email, password, *args, **kwargs):
+
+        member = Member.objects.create_user(username=email, email=email, password=password)
+        member.is_mentor = True
+        member.is_participant = False
+        mentor = Mentor.objects.create(member=member)
+        return mentor
+
+
+class Mentor(models.Model):
+    objects = MentorManager()
+
+    member = models.OneToOneField(Member, related_name='Mentor', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.member)
+
+    def send_greeting_email(self, username, password):
+        html_content = strip_spaces_between_tags(render_to_string('auth/mentor_greet_email.html', {
+            'login_url': '%s/admin' % settings.DOMAIN,
+            'username': username,
+            'password': password
+        }))
+        text_content = re.sub('<style[^<]+?</style>', '', html_content)
+        text_content = strip_tags(text_content)
+
+        msg = EmailMultiAlternatives('اطلاعات کاربری منتور', text_content, 'Rastaiha <info@rastaiha.ir>', [username])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
 
 
 class Participant(models.Model):

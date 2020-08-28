@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
 import sys
 
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
@@ -11,7 +12,8 @@ from .models import Member, Participant, Team
 from import_export.admin import ExportActionMixin
 from import_export.fields import Field
 from import_export import resources
-import csv
+from django.urls import path, reverse
+
 from django.http import HttpResponse
 
 
@@ -148,7 +150,7 @@ class CustomUserAdmin(admin.ModelAdmin,):
 class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     resource_class = ParticipantResource
     readonly_fields = ['document', 'gender', 'grade']
-    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
+    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified','account_actions']
     # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
     list_filter = ("gender", IsEmailVerifiedFilter, IsAcceptedFilter, IsPaidFilter)
     # inlines = [CustomUserAdmin]
@@ -184,6 +186,46 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
             return False
 
 
+    def account_actions(self, obj):
+        try:
+            if obj.accepted :
+                return mark_safe('<a class="button" href="' + reverse('admin:unaccept_member',
+                                                                      args=[obj.pk]) + '">عدم قبول</a>' + '&nbsp;')
+
+            else:
+                return mark_safe('<a class="button" href="' + reverse('admin:accept_member',
+                                                                      args=[obj.pk]) + '">قبول</a>' + '&nbsp;')
+        except:
+            return None
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'accept/<int:pk>/',
+                self.accept_member,
+                name='accept_member',
+            ),
+            path(
+                'unaccept/<int:pk>/',
+                self.unaccept_member,
+                name='unaccept_member',
+            )
+        ]
+        return custom_urls + urls
+
+    def accept_member(self, request, *args, **kwargs):
+        participant = Participant.objects.get(pk=kwargs['pk'])
+        participant.accepted = True
+        participant.participant.save()
+        return redirect('/admin/accounts/participant')
+
+    def unaccept_member(self, request, *args, **kwargs):
+        participant = Participant.objects.get(pk=kwargs['pk'])
+        participant.accepted = False
+        participant.participant.save()
+        return redirect('/admin/accounts/participant')
+
     get_name.short_description = 'name'
     is_email_verified.short_description = 'تایید ایمیل'
     is_paid.short_description = 'تایید پرداخت'
@@ -192,6 +234,9 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     is_accepted.boolean = True
     is_email_verified.boolean = True
     is_paid.boolean = True
+    account_actions.short_description = 'ACCEPT'
+
+
     list_per_page = sys.maxsize
 
 

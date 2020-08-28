@@ -39,10 +39,12 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
         instance = self.create(validated_data)
         return instance
 
+
 class FSMStateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FSMState
         fields = '__all__'
+
 
 class FSMStateGetSerializer(serializers.ModelSerializer):
     outward_edges = FSMEdgeSerializer(many=True)
@@ -209,7 +211,6 @@ class ProblemSerializer(serializers.ModelSerializer):
             return ProblemBigAnswerSerializer
         elif model == ProblemMultiChoice:
             return ProblemMultiChoiceSerializer
-         
 
     def to_representation(self, instance):
         serializer = ProblemSerializer.get_serializer(instance.__class__)
@@ -226,7 +227,8 @@ class ProblemSerializer(serializers.ModelSerializer):
             validated_data['widget_type']))
         serializer = serializerClass(validated_data)
         return serializer.update(instance, validated_data)
-    
+
+
 class WidgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Widget
@@ -261,6 +263,7 @@ class WidgetSerializer(serializers.ModelSerializer):
 class FSMPageSerializer(serializers.ModelSerializer):
     state = FSMStateSerializer()
     widgets = WidgetSerializer(many=True)
+
     class Meta:
         model = FSMPage
         fields = '__all__'

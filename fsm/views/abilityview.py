@@ -5,14 +5,15 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.decorators import api_view, permission_classes
-
+from rest_framework import permissions
+from fsm.views import permissions as customPermissions
 from fsm.models import Ability
-from fsm.views import permissions
+
 from fsm.serializers import AbilitySerializer
 
 
 class AbilityView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
-    permission_classes = []
+    permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission, ]
     queryset = Ability.objects.all()
     serializer_class = AbilitySerializer
