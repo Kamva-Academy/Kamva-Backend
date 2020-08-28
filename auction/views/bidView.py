@@ -6,14 +6,15 @@ from django.shortcuts import render
 from auction.serializers import *
 from auction.models import *
 from auction.views.permisions import *
+import timezone
 def save_one_time_bid(request, auction, bid):
     try:
-        team = request.user.account.team
+        participant = request.member.participant
         auction = OneTimeAuction.objects.filter(pk=auction)[0]
-        bidder = OneTimeBidder.objects.filter(team=team, auction=auction)
+        bidder = OneTimeBidder.objects.filter(participant=participant, auction=auction)[0]
     except:
         return False
-
+    #check time
     bidder.bid = bid
     bidder.save()
     if auction.winner.bid < bid:

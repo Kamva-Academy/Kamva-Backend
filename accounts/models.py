@@ -43,7 +43,6 @@ class ParticipantStatus(Enum):
 
 class Member(AbstractUser):
     is_participant = models.BooleanField(default=True)
-
     
     def send_signup_email(self, base_url, password=''):
         options = {
