@@ -290,115 +290,93 @@ class UploadAnswerView(APIView):
 
 
 class PayView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = [SessionAuthentication]
     ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
 
     def __get_amount(self, user):
-        x = Participant.objects.get(member=user)
-        if x.accepted:
-            if x.team:
-                return self.ZARINPAL_CONFIG['TEAM_FEE']
-            else:
-                return self.ZARINPAL_CONFIG['PERSON_FEE']
-        return -1
+        return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
 
     def get(self, request, *args, **kwargs):
-        amount = self.__get_amount(request.user)
-        if amount == -1:
-            return Response({'status': 'این کاربر توسط تیم ارزیابی فعال نشده است.'}, status=status.HTTP_400_BAD_REQUEST)
-        response = zarinpal.send_request(amount=amount,
-                                         call_back_url=request.build_absolute_uri('verify-payment'))
-        return response
-
-        # logger.warning(f'Zarinpal callback: {request.GET}')
-        # response = zarinpal.verify(status=request.GET.get('Status'), authority=request.GET['Authority'], amount=amount)
-        #
-        # logger.warning(f'zarinpal.verify: {response}')
-        # if 200 <= response.status_code <= 299:
-        #     serializer = AnswersSheetSerializer(data=temp_ans.data)
-        #     serializer.is_valid(raise_exception=True)
-        #     answers_sheet = serializer.save()
-        #
-        #     temp_ans.delete()
-        #
-        #     return redirect(
-        #         f'{settings.REACT_APP_HOST}{settings.SUCCESSFUL_PAYMENT_REDIRECT_ROUTE}{answers_sheet.applicant.uuid}'
-        #     )
-        # else:
-        #     return redirect(
-        #         f'{settings.REACT_APP_HOST}{settings.FAILED_PAYMENT_REDIRECT_ROUTE}'
-        #     )
+        user = Participant.objects.filter(member=request.user)
+        response = dict()
+        status_r = int()
+        if user:
+            user = user[0]
+            if user.accepted and not user.is_activated:
+                amount = self.__get_amount(user)
+                res = zarinpal.send_request(amount=amount,
+                                            call_back_url=request.build_absolute_uri('verify-payment'))
+                status_r = res["status"]
+                response = {
+                    "message": res["message"],
+                    "amount": amount,
+                    "typePayment": "team" if user.team else "person"
+                } if status_r == 201 else {
+                    "message": res["message"]
+                }
+            elif not user.accepted:
+                response = {
+                    "message": "دانش آموز عزیز به علت تایید نشدن حساب کاربری شما امکان پرداخت وجود ندارد",
+                }
+                status_r = 403
+            elif user.is_activated:
+                response = {
+                    "message": "دانش آموز عزیز هزینه ثبت نام قبلا پرداخت شده است.",
+                }
+                status_r = 403
+        else:
+            response = {
+                "message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است",
+            }
+            status_r = 403
+        return Response(response, status=status_r)
 
 
 class VerifyPayView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = [SessionAuthentication]
     ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
 
+    def __random_string(self, length=10):
+        """Generate a random string of fixed length """
+        letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
+        return ''.join(random.choice(letters) for _ in range(length))
+
     def __get_amount(self, user):
-        x = Participant.objects.get(member=user)
-        if x.accepted:
-            if x.team:
-                return self.ZARINPAL_CONFIG['TEAM_FEE']
-            else:
-                return self.ZARINPAL_CONFIG['PERSON_FEE']
-        return -1
+        return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
 
     def get(self, request, *args, **kwargs):
-        amount = self.__get_amount(request.user)
-        if amount == -1:
-            return Response({'status': 'این کاربر توسط تیم ارزیابی فعال نشده است.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        logger.warning(f'Zarinpal callback: {request.GET}')
-        response = zarinpal.verify(status=request.GET.get('Status'), authority=request.GET['Authority'], amount=amount)
-
-        logger.warning(f'zarinpal.verify: {response}')
-        if 200 <= response.status_code <= 299:
-            print("hoooora")
-            # serializer = AnswersSheetSerializer(data=temp_ans.data)
-            # serializer.is_valid(raise_exception=True)
-            # answers_sheet = serializer.save()
-            #
-            # temp_ans.delete()
-
-            return redirect(
-                f'https://google.com/'
-            )
-        # else:
-        #     return redirect(
-        #         f'{settings.REACT_APP_HOST}{settings.FAILED_PAYMENT_REDIRECT_ROUTE}'
-        #     )
-
-    # def post(self, request, *args, **kwargs):
-    #     data = request.data
-    #
-    #     code = data.get('code')
-    #
-    #     amount = self.__get_amount(code)
-    #
-    #     serializer = AnswersSheetSerializer(data=data)
-    #     try:
-    #         serializer.is_valid(raise_exception=True)
-    #     except ValidationError as ve:
-    #         logger.error(f'Applicant info validation error: {ve} -- data: {data}')
-    #         raise ve
-    #
-    #     if amount:
-    #
-    #         temp_ans = TemporaryAnswersSheet.objects.create(data=data)
-    #
-    #         response = zarinpal.send_request(
-    #             amount=amount,
-    #             call_back_url=request.build_absolute_uri(reverse('verify-payment', kwargs={'uuid': temp_ans.uuid}))
-    #         )
-    #
-    #         return response
-    #
-    #     else:
-    #         self.__mark_code_as_used(code)
-    #
-    #         serializer.save()
-    #
-    #         return Response({'uuid': serializer.data['applicant']['uuid']})
-
+        user = Participant.objects.filter(member=request.user)
+        if user:
+            user = user[0]
+            amount = self.__get_amount(user)
+            random_s = self.__random_string()
+            logger.warning(f'Zarinpal callback: {request.GET}')
+            res = zarinpal.verify(status=request.GET.get('Status'),
+                                  authority=request.GET.get('Authority'),
+                                  amount=amount)
+            if 200 <= int(res["status"]) <= 299:
+                if user.team:
+                    team = Participant.objects.filter(team=user.team)
+                    # Update is_activated for member of a group
+                    for participant in team:
+                        participant.is_activated = True
+                    Participant.objects.bulk_update(team, ['is_activated'])
+                else:
+                    user.is_activated = True
+                    user.save()
+                Payment.objects.create(user=user,
+                                       amount=amount,
+                                       ref_id=str(res['ref_id']),
+                                       authority=request.GET.get('Authority'),
+                                       status="SUCCESS" if res["status"] == 200 else "REPETITIOUS",
+                                       uniq_code=random_s)
+                return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}{random_s}')
+            else:
+                Payment.objects.create(user=user,
+                                       amount=amount,
+                                       authority=request.GET.get('Authority'),
+                                       status="FAILED",
+                                       uniq_code=random_s)
+                return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}{random_s}')
+        else:
+            return Response(
+                {"message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است"},
+                status=403)

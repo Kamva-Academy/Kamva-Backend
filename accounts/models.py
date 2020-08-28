@@ -103,9 +103,19 @@ class Team(models.Model):
 
 
 class Payment(models.Model):
-    user = models.ForeignKey(Member, on_delete=models.CASCADE)
+    STATUS_CHOICE = (
+        ("SUCCESS", "SUCCESS"),
+        ("REPETITIOUS", "REPETITIOUS"),
+        ("FAILED", "FAILED"),
+    )
+
+    user = models.ForeignKey(Participant, on_delete=models.CASCADE)
+    ref_id = models.CharField(blank=True, max_length=100, null=True)
     amount = models.IntegerField()
-    ref_id = models.CharField(blank=False, max_length=100)
-    authority = models.CharField(blank=False, max_length=37)
-    status = models.IntegerField()
+    authority = models.CharField(blank=False, max_length=37, null=False)
+    status = models.CharField(blank=False, choices=STATUS_CHOICE, max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
+    uniq_code = models.CharField(blank=False, max_length=100, default="")
+
+    def __str__(self):
+        return self.uniq_code

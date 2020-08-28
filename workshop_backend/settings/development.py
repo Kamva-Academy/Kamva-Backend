@@ -24,9 +24,17 @@ DATABASES = {
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s] %(levelname)-8s [%(module)s:%(funcName)s:%(lineno)d]: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
     'handlers': {
         'console': {
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
@@ -71,8 +79,14 @@ SIMPLE_JWT = {
 }
 
 ZARINPAL_CONFIG = {
+    'ROUTE_START_PAY': 'https://sandbox.zarinpal.com/pg/StartPay/',
+    'ROUTE_WEB_GATE': 'https://sandbox.zarinpal.com/pg/services/WebGate/wsdl',
     'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
     'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
-    'MERCHANT': '8b469980-683d-11ea-806a-000c295eb8fc',  # Required
-    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا»'  # Required
+    'MERCHANT': 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا» به صورت آزمایشی'  # Required
+}
+PAYMENT = {
+    'FRONT_HOST_SUCCESS': 'https://rastaiha.ir/payment/success/',
+    'FRONT_HOST_FAILURE': 'https://rastaiha.ir/payment/failure/'
 }

@@ -11,7 +11,7 @@ ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
 
 
 def send_request(amount, call_back_url, email=None, mobile=None):
-    client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
+    client = Client(ZARINPAL_CONFIG['ROUTE_WEB_GATE'])
     result = client.service.PaymentRequest(
         ZARINPAL_CONFIG['MERCHANT'],
         amount,
@@ -20,40 +20,45 @@ def send_request(amount, call_back_url, email=None, mobile=None):
         mobile,
         call_back_url)
     if result.Status == 100:
-        return Response({
-            'redirect': f'https://www.zarinpal.com/pg/StartPay/{str(result.Authority)}'
-        })
+        return {
+            "message": f'{ZARINPAL_CONFIG["ROUTE_START_PAY"]}{str(result.Authority)}',
+            'status': 201
+        }
     else:
         logger.error(f'Zarinpal send request error: {result}')
-        return Response({
-            'msg': f'Error code: {str(result.Status)}'
-        }, status=500)
+        return {
+            'message': f'برای درگاهی اینترنتی مشکلی پیش امده است لطفا با پشتیبانی رستا در تماس باشید:{str(result.Status)}',
+            'status': 403
+        }
 
 
 def verify(status, authority, amount):
-    client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
+    client = Client(ZARINPAL_CONFIG['ROUTE_WEB_GATE'])
     if status == 'OK':
         result = client.service.PaymentVerification(ZARINPAL_CONFIG['MERCHANT'], authority, amount)
         if result.Status == 100:
             logger.info(f'Transaction success: {result}')
-            return Response({
-                'msg': 'Transaction success.',
-                'ref_id': str(result.RefID)
-            })
+            return {
+                'message': 'پرداخت با موفقیت انجام شد.',
+                'ref_id': str(result.RefID),
+                'status': 200
+            }
         elif result.Status == 101:
-            logger.info(f'Transaction submitted: {result}')
-            return Response({
-                'msg': 'Transaction submitted.',
-                'status': str(result.Status)
-            })
+            logger.warning(f'Transaction submitted: {result}')
+            return {
+                'message': 'این تراکنش قبلا بررسی شده است.',
+                'ref_id': str(result.RefID),
+                'status': 201
+            }
         else:
-            logger.error(f'Zarinpal verification error: {result}')
-            return Response({
-                'msg': 'Transaction failed!',
-                'status': str(result.Status)
-            }, status=400)
+            logger.warning(f'Zarinpal verification error: {result}')
+            return {
+                'message': 'تراکنش ناموفق بود',
+                'status': 400
+            }
     else:
-        logger.error(f'Zarinpal status not OK: {status}')
-        return Response({
-            'msg': 'Transaction failed or canceled by user'
-        }, status=400)
+        logger.warning(f'Transaction failed or canceled by authority: {authority}')
+        return {
+            'message': 'تراکنش ناموفق بوده است یا توسط کاربر کنسل شده است',
+            'status': 403
+        }
