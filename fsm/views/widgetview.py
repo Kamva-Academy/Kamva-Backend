@@ -16,6 +16,7 @@ import sys
 class WidgetView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission, ]
+    # permission_classes = [permissions.AllowAny]
     queryset = Widget.objects.all().select_subclasses()
     serializer_class = WidgetSerializer
 

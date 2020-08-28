@@ -14,6 +14,8 @@ from fsm.serializers import FSMSerializer, FSMGetSerializer
 class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
+    # permission_classes = [permissions.AllowAny]
+
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
 
