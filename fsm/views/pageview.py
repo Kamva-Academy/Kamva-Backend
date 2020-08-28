@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -16,7 +17,8 @@ class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cre
     permission_classes = []
     queryset = FSMPage.objects.all()
     serializer_class = FSMPageSerializer
-    
+
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         widgets_data = request.data['widgets']
         serializer = FSMPageSerializer(data=request.data)
@@ -47,8 +49,9 @@ class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cre
         state.save()
         
         response = serializer.to_representation(instance)
-        return Response(response) 
+        return Response(response)
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         serializer = FSMPageSerializer(data=request.data)
         if not serializer.is_valid(raise_exception=True):

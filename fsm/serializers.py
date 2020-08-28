@@ -51,35 +51,43 @@ class FSMStateGetSerializer(serializers.ModelSerializer):
         model = FSMState
         fields = '__all__'
 
+
 class FSMSerializer(serializers.ModelSerializer):
     class Meta:
         model = FSM
         fields = '__all__'
+
+
 class FSMGetSerializer(serializers.ModelSerializer):
     states = FSMStateSerializer(many=True)
     class Meta:
         model = FSM
         fields = '__all__'
 
+
 class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = '__all__'
+
 
 class DescriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Description
         fields = '__all__'
 
+
 class SmallAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = SmallAnswer
         fields = '__all__'
 
+
 class BigAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = BigAnswer
         fields = '__all__'
+
 
 class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,6 +97,7 @@ class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
 
 class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
     answer = SmallAnswerSerializer()
+
     class Meta:
         model = ProblemSmallAnswer
         fields = '__all__'
