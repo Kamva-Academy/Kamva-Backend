@@ -14,7 +14,7 @@ from fsm.serializers import WidgetSerializer
 import sys
 
 class WidgetView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
-                   mixins.UpdateModelMixin):
+                   mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     #permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission, ]
     permission_classes = [permissions.AllowAny]
     queryset = Widget.objects.all().select_subclasses()
