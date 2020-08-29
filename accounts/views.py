@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 import string
@@ -14,9 +15,16 @@ from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
-from .models import Member, Participant
+from .models import Member, Participant, Payment
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from accounts import zarinpal
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+
+from .serializers import MyTokenObtainPairSerializer, MemberSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # def check_bibot_response(request):
@@ -35,12 +43,6 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 #             messages.error(request, 'کپچا به درستی حل نشده است!')
 #             return False
 #     return False
-
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import status, permissions
-from rest_framework.views import APIView
-
-from .serializers import MyTokenObtainPairSerializer, MemberSerializer
 
 
 class ObtainTokenPair(TokenObtainPairView):
@@ -256,13 +258,13 @@ class ChangePass(APIView):
         user.set_password(new_pass)
         user.save()
 
-        return Response({'success': True},status=status.HTTP_200_OK)
+        return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
     # permission_classes = (permissions.AllowAny,)
-
+    @transaction.atomic
     def post(self, request):
         if 'file' not in request.data:
             raise ParseError("Empty content")
@@ -282,3 +284,99 @@ class UploadAnswerView(APIView):
                 os.remove(old_file.path)
 
         return Response({'success': True}, status=status.HTTP_201_CREATED)
+
+
+class PayView(APIView):
+    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+
+    def __get_amount(self, user):
+        return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
+
+    def get(self, request, *args, **kwargs):
+        user = Participant.objects.filter(member=request.user)
+        response = dict()
+        status_r = int()
+        if user:
+            user = user[0]
+            if user.accepted and not user.is_activated:
+                amount = self.__get_amount(user)
+                res = zarinpal.send_request(amount=amount,
+                                            call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={user.uuid}')
+                status_r = res["status"]
+                response = {
+                    "message": res["message"],
+                    "amount": amount,
+                    "typePayment": "team" if user.team else "person"
+                } if status_r == 201 else {
+                    "message": res["message"]
+                }
+            elif not user.accepted:
+                response = {
+                    "message": "دانش آموز عزیز به علت تایید نشدن حساب کاربری شما امکان پرداخت وجود ندارد",
+                }
+                status_r = 403
+            elif user.is_activated:
+                response = {
+                    "message": "دانش آموز عزیز هزینه ثبت نام قبلا پرداخت شده است.",
+                }
+                status_r = 403
+        else:
+            response = {
+                "message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است",
+            }
+            status_r = 403
+        return Response(response, status=status_r)
+
+
+class VerifyPayView(APIView):
+    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+    permission_classes = (permissions.AllowAny,)
+
+    def __random_string(self, length=10):
+        """Generate a random string of fixed length """
+        letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
+        return ''.join(random.choice(letters) for _ in range(length))
+
+    def __get_amount(self, user):
+        return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
+
+    def get(self, request, *args, **kwargs):
+        user = Participant.objects.filter(uuid=request.GET.get('uuid'))
+        logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
+        logger.warning(request.META.get('REMOTE_ADDR'))
+        if user:
+            user = user[0]
+            amount = self.__get_amount(user)
+            random_s = self.__random_string()
+            logger.warning(f'Zarinpal callback: {request.GET}')
+            res = zarinpal.verify(status=request.GET.get('Status'),
+                                  authority=request.GET.get('Authority'),
+                                  amount=amount)
+            if 200 <= int(res["status"]) <= 299:
+                if user.team:
+                    team = Participant.objects.filter(team=user.team)
+                    # Update is_activated for member of a group
+                    for participant in team:
+                        participant.is_activated = True
+                    Participant.objects.bulk_update(team, ['is_activated'])
+                else:
+                    user.is_activated = True
+                    user.save()
+                Payment.objects.create(user=user,
+                                       amount=amount,
+                                       ref_id=str(res['ref_id']),
+                                       authority=request.GET.get('Authority'),
+                                       status="SUCCESS" if res["status"] == 200 else "REPETITIOUS",
+                                       uniq_code=random_s)
+                return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}{random_s}')
+            else:
+                Payment.objects.create(user=user,
+                                       amount=amount,
+                                       authority=request.GET.get('Authority'),
+                                       status="FAILED",
+                                       uniq_code=random_s)
+                return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}{random_s}')
+        else:
+            return Response(
+                {"message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است"},
+                status=403)

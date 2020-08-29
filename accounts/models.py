@@ -10,6 +10,8 @@ from django.utils.html import strip_tags, strip_spaces_between_tags
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from accounts.tokens import account_activation_token
+import uuid
+
 from enum import Enum
 
 
@@ -44,7 +46,7 @@ class Member(AbstractUser):
     is_participant = models.BooleanField(default=True)
     is_mentor = models.BooleanField(default=False)
 
-    
+
     def send_signup_email(self, base_url, password=''):
         options = {
             'user': self,
@@ -69,6 +71,7 @@ class Member(AbstractUser):
     def __str__(self):
         return self.username
 
+
 class MentorManager(models.Manager):
     @transaction.atomic
     def create_mentor(self, email, password, *args, **kwargs):
@@ -76,13 +79,13 @@ class MentorManager(models.Manager):
         member = Member.objects.create_user(username=email, email=email, password=password)
         member.is_mentor = True
         member.is_participant = False
+        member.save()
         mentor = Mentor.objects.create(member=member)
         return mentor
 
 
 class Mentor(models.Model):
     objects = MentorManager()
-
     member = models.OneToOneField(Member, related_name='Mentor', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -90,7 +93,7 @@ class Mentor(models.Model):
 
     def send_greeting_email(self, username, password):
         html_content = strip_spaces_between_tags(render_to_string('auth/mentor_greet_email.html', {
-            'login_url': '%s/admin' % settings.DOMAIN,
+            'login_url': 'rastaiha.ir/login' ,
             'username': username,
             'password': password
         }))
@@ -104,6 +107,7 @@ class Mentor(models.Model):
 
 class Participant(models.Model):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     school = models.CharField(max_length=50)
     grade = models.CharField(max_length=10, choices=[(tag.value, tag.name) for tag in Grade])
     city = models.CharField(max_length=20)
@@ -121,8 +125,8 @@ class Participant(models.Model):
 
 
 class Team(models.Model):
-    # participants = models.ManyToManyField(Participant, blank=False)
     group_name = models.CharField(max_length=30, blank=True)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     active = models.BooleanField(default=False)
     current_state = models.ForeignKey('fsm.FSMState', null=True, on_delete=models.SET_NULL, related_name='teams')
     def __str__(self):
@@ -134,3 +138,20 @@ class Team(models.Model):
         return s
 
 
+class Payment(models.Model):
+    STATUS_CHOICE = (
+        ("SUCCESS", "SUCCESS"),
+        ("REPETITIOUS", "REPETITIOUS"),
+        ("FAILED", "FAILED"),
+    )
+
+    user = models.ForeignKey(Participant, on_delete=models.CASCADE)
+    ref_id = models.CharField(blank=True, max_length=100, null=True)
+    amount = models.IntegerField()
+    authority = models.CharField(blank=False, max_length=37, null=False)
+    status = models.CharField(blank=False, choices=STATUS_CHOICE, max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    uniq_code = models.CharField(blank=False, max_length=100, default="")
+
+    def __str__(self):
+        return self.uniq_code
