@@ -8,7 +8,9 @@ router = DefaultRouter()
 router.register('auction', OneTimeAuctionView)
 router.register('auction/<int:pk>', OneTimeAuctionView)
 urlpatterns = [
-    path('bid/', new_one_time_bid)
+    path('bid/', new_one_time_bid),
+    path('create/', new_one_time_auction),
+    
     ]
 
 urlpatterns += router.urls

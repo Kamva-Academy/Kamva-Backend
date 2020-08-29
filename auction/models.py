@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from accounts.models import *
 class OneTimeAuction(models.Model):
-    team =  models.ForeignKey(Team, null=True, on_delete=models.CASCADE, related_name='oneTimeAuction')
     auction_pay_type = models.IntegerField(default=1)
     winner =  models.ForeignKey('OneTimeBidder', null=True, on_delete=models.CASCADE)
     start_time = models.DateTimeField(null=True, blank=True)
