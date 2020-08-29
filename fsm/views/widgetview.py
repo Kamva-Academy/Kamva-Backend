@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -20,6 +21,7 @@ class WidgetView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Crea
     queryset = Widget.objects.all().select_subclasses()
     serializer_class = WidgetSerializer
 
+    @transaction.atomic
     def get_serializer_class(self):
         if self.request.method == 'POST':
             try:

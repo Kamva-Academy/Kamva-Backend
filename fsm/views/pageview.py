@@ -42,11 +42,11 @@ class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cre
             widget.save()
             # get widget by id
             # widgetSerializer = WidgetSerializer()
-            # widget = widgetSerializer.create(widget_data)
+            # # widget = widgetSerializer.create(widget_data)
             # widget.page = instance
             # widget.save()
 
-        
+
         fsmStateSerializer = FSMStateSerializer(data=request.data['state'])
         if not fsmStateSerializer.is_valid(raise_exception=True):
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -58,7 +58,7 @@ class FSMPageView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cre
         state = fsmStateSerializer.create(data)
         state.page = instance
         state.save()
-        
+
         response = serializer.to_representation(instance)
         return Response(response)
 
