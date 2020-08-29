@@ -284,8 +284,6 @@ class TeamAdmin(admin.ModelAdmin):
         if accept_count == 0: return False
         elif accept_count == obj.participant_set.all().count(): return True
         else: return None
-            
- 
     # # inlines = [
     # #     ParticipantInline,
     # # ]
@@ -295,8 +293,16 @@ class TeamAdmin(admin.ModelAdmin):
     team_status.short_description = "وضعیت قبولی تیم"
     team_status.boolean = True
 
-    
 
+class PaymentAdmin(admin.ModelAdmin):
+    model = Payment
+    list_display = ['get_user_name', 'uniq_code' ]
+
+    def get_user_name(self, obj):
+        name = str(obj.user.member.first_name)
+        return name
+
+    get_user_name.short_description = "نام"
 
 
 # Register your models here.
