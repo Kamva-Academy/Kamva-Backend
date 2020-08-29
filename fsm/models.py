@@ -23,6 +23,16 @@ class FSMEdge(models.Model):
     head = models.ForeignKey(FSMState, on_delete=models.CASCADE, related_name='inward_edges')
     priority = models.IntegerField()
 
+    def get_next_state(self, abilities):
+        output = True
+        for ability in Ability.objects.filter(edge=self):
+            try:
+                value = abilities.filter(name = ability.name)[0].value
+            except:
+                output = False
+                return
+            output = output and ability.is_valid(value)
+        return self.head if output else None
 
 class Ability(models.Model):
     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.CASCADE, related_name='abilities')
@@ -31,6 +41,9 @@ class Ability(models.Model):
     team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
     def __str__(self):
         return self.name
+
+    def is_valid(self, value):
+        return self.value == value
 
 
 class FSMPage(models.Model):
@@ -61,10 +74,9 @@ class Game(Widget):
 
 
 class Answer(models.Model):
-    submited_answer = models.OneToOneField('SubmitedAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='%(class)s')
-    class Meta:
-        abstract = True
-
+    answer_type = models.CharField(max_length=20, default="Answer")
+    objects = InheritanceManager()
+ 
 
 class SmallAnswer(Answer):
     problem = models.OneToOneField('ProblemSmallAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
@@ -84,12 +96,10 @@ class MultiChoiceAnswer(Answer):
 class Problem(Widget):
     name = models.CharField(max_length=100)
     text = models.TextField()
+    objects = InheritanceManager()
 
     def __str__(self):
         return self.name
-
-    class Meta:
-        abstract = True
 
 
 class ProblemSmallAnswer(Problem):
@@ -112,6 +122,17 @@ class SubmitedAnswer(models.Model):
     participant = models.ForeignKey(Participant, null=True, on_delete=models.CASCADE, related_name='submited_answers')
     publish_date = models.DateTimeField(null=True, blank=True)
     team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='answers')
+    answer = models.OneToOneField(Answer, null=True, on_delete=models.CASCADE, unique=True)
+    problem = models.ForeignKey('Problem', null=True, on_delete=models.CASCADE, related_name='submited_answers')
+    
+    def xanswer(self):
+        try:
+            return Answer.objects.filter(id=self.answer.id).select_subclasses()[0]
+        except:
+            return None
+ 
+
+    
 
 class TeamHistory(models.Model):
     team = models.ForeignKey(Team, null=True, on_delete=models.CASCADE, related_name='histories')

@@ -2,8 +2,9 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from rest_framework import serializers
 from fsm.models import *
+from accounts.models import Team
 import sys
-
+from django.utils import timezone
 class AbilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Ability
@@ -97,6 +98,38 @@ class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
         model = MultiChoiceAnswer
         fields = '__all__'
 
+class AnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = '__all__'
+    
+    @classmethod
+    def get_serializer(cls, model):
+        if model == SmallAnswer:
+            return SmallAnswerSerializer
+        elif model == BigAnswer:
+            return BigAnswerSerializer
+        elif model == MultiChoiceAnswer:
+            return MultiChoiceAnswerSerializer
+
+    def to_representation(self, instance):
+        serializer = AnswerSerializer.get_serializer(instance.__class__)
+        return serializer(instance, context=self.context).data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['answer_type']))
+        serializer = serializerClass(validated_data)
+        return serializer.create(validated_data)
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
+            validated_data['answer_type']))
+        serializer = serializerClass(validated_data)
+        return serializer.update(instance, validated_data)
+
 
 class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
     answer = SmallAnswerSerializer()
@@ -171,7 +204,6 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        print(validated_data)
         answer_data = validated_data.pop('answer')
         choices_data = validated_data.pop('choices')
         instance = ProblemMultiChoice.objects.create(**validated_data)
@@ -268,7 +300,6 @@ class WidgetSerializer(serializers.ModelSerializer):
         return serializer.update(instance, validated_data)
     
     def to_representation(self, instance):
-        print(instance)
         serializer = WidgetSerializer.get_serializer(instance.__class__)
         return serializer(instance, context=self.context).data
 
@@ -293,3 +324,78 @@ class FSMPageSerializer(serializers.ModelSerializer):
         instance.delete()
         instance = self.create(validated_data)
         return instance
+
+class SubmitedAnswerSerializer(serializers.ModelSerializer):
+    xanswer = AnswerSerializer()
+    class Meta:
+        model = SubmitedAnswer
+        fields = '__all__'
+
+
+class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
+    answer = AnswerSerializer()
+    class Meta:
+        model = SubmitedAnswer
+        fields = ['answer', 'problem']
+    
+    @transaction.atomic
+    def create(self, validated_data):
+        answer_data = validated_data['answer']
+        serializer = SubmitedAnswerPostSerializer(data=validated_data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        validated_data.pop('answer')
+        instance = SubmitedAnswer.objects.create(**validated_data)
+
+        serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
+            answer_data['answer_type']))
+        serializer = serializerClass(data=answer_data)
+        if not serializer.is_valid(raise_exception=True):
+            return None
+        answer = serializer.create(serializer.validated_data)
+        instance.answer = answer
+        
+        instance.publish_date = timezone.localtime()
+        instance.save()
+        return instance
+
+ 
+
+class TeamHistorySerializer(serializers.ModelSerializer):
+    abilities = AbilitySerializer(many=True)
+    answers = SubmitedAnswerSerializer(many=True)
+    class Meta:
+        model = TeamHistory
+        fields = '__all__'
+
+    def create(self, validated_data):
+        abilities_data = validated_data.pop('abilities')
+        instance = TeamHistory.objects.create(**validated_data)
+        for ability_data in abilities_data:
+            ability = Ability.objects.create(**ability_data)
+            ability.team_history = instance
+            ability.save()
+    
+        return instance
+
+    def update(self, instance, validated_data):    
+        validated_data['pk'] = instance.pk
+        abilities = Ability.objects.filter(team_history=instance)
+        index = 0
+        for ability in abilities:
+            try:
+                validated_data['abilities'][index]['pk'] = ability.pk
+            except:
+                pass
+            ability.delete()
+            index+=1
+        instance.delete()
+        instance = self.create(validated_data)
+        return instance
+
+class TeamSerializer(serializers.ModelSerializer):
+    histories = TeamHistorySerializer(many=True)
+    class Meta:
+        model = Team
+        fields = '__all__'
+
