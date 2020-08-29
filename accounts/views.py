@@ -17,10 +17,14 @@ from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
 from .models import Member, Participant, Payment
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.authentication import SessionAuthentication
 from accounts import zarinpal
-from django.urls import reverse
-from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+
+from .serializers import MyTokenObtainPairSerializer, MemberSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # def check_bibot_response(request):
@@ -40,13 +44,6 @@ from rest_framework.permissions import IsAuthenticated
 #             return False
 #     return False
 
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import status, permissions
-from rest_framework.views import APIView
-
-from .serializers import MyTokenObtainPairSerializer, MemberSerializer
-
-logger = logging.getLogger(__name__)
 
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
