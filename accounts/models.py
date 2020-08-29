@@ -79,7 +79,7 @@ class Participant(models.Model):
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     is_activated = models.BooleanField(default=False)
     team = models.ForeignKey('Team', models.SET_NULL,
-        blank=True, null=True)
+        blank=True, null=True, related_name="participants")
     accepted = models.BooleanField(default=False)
     ent_answer = models.FileField(blank=True, null=True, upload_to='ent_answers')
 

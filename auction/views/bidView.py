@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.shortcuts import render
 from auction.serializers import *
 from auction.models import *
-from auction.views.permisions import *
-import timezone
+from auction.views.permissions import *
+from django.utils import timezone
 def save_one_time_bid(request, auction, bid):
     try:
         participant = request.member.participant
@@ -14,7 +14,8 @@ def save_one_time_bid(request, auction, bid):
         bidder = OneTimeBidder.objects.filter(participant=participant, auction=auction)[0]
     except:
         return False
-    #check time
+    if timezone.localtime() > auction.start_time:
+        print("Salam")
     bidder.bid = bid
     bidder.save()
     if auction.winner.bid < bid:
@@ -23,7 +24,7 @@ def save_one_time_bid(request, auction, bid):
     return True
 
 @api_view(['POST'])
-@permission_classes([BidPermission])
+@permission_classes([permissions.AllowAny])
 def new_one_time_bid(request):
     serializer = OneTimeBidSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
