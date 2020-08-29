@@ -10,7 +10,6 @@ from django.utils.html import strip_tags, strip_spaces_between_tags
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from accounts.tokens import account_activation_token
-
 from enum import Enum
 
 
@@ -125,7 +124,7 @@ class Team(models.Model):
     # participants = models.ManyToManyField(Participant, blank=False)
     group_name = models.CharField(max_length=30, blank=True)
     active = models.BooleanField(default=False)
-
+    current_state = models.ForeignKey('fsm.FSMState', null=True, on_delete=models.SET_NULL, related_name='teams')
     def __str__(self):
         s = str(self.id) + "-" +self.group_name + " ("
 

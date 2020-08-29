@@ -1,6 +1,6 @@
 from django.db import models
 from model_utils.managers import InheritanceManager
-from accounts.models import *
+from accounts.models import Team, Participant
 
 class FSM(models.Model):
     name = models.CharField(max_length=100)
