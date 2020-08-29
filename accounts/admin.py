@@ -309,4 +309,4 @@ class PaymentAdmin(admin.ModelAdmin):
 admin.site.register(Member, CustomUserAdmin)
 admin.site.register(Participant, ParticipantInline)
 admin.site.register(Team, TeamAdmin)
-admin.site.register(Payment)
+admin.site.register(Payment, PaymentAdmin)
