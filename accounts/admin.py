@@ -299,7 +299,7 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ['get_user_name', 'uniq_code' ]
 
     def get_user_name(self, obj):
-        name = str(obj.user.member.first_name)
+        name = str(obj.user.member.first_name) + "(" + str(obj.user.member.username) + ")"
         return name
 
     get_user_name.short_description = "نام"
