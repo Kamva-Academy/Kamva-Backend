@@ -144,7 +144,7 @@ class IsAcceptedFilter(admin.SimpleListFilter):
 
 class CustomUserAdmin(admin.ModelAdmin,):
     model = Member
-    readonly_fields = [ 'first_name', 'email', 'username']
+    readonly_fields = [ 'first_name']
     list_display = ['email', 'first_name', 'is_active']
 
 
