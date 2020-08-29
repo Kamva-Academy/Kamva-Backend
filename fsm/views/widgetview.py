@@ -38,6 +38,6 @@ class WidgetView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Crea
                     model = Widget
                     
                 fields = '__all__'
-
+        
         return WidgetInstanceSerializer
     

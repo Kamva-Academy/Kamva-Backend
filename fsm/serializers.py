@@ -159,12 +159,13 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True)
-    answer = MultiChoiceAnswerSerializer
+    answer = MultiChoiceAnswerSerializer()
     class Meta:
         model = ProblemMultiChoice
         fields = '__all__'
 
     def create(self, validated_data):
+        print(validated_data)
         answer_data = validated_data.pop('answer')
         choices_data = validated_data.pop('choices')
         instance = ProblemMultiChoice.objects.create(**validated_data)
