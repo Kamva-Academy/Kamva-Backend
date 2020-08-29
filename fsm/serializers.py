@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db import transaction
 from rest_framework import serializers
 from fsm.models import *
 import sys
@@ -103,7 +104,8 @@ class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProblemSmallAnswer
         fields = '__all__'
-    
+
+    @transaction.atomic
     def create(self, validated_data):
         answer_data = validated_data.pop('answer')
         instance = ProblemSmallAnswer.objects.create(**validated_data)
@@ -112,7 +114,8 @@ class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
         answer.save()
     
         return instance
-    
+
+    @transaction.atomic
     def update(self, instance, validated_data):
         validated_data['pk'] = instance.pk
         try:
@@ -131,6 +134,7 @@ class ProblemBigAnswerSerializer(serializers.ModelSerializer):
         model = ProblemBigAnswer
         fields = '__all__'
 
+    @transaction.atomic
     def create(self, validated_data):
         answer_data = validated_data.pop('answer')
         instance = ProblemBigAnswer.objects.create(**validated_data)
@@ -139,7 +143,8 @@ class ProblemBigAnswerSerializer(serializers.ModelSerializer):
         answer.save()
     
         return instance
-    
+
+    @transaction.atomic
     def update(self, instance, validated_data):
         validated_data['pk'] = instance.pk
         try:
@@ -164,6 +169,7 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
         model = ProblemMultiChoice
         fields = '__all__'
 
+    @transaction.atomic
     def create(self, validated_data):
         print(validated_data)
         answer_data = validated_data.pop('answer')
@@ -179,6 +185,7 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
     
         return instance
 
+    @transaction.atomic
     def update(self, instance, validated_data):    
         validated_data['pk'] = instance.pk
         choices = Choice.objects.filter(problem=instance)
@@ -217,12 +224,14 @@ class ProblemSerializer(serializers.ModelSerializer):
         serializer = ProblemSerializer.get_serializer(instance.__class__)
         return serializer(instance, context=self.context).data
 
+    @transaction.atomic
     def create(self, validated_data):
         serializerClass = ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
             validated_data['widget_type']))
         serializer = serializerClass(validated_data)
         return serializer.create(validated_data)
-    
+
+    @transaction.atomic
     def update(self, instance, validated_data):    
         serializerClass = ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
             validated_data['widget_type']))
@@ -243,13 +252,15 @@ class WidgetSerializer(serializers.ModelSerializer):
             return DescriptionSerializer
         elif issubclass(model, Problem):
             return ProblemSerializer.get_serializer(model)
-    
+
+    @transaction.atomic
     def create(self, validated_data):
         serializerClass = WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
             validated_data['widget_type']))
         serializer = serializerClass(validated_data)
         return serializer.create(validated_data)
-    
+
+    @transaction.atomic
     def update(self, instance, validated_data):    
         serializerClass = WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
             validated_data['widget_type']))
@@ -257,6 +268,7 @@ class WidgetSerializer(serializers.ModelSerializer):
         return serializer.update(instance, validated_data)
     
     def to_representation(self, instance):
+        print(instance)
         serializer = WidgetSerializer.get_serializer(instance.__class__)
         return serializer(instance, context=self.context).data
 

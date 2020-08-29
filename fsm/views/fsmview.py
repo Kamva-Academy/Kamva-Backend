@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -19,6 +20,7 @@ class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateM
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
 
+    @transaction.atomic
     def get_serializer_class(self):
         return FSMGetSerializer \
             if self.request.method == 'GET' \
