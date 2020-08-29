@@ -45,7 +45,7 @@ class ParticipantStatus(Enum):
 class Member(AbstractUser):
     is_participant = models.BooleanField(default=True)
 
-    
+
     def send_signup_email(self, base_url, password=''):
         options = {
             'user': self,
@@ -91,8 +91,8 @@ class Participant(models.Model):
 
 
 class Team(models.Model):
-    # participants = models.ManyToManyField(Participant, blank=False)
     group_name = models.CharField(max_length=30, blank=True)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     active = models.BooleanField(default=False)
 
     def __str__(self):
