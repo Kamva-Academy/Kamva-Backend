@@ -10,6 +10,7 @@ from django.utils.html import strip_tags, strip_spaces_between_tags
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from accounts.tokens import account_activation_token
+import uuid
 
 from enum import Enum
 
@@ -72,6 +73,7 @@ class Member(AbstractUser):
 
 class Participant(models.Model):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     school = models.CharField(max_length=50)
     grade = models.CharField(max_length=10, choices=[(tag.value, tag.name) for tag in Grade])
     city = models.CharField(max_length=20)
