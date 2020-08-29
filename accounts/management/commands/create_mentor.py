@@ -17,7 +17,9 @@ class Command(BaseCommand):
             password = Member.objects.make_random_password()
             mentor = Mentor.objects.create_mentor(
                 email=mentor_email,
-                password=password
+                password=password,
+                is_mentor = True,
+                is_participant = False
             )
             self.stdout.write(
                 self.style.SUCCESS('Successfully created mentor %s with password %s' % (mentor_email, password))

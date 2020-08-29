@@ -71,6 +71,7 @@ class Member(AbstractUser):
     def __str__(self):
         return self.username
 
+
 class MentorManager(models.Manager):
     @transaction.atomic
     def create_mentor(self, email, password, *args, **kwargs):
@@ -78,13 +79,13 @@ class MentorManager(models.Manager):
         member = Member.objects.create_user(username=email, email=email, password=password)
         member.is_mentor = True
         member.is_participant = False
+        member.save()
         mentor = Mentor.objects.create(member=member)
         return mentor
 
 
 class Mentor(models.Model):
     objects = MentorManager()
-
     member = models.OneToOneField(Member, related_name='Mentor', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -92,7 +93,7 @@ class Mentor(models.Model):
 
     def send_greeting_email(self, username, password):
         html_content = strip_spaces_between_tags(render_to_string('auth/mentor_greet_email.html', {
-            'login_url': '%s/admin' % settings.DOMAIN,
+            'login_url': 'rastaiha.ir/login' ,
             'username': username,
             'password': password
         }))
