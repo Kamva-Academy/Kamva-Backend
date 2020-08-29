@@ -46,10 +46,7 @@ from rest_framework.views import APIView
 
 from .serializers import MyTokenObtainPairSerializer, MemberSerializer
 
-<<<<<<< HEAD
-=======
 logger = logging.getLogger(__name__)
->>>>>>> 01abba93d75383b4862622c7e5ecf310db1bb402
 
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
