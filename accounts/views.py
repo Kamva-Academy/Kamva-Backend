@@ -304,7 +304,7 @@ class PayView(APIView):
             if user.accepted and not user.is_activated:
                 amount = self.__get_amount(user)
                 res = zarinpal.send_request(amount=amount,
-                                            call_back_url=request.build_absolute_uri('verify-payment'))
+                                            call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={user.uuid}')
                 status_r = res["status"]
                 response = {
                     "message": res["message"],
@@ -333,6 +333,7 @@ class PayView(APIView):
 
 class VerifyPayView(APIView):
     ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+    permission_classes = (permissions.AllowAny,)
 
     def __random_string(self, length=10):
         """Generate a random string of fixed length """
@@ -343,7 +344,9 @@ class VerifyPayView(APIView):
         return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
 
     def get(self, request, *args, **kwargs):
-        user = Participant.objects.filter(member=request.user)
+        user = Participant.objects.filter(uuid=request.GET.get('uuid'))
+        logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
+        logger.warning(request.META.get('REMOTE_ADDR'))
         if user:
             user = user[0]
             amount = self.__get_amount(user)
