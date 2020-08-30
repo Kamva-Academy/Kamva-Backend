@@ -12,5 +12,7 @@ urlpatterns = [
     # path('rest-auth/registration/', include('rest_auth.registration.urls')),
     path('api/admin/', admin.site.urls),
     path('api/auth/', include(('accounts.urls', 'accounts'), namespace='accounts'))
+    path('api/fsm/', include('fsm.urls') ),
+
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
