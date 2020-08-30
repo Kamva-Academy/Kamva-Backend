@@ -151,7 +151,7 @@ class CustomUserAdmin(admin.ModelAdmin,):
 class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     resource_class = ParticipantResource
     readonly_fields = ['document', 'gender', 'grade']
-    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team','account_actions', 'is_accepted', 'is_paid', 'is_email_verified']
+    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified','account_actions']
     # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
     list_filter = ("gender", IsEmailVerifiedFilter, IsAcceptedFilter, IsPaidFilter)
     # inlines = [CustomUserAdmin]

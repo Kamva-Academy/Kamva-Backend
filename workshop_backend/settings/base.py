@@ -38,14 +38,9 @@ INSTALLED_APPS = [
     'import_export',
     'rest_framework',
     'rest_framework.authtoken',
-# may need for auth in installed apps
-#     'django.contrib.sites',
-#     'rest_auth.registration',
-#     'allauth',
-#     'allauth.account',
-#     'allauth.socialaccount',
     'workshop',
     'channels',
+    'fsm',
     'accounts',
     'corsheaders'
 ]

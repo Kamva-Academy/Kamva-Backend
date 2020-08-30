@@ -44,6 +44,7 @@ class ParticipantStatus(Enum):
 
 class Member(AbstractUser):
     is_participant = models.BooleanField(default=True)
+    is_mentor = models.BooleanField(default=False)
 
 
     def send_signup_email(self, base_url, password=''):
@@ -71,6 +72,39 @@ class Member(AbstractUser):
         return self.username
 
 
+class MentorManager(models.Manager):
+    @transaction.atomic
+    def create_mentor(self, email, password, *args, **kwargs):
+
+        member = Member.objects.create_user(username=email, email=email, password=password)
+        member.is_mentor = True
+        member.is_participant = False
+        member.save()
+        mentor = Mentor.objects.create(member=member)
+        return mentor
+
+
+class Mentor(models.Model):
+    objects = MentorManager()
+    member = models.OneToOneField(Member, related_name='Mentor', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.member)
+
+    def send_greeting_email(self, username, password):
+        html_content = strip_spaces_between_tags(render_to_string('auth/mentor_greet_email.html', {
+            'login_url': 'rastaiha.ir/login' ,
+            'username': username,
+            'password': password
+        }))
+        text_content = re.sub('<style[^<]+?</style>', '', html_content)
+        text_content = strip_tags(text_content)
+
+        msg = EmailMultiAlternatives('اطلاعات کاربری منتور', text_content, 'Rastaiha <info@rastaiha.ir>', [username])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+
+
 class Participant(models.Model):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
@@ -94,7 +128,7 @@ class Team(models.Model):
     group_name = models.CharField(max_length=30, blank=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     active = models.BooleanField(default=False)
-
+    current_state = models.ForeignKey('fsm.FSMState', null=True, on_delete=models.SET_NULL, related_name='teams')
     def __str__(self):
         s = str(self.id) + "-" +self.group_name + " ("
 
