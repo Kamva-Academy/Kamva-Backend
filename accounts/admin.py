@@ -144,13 +144,13 @@ class IsAcceptedFilter(admin.SimpleListFilter):
 
 class CustomUserAdmin(admin.ModelAdmin,):
     model = Member
-    readonly_fields = [ 'first_name']
+    # readonly_fields = [ 'first_name']
     list_display = ['email', 'first_name', 'is_active']
 
 
 class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     resource_class = ParticipantResource
-    readonly_fields = ['document', 'gender', 'grade']
+    # readonly_fields = ['document', 'gender', 'grade']
     list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team','account_actions', 'is_accepted', 'is_paid', 'is_email_verified']
     # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
     list_filter = ("gender", IsEmailVerifiedFilter, IsAcceptedFilter, IsPaidFilter)
