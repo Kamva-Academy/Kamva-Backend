@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'workshop',
     'channels',
-    'fsm',
     'accounts',
     'corsheaders'
 ]

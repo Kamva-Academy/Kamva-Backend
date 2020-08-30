@@ -6,6 +6,10 @@ import uuid
 
 def gen_uuid(apps, schema_editor):
     participant = apps.get_model('accounts', 'Participant')
+    member = apps.get_model('accounts', 'Member')
+    for row in member.objects.all():
+        row.uuid = uuid.uuid4()
+        row.save(update_fields=['uuid'])
     for row in participant.objects.all():
         row.member.uuid = row.uuid
         row.member.save(update_fields=['uuid'])
@@ -14,7 +18,7 @@ def gen_uuid(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0008_merge_20200830_1817'),
+        ('accounts', '0007_auto_20200829_1822'),
     ]
 
     operations = [
