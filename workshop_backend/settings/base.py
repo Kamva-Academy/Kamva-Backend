@@ -38,9 +38,14 @@ INSTALLED_APPS = [
     'import_export',
     'rest_framework',
     'rest_framework.authtoken',
+    'workshop',
+    'channels',
     'accounts',
     'corsheaders'
 ]
+
+# SITE_ID=1
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

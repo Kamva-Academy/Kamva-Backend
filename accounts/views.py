@@ -17,10 +17,14 @@ from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
 from .models import Member, Participant, Payment
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.authentication import SessionAuthentication
 from accounts import zarinpal
-from django.urls import reverse
-from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+
+from .serializers import MyTokenObtainPairSerializer, MemberSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # def check_bibot_response(request):
@@ -40,13 +44,6 @@ from rest_framework.permissions import IsAuthenticated
 #             return False
 #     return False
 
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import status, permissions
-from rest_framework.views import APIView
-
-from .serializers import MyTokenObtainPairSerializer, MemberSerializer
-
-logger = logging.getLogger(__name__)
 
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -304,7 +301,7 @@ class PayView(APIView):
             if user.accepted and not user.is_activated:
                 amount = self.__get_amount(user)
                 res = zarinpal.send_request(amount=amount,
-                                            call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={user.uuid}')
+                                            call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={user.member.uuid}')
                 status_r = res["status"]
                 response = {
                     "message": res["message"],
@@ -344,7 +341,7 @@ class VerifyPayView(APIView):
         return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
 
     def get(self, request, *args, **kwargs):
-        user = Participant.objects.filter(uuid=request.GET.get('uuid'))
+        user = Participant.objects.filter(member__uuid=request.GET.get('uuid'))
         logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
         logger.warning(request.META.get('REMOTE_ADDR'))
         if user:

@@ -1,5 +1,8 @@
 appdirs==1.4.3
 asgiref==3.2.10
+channels==2.4.0
+channels-redis==2.4.1
+uvicorn==0.11.8
 CacheControl==0.12.6
 certifi==2019.11.28
 chardet==3.0.4
@@ -26,6 +29,7 @@ dj-database-url==0.5.0
 Django==3.0.8
 django-heroku==0.3.1
 django-import-export==2.3.0
+django-model-utils==4.0.0
 djangorestframework==3.11.1
 djangorestframework-simplejwt==4.4.0
 et-xmlfile==1.0.1

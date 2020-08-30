@@ -63,6 +63,17 @@ TESTING = sys.argv[1] == 'test'
 django_heroku.settings(locals(), test_runner=False)
 DOMAIN = get_environment_var('DOMAIN', 'http://kabaraamadalapeste.herokuapp.com')
 
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
+}
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),

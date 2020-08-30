@@ -11,7 +11,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super(MyTokenObtainPairSerializer, cls).get_token(user)
 
         # TODO Add custom claims
-        # token['fav_color'] = user.fav_color
+        token['is_mentor'] = user.is_mentor
+        token['is_participant'] = user.is_participant
+        if user.is_participant:
+            token['name'] = user.first_name
+            token['team'] = str(user.participant.team)
+            token['uuid'] = user.participant.uuid
         return token
 
 
