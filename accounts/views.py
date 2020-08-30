@@ -60,17 +60,20 @@ class GroupSignup(APIView):
 
         for member_info in members_info:
             if Member.objects.filter(email__exact=member_info['email']).count() > 0:
-                return Response({'success': False, "error":  "فردی با ایمیل "+ member_info['email']+ " قبلا ثبت‌نام کرده"},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'success': False, "error": "فردی با ایمیل " + member_info['email'] + " قبلا ثبت‌نام کرده"},
+                    status=status.HTTP_400_BAD_REQUEST)
 
-        if(members_info[0]['email'] == members_info[1]['email']
+        if (members_info[0]['email'] == members_info[1]['email']
                 or members_info[1]['email'] == members_info[2]['email']
-                or members_info[2]['email'] == members_info[0]['email'] ):
-            return Response({'success':False, "error": "ایمیلهای اعضای گروه باید متمایز باشد."}, status=status.HTTP_400_BAD_REQUEST)
+                or members_info[2]['email'] == members_info[0]['email']):
+            return Response({'success': False, "error": "ایمیلهای اعضای گروه باید متمایز باشد."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if not (members_info[0]['gender'] == members_info[1]['gender']
                 and members_info[2]['gender'] == members_info[1]['gender']):
-            return Response({'success':False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if 'document1' not in request.data:
             raise ParseError("Empty content document1")
@@ -169,7 +172,7 @@ class IndividualSignup(APIView):
         if Member.objects.filter(email__exact=request.data['email']).count() > 0:
             return Response({'success': False, "error": "فردی با ایمیل " + request.data['email'] + "قبلا ثبت‌نام کرده"},
                             status=status.HTTP_400_BAD_REQUEST)
-        
+
         if 'document' not in request.data:
             raise ParseError("Empty Document content")
 
@@ -251,7 +254,12 @@ def activate(request, uidb64, token):
 class ChangePass(APIView):
 
     def post(self, request):
-        user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
+        user = JWTAuthentication.get_user(self, JWTAuthentication.get_validated_token(self,
+                                                                                      JWTAuthentication.get_raw_token(
+                                                                                          self,
+                                                                                          JWTAuthentication.get_header(
+                                                                                              JWTAuthentication,
+                                                                                              request))))
         new_pass = request.data['newPass']
         # username = request.POST.get('username')
         # member = get_object_or_404(Member, username=username)
@@ -261,8 +269,72 @@ class ChangePass(APIView):
         return Response({'success': True}, status=status.HTTP_200_OK)
 
 
+class UserInfo(APIView):
+
+    def get(self, request):
+        member = request.user
+        if "uuid" in request.GET:
+            member = Member.objects.filter(uuid=request.GET.get('uuid'))
+            if not member.count() >0:
+                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
+            member = member[0]
+        responce = {
+            "email": member.email,
+            "name": member.first_name,
+            "is_participant": member.is_participant,
+            "is_mentor": member.is_mentor,
+            "uuid": member.uuid
+        }
+
+        if member.is_participant:
+            participant = member.participant
+            responce['grade'] = participant.grade
+            responce['gender'] = participant.gender
+            responce['city'] = participant.city
+            responce['school'] = participant.school
+            responce['accepted'] = participant.accepted
+            responce['is_activated'] = participant.is_activated
+
+            if participant.team:
+                team = participant.team
+                responce['team'] = participant.team_id
+                responce['team_members'] = [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                                            for p in team.participant_set.all()]
+
+        return Response(responce)
+
+
+class TeamInfo(APIView):
+
+    def get(self, request):
+        member = request.user
+        if "teamId" in request.GET:
+            team = Team.objects.filter(id=request.GET.get('teamId'))
+            if not team.count() > 0:
+                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
+            else: team = team[0]
+        elif "uuid" in request.GET:
+            team = Team.objects.filter(uuid=request.GET.get('uuid'))
+            if not team.count() > 0:
+                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
+            else: team = team[0]
+        else:
+                team = request.user.participant.team
+
+        if not team:
+            return Response({'success': False, "error": "team not found"}, status=status.HTTP_400_BAD_REQUEST)
+        response = {
+            "name": team.group_name,
+            "uuid": team.uuid,
+            "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                             for p in team.participant_set.all()],
+        }
+        return Response(response)
+
+
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
+
     # permission_classes = (permissions.AllowAny,)
     @transaction.atomic
     def post(self, request):
@@ -270,7 +342,12 @@ class UploadAnswerView(APIView):
             raise ParseError("Empty content")
 
         file = request.data['file']
-        user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
+        user = JWTAuthentication.get_user(self, JWTAuthentication.get_validated_token(self,
+                                                                                      JWTAuthentication.get_raw_token(
+                                                                                          self,
+                                                                                          JWTAuthentication.get_header(
+                                                                                              JWTAuthentication,
+                                                                                              request))))
         file.name = str(user.username) + "-" + file.name
         participant = user.participant
 

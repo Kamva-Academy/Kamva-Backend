@@ -15,8 +15,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['is_participant'] = user.is_participant
         if user.is_participant:
             token['name'] = user.first_name
-            token['team'] = str(user.participant.team)
-            token['uuid'] = user.participant.uuid
+            token['team'] = str(user.participant.team_id)
+            token['uuid'] = str(user.uuid)
         return token
 
 
