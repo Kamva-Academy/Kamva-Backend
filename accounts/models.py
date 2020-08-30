@@ -45,7 +45,7 @@ class ParticipantStatus(Enum):
 class Member(AbstractUser):
     is_participant = models.BooleanField(default=True)
     is_mentor = models.BooleanField(default=False)
-
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
     def send_signup_email(self, base_url, password=''):
         options = {
@@ -107,7 +107,6 @@ class Mentor(models.Model):
 
 class Participant(models.Model):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     school = models.CharField(max_length=50)
     grade = models.CharField(max_length=10, choices=[(tag.value, tag.name) for tag in Grade])
     city = models.CharField(max_length=20)
