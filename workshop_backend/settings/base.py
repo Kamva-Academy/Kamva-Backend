@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'workshop',
     'channels',
     'accounts',
-    'corsheaders'
+    'corsheaders',
+    'fsm'
 ]
 
 # SITE_ID=1
