@@ -127,6 +127,8 @@ class Team(models.Model):
     group_name = models.CharField(max_length=30, blank=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     active = models.BooleanField(default=False)
+    current_state = models.ForeignKey('fsm.FSMState', null=True, on_delete=models.SET_NULL, related_name='teams')
+
     def __str__(self):
         s = str(self.id) + "-" +self.group_name + " ("
 
