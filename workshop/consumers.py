@@ -1,23 +1,54 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .models import Message
+from accounts.models import Member, Participant
 from .views import get_last_10_messages, get_user_contact, get_current_chat, get_message_by_id
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import json
+from channels.db import database_sync_to_async
+from django.shortcuts import get_object_or_404
+
+
+def get_name(team_uuid, person_uuid):
+    try:
+        member = Member.objects.filter(uuid=person_uuid)
+        if member:
+            if member[0].is_mentor:
+                result = True
+            elif member[0].is_participant:
+                participant = Participant.objects.get(member=member[0])
+                print(participant.team.uuid)
+                print(team_uuid)
+                if str(participant.team.uuid) == team_uuid:
+                    print("dfasd")
+                    result = True
+                else:
+                    result = False
+            else:
+                result = False
+        else:
+            result = False
+        return result
+    except:
+        return False
 
 
 class BoardConsumer(AsyncJsonWebsocketConsumer):
+
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
+        self.room_name = self.scope['url_route']['kwargs']['team_uuid']
+        person_uuid = self.scope['url_route']['kwargs']['person_uuid']
         self.room_group_name = 'board_%s' % self.room_name
-
-        # Join room
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
-        await self.accept()
+        check_user = await database_sync_to_async(get_name)(self.room_name, person_uuid)
+        if check_user:
+            # Join room
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            await self.accept()
+        else:
+            await self.close()
 
     async def disconnect(self, close_code):
         # Leave room
@@ -42,7 +73,6 @@ class BoardConsumer(AsyncJsonWebsocketConsumer):
 
     # Receive message from room
     async def PASS_DRAWING_STATE(self, event):
-        print(event)
         message = event.get('data')
         message_type = event.get('type')
 
@@ -54,7 +84,6 @@ class BoardConsumer(AsyncJsonWebsocketConsumer):
 
     # Receive message from room
     async def JOIN_TO_GROUP_ROOM(self, event):
-        print(event)
         message = event.get('data')
         message_type = event.get('type')
 
