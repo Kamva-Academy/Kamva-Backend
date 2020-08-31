@@ -315,10 +315,10 @@ class UserInfo(APIView):
                         'fsm_id': current_state.fsm_id,
                         'page_id': current_state.page.id
                     }
-                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
-                        'start_time').latest()
+                    state_history = TeamHistory.objemcts.filter(team=team, state=current_state).order_by(
+                        '-start_time')
                     if state_history:
-                        response['current_state']['start_time'] = str(state_history.start_time)
+                        response['current_state']['start_time'] = str(state_history[0].start_time)
                     else:
                         response['current_state']['start_time'] = ''
 
@@ -359,9 +359,9 @@ class TeamInfo(APIView):
                 'fsm_name': current_state.fsm.name,
                 'fsm_id': current_state.fsm_id,
             }
-            state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('start_time').latest()
+            state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
             if state_history:
-                response['current_state']['start_time'] = str(state_history.start_time)
+                response['current_state']['start_time'] = str(state_history[0].start_time)
             else:
                 response['current_state']['start_time'] = ''
 
@@ -393,9 +393,9 @@ class Teams(APIView):
                         'fsm_id': current_state.fsm_id,
                     }
                     state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
-                        'start_time').latest()
+                        '-start_time')
                     if state_history:
-                        team_json['current_state']['start_time'] = str(state_history.start_time)
+                        team_json['current_state']['start_time'] = str(state_history[0].start_time)
                     else:
                         team_json['current_state']['start_time'] = ''
 
