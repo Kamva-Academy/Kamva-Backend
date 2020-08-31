@@ -1,6 +1,6 @@
 from workshop_backend.settings.base import *
 import sys
-########import django_heroku
+import django_heroku
 from datetime import timedelta
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -59,10 +59,10 @@ LOGGING = {
 TESTING = sys.argv[1] == 'test'
 # TESTING = True
 STATIC_ROOT = get_environment_var('STATIC_ROOT', 'staticfiles')
-    
+
 # Activate Django-Heroku.
-#########django_heroku.settings(locals(), test_runner=False)
-########DOMAIN = get_environment_var('DOMAIN', 'http://kabaraamadalapeste.herokuapp.com')
+django_heroku.settings(locals(), test_runner=False)
+DOMAIN = get_environment_var('DOMAIN', 'http://kabaraamadalapeste.herokuapp.com')
 
 REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
 
