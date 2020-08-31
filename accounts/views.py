@@ -310,6 +310,7 @@ class UserInfo(APIView):
                         'state_id': team.current_state_id,
                         'fsm_name': current_state.fsm.name,
                         'fsm_id': current_state.fsm_id,
+                        'page_id': current_state.page.id
                     }
         return Response(response)
 
