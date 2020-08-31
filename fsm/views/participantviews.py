@@ -3,12 +3,13 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from .permissions import TestMembersOnly
 from fsm.models import *
 from fsm.serializers import *
 from fsm.views.functions import *
 
 @transaction.atomic
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, TestMembersOnly ])
 @api_view(['GET'])
 def get_current_page(request):
     participant = request.user.participant
@@ -18,7 +19,7 @@ def get_current_page(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @transaction.atomic
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['GET'])
 def get_history(request):
     participant = request.user.participant
@@ -28,7 +29,7 @@ def get_history(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @transaction.atomic
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['POST'])
 def send_answer(request):
     serializer = SubmitedAnswerPostSerializer(data=request.data)
@@ -45,7 +46,7 @@ def send_answer(request):
 
 
 @transaction.atomic
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['POST'])
 def move_to_next_state(request):
     team = request.user.participant.team
@@ -61,7 +62,7 @@ def is_not_in_later(team, state):
     return len(TeamHistory.objects.filter(team=team.id, state=state.id)) == 0
 
 @transaction.atomic
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['POST'])
 def set_first_current_page(request):
     team = request.user.participant.team
