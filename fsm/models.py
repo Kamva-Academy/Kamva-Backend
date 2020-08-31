@@ -151,7 +151,7 @@ class SubmitedAnswer(models.Model):
 
 class TeamHistory(models.Model):
     team = models.ForeignKey(Team, null=True, on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(Participant, null=True, on_delete=models.CASCADE, related_name='histories')
+    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='histories')
     grade = models.IntegerField(default=0)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)

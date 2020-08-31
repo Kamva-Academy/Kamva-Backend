@@ -406,3 +406,5 @@ class EditEdgesSerializer(serializers.Serializer):
 class GetTeamHistorySerializer(serializers.Serializer):
     team = serializers.IntegerField()
 
+class SetFirstStateSerializer(serializers.Serializer):
+    fsm = serializers.IntegerField()
