@@ -4,10 +4,15 @@ from accounts.models import Member
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
+from django.contrib.contenttypes.models import ContentType
+
 from fsm.models import *
 from fsm.serializers import *
 from fsm.views.functions import *
 from notifications.signals import notify
+from notifications.models import Notification
+
 
 @transaction.atomic
 @permission_classes([IsAuthenticated])
@@ -67,5 +72,13 @@ def set_first_current_page(request):
 @api_view(['POST'])
 def request_mentor(request):
     team = request.user.participant.team
+    qs = Notification.objects.filter(
+        actor_content_type=ContentType.objects.get_for_model(team).id,
+        actor_object_id=team.pk,
+        recipient__is_mentor=True,
+        unread=True
+    )
+    if qs.count() > 0:
+        return Response({"text": "قبلا درخواست دادی. یکم بیشتر صبر کن."}, status=status.HTTP_200_OK)
     notify.send(team, recipient=Member.objects.filter(is_mentor=True), verb="request_mentor")
-    return Response({}, status=status.HTTP_200_OK)
+    return Response({"text": "درخواست ارسال شد. به زودی یکی از منتورا میاد اینجا."}, status=status.HTTP_200_OK)
