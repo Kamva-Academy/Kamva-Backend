@@ -408,3 +408,10 @@ class GetTeamHistorySerializer(serializers.Serializer):
 
 class SetFirstStateSerializer(serializers.Serializer):
     fsm = serializers.IntegerField()
+
+class TeamHistorySubmitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamHistory
+        exclude = ('start_time', )
+
+

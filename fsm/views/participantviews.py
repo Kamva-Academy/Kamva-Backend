@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from fsm.models import *
 from fsm.serializers import *
+from fsm.views.functions import *
 
 @transaction.atomic
 @permission_classes([IsAuthenticated])
@@ -42,18 +43,18 @@ def send_answer(request):
     data = SubmitedAnswerSerializer(instance).data
     return Response(data, status=status.HTTP_200_OK)
 
-'''
+
 @transaction.atomic
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])
 def set_first_current_page(request):
     team = request.user.participant.team
-    page = participant.team.current_state.page
     serializer = SetFirstStateSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
-    fsm = FSM.objects.filter(id=data['fsm'])[0]
-    state = FSMState.objects.
-    data = serializer.to_representation(page)
+    fsm = FSM.objects.filter(id=request.data['fsm'])[0]
+    state = FSMState.objects.filter(fsm=fsm, name='start')[0]
+    #check is null
+    team_change_current_state(team, state)
+    data = FSMPageSerializer().to_representation(state.page)
     return Response(data, status=status.HTTP_200_OK)
-'''
