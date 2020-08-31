@@ -279,7 +279,7 @@ class UserInfo(APIView):
             if not member.count() >0:
                 return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
             member = member[0]
-        responce = {
+        response = {
             "email": member.email,
             "name": member.first_name,
             "is_participant": member.is_participant,
@@ -289,20 +289,29 @@ class UserInfo(APIView):
 
         if member.is_participant:
             participant = member.participant
-            responce['grade'] = participant.grade
-            responce['gender'] = participant.gender
-            responce['city'] = participant.city
-            responce['school'] = participant.school
-            responce['accepted'] = participant.accepted
-            responce['is_activated'] = participant.is_activated
+            response['grade'] = participant.grade
+            response['gender'] = participant.gender
+            response['city'] = participant.city
+            response['school'] = participant.school
+            response['accepted'] = participant.accepted
+            response['is_activated'] = participant.is_activated
 
             if participant.team:
                 team = participant.team
-                responce['team'] = participant.team_id
-                responce['team_members'] = [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                response['team'] = participant.team_id
+                response['team_uuid'] = participant.team.uuid,
+                response['team_members'] = [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
                                             for p in team.participant_set.all()]
 
-        return Response(responce)
+                if participant.team.current_state:
+                    current_state = participant.team.current_state
+                    response['current_state'] = {
+                        'state_name': current_state.name,
+                        'state_id': team.current_state_id,
+                        'fsm_name': current_state.fsm.name,
+                        'fsm_id': current_state.fsm_id,
+                    }
+        return Response(response)
 
 
 class TeamInfo(APIView):
@@ -330,7 +339,25 @@ class TeamInfo(APIView):
             "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
                              for p in team.participant_set.all()],
         }
+        if team.current_state:
+            current_state = team.current_state
+            response['current_state'] = {
+                'state_name': current_state.name,
+                'state_id': team.current_state_id,
+                'fsm_name': current_state.fsm.name,
+                'fsm_id': current_state.fsm_id,
+
+            }
         return Response(response)
+
+class Teams(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request):
+        teams = Team.objects.all()
+
+        for team in teams:
+            pass
 
 
 class UploadAnswerView(APIView):
