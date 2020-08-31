@@ -43,6 +43,20 @@ def send_answer(request):
     data = SubmitedAnswerSerializer(instance).data
     return Response(data, status=status.HTTP_200_OK)
 
+
+@transaction.atomic
+@permission_classes([IsAuthenticated])
+@api_view(['POST'])
+def move_to_next_state(request):
+    team = request.user.participant.team
+    edges = FSMEdge.objects.filter(tail=team.current_state.id)
+    if team.current_state.name == 'start' and edges.count() == 1:
+        team_change_current_state(team, edges[0].head)
+        data = FSMState.to_representation(edges[0].head)
+        return Response(data, status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
 def is_not_in_later(team, state):
     return len(TeamHistory.objects.filter(team=team.id, state=state.id)) == 0
 

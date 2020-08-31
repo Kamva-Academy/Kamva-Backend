@@ -39,6 +39,7 @@ urlpatterns = [
      path('editedges/', edit_edges),
      path('getteamhistory/', get_team_history),
      path('setfirstcurrentpage/', set_first_current_page),
+     path('movetonextstate/', move_to_next_state),
      path('submitteam/',submit_team)
 ]
 
