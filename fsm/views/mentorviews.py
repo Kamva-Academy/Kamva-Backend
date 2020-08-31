@@ -4,14 +4,18 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions
 
+from django.contrib.contenttypes.models import ContentType
+
 from fsm.models import *
 from fsm.serializers import *
 from fsm.views import permissions as customPermissions
 from fsm.views.functions import *
+from notifications.models import Notification
+
 
 @transaction.atomic
-@permission_classes( [permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 @api_view(['POST'])
+@permission_classes( [permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def edit_edges(request):
     serializer = EditEdgesSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
@@ -40,8 +44,8 @@ def edit_edges(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @transaction.atomic
-@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 @api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def get_team_history(request):
     serializer = GetTeamHistorySerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
@@ -57,8 +61,8 @@ def get_team_history(request):
 
 
 @transaction.atomic
-@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 @api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def submit_team(request):
     serializer = TeamHistorySubmitSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
@@ -76,3 +80,20 @@ def submit_team(request):
 #create history auto
 #get history
 #clock + state
+
+@transaction.atomic
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
+def go_to_team(request):
+    serializer = GoToTeamSerializer(data=request.data)
+    if not serializer.is_valid(raise_exception=True):
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    validated_data = serializer.validated_data
+    team = Team.objects.get(pk=validated_data['team'])
+    qs = Notification.objects.filter(
+        actor_content_type=ContentType.objects.get_for_model(team).id,
+        actor_object_id=team.pk,
+        recipient__is_mentor=True
+    )
+    qs.mark_all_as_read()
+    return Response({}, status=status.HTTP_200_OK)

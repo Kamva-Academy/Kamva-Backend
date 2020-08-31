@@ -3,7 +3,6 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-
 urlpatterns = [
     path('chat/', include('workshop.api.urls', namespace='workshop')),
     # for auth
@@ -12,7 +11,8 @@ urlpatterns = [
     # path('rest-auth/registration/', include('rest_auth.registration.urls')),
     path('api/admin/', admin.site.urls),
     path('api/auth/', include(('accounts.urls', 'accounts'), namespace='accounts')),
-    path('api/fsm/', include('fsm.urls') ),
-
+    path('api/fsm/', include('fsm.urls')),
+    path('api/notifications/', include('notifications_jwt.urls', namespace='notifications')),
 ]
+
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -20,6 +20,8 @@ class FSMState(models.Model):
     name = models.CharField(max_length=150)
 
     def __str__(self):
+        if self.fsm:
+            return '%s: %s' % (self.fsm.name, self.name)
         return self.name
 
 
@@ -53,6 +55,7 @@ class Ability(models.Model):
 
 class FSMPage(models.Model):
     page_type = models.CharField(max_length=20)
+    init_whiteboard = models.CharField(max_length=100000, null=True, blank=True)
 
     def widgets(self):
         return Widget.objects.filter(page=self).select_subclasses()

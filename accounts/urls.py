@@ -16,7 +16,7 @@ from django.urls import path, re_path
 from django.urls import path
 from rest_framework_simplejwt import views as jwt_views
 from .views import ObtainTokenPair, GroupSignup, IndividualSignup, activate, ChangePass, logout, UploadAnswerView, \
-    PayView, VerifyPayView, UserInfo, TeamInfo
+    PayView, VerifyPayView, UserInfo, TeamInfo, Teams
 
 urlpatterns = [
     path('pay/', PayView.as_view(), name="pay"),
@@ -33,5 +33,6 @@ urlpatterns = [
             activate, name='activate'),
     path('userInfo/', UserInfo.as_view(), name="user_info"),
     path('teamInfo/', TeamInfo.as_view(), name="team_info"),
+    path('teams/', Teams.as_view(), name="team_info"),
 
 ]
