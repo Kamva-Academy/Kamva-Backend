@@ -358,6 +358,7 @@ class TeamInfo(APIView):
                 'state_id': team.current_state_id,
                 'fsm_name': current_state.fsm.name,
                 'fsm_id': current_state.fsm_id,
+                'page_id': current_state.page.id
             }
             state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
             if state_history:
@@ -391,7 +392,9 @@ class Teams(APIView):
                         'state_id': team.current_state_id,
                         'fsm_name': current_state.fsm.name,
                         'fsm_id': current_state.fsm_id,
+                        'page_id': current_state.page_id
                     }
+
                     state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
                         '-start_time')
                     if state_history:
