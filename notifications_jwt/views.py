@@ -32,7 +32,6 @@ else:
 
 @api_view(["GET"])
 def live_unread_notification_list(request):
-    print('User: %s' % request.user)
     ''' Return a json with a unread notification list '''
     try:
         user_is_authenticated = request.user.is_authenticated()
@@ -81,7 +80,6 @@ def live_unread_notification_list(request):
 
 @api_view(["GET"])
 def live_all_notification_list(request):
-    print('User: %s' % request.user)
     ''' Return a json with a unread notification list '''
     try:
         user_is_authenticated = request.user.is_authenticated()
