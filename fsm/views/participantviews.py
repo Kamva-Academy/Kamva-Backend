@@ -61,4 +61,4 @@ def set_first_current_page(request):
         data = FSMPageSerializer().to_representation(state.page)
     else:
          return Response(" شما در کارگاه دیگری هستید یا قبلا اینجا بوده اید",status=status.HTTP_400_BAD_REQUEST)
-    return Response(data, status=status.HTTطP_200_OK)
+    return Response(data, status=status.HTTP_200_OK)
