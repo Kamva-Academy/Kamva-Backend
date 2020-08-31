@@ -366,6 +366,7 @@ class TeamInfo(APIView):
 
         return Response(response)
 
+
 class Teams(APIView):
     permission_classes = (permissions.AllowAny,)
 
@@ -378,6 +379,7 @@ class Teams(APIView):
                 team_json = {
                     "name": team.group_name,
                     "uuid": team.uuid,
+                    "team_id": team.id,
                     "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
                                      for p in team.participant_set.all()],
                 }
@@ -388,8 +390,14 @@ class Teams(APIView):
                         'state_id': team.current_state_id,
                         'fsm_name': current_state.fsm.name,
                         'fsm_id': current_state.fsm_id,
-
                     }
+                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
+                        'start_time').latest()
+                    if state_history:
+                        team_json['current_state']['start_time'] = str(state_history.start_time)
+                    else:
+                        team_json['current_state']['start_time'] = ''
+
                 valid_teams.append(team_json)
         return Response(valid_teams)
 
