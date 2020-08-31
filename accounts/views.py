@@ -355,9 +355,27 @@ class Teams(APIView):
 
     def get(self, request):
         teams = Team.objects.all()
+        valid_teams = []
 
         for team in teams:
-            pass
+            if team.is_team_active():
+                team_json = {
+                    "name": team.group_name,
+                    "uuid": team.uuid,
+                    "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                                     for p in team.participant_set.all()],
+                }
+                if team.current_state:
+                    current_state = team.current_state
+                    team_json['current_state'] = {
+                        'state_name': current_state.name,
+                        'state_id': team.current_state_id,
+                        'fsm_name': current_state.fsm.name,
+                        'fsm_id': current_state.fsm_id,
+
+                    }
+                valid_teams.append(team_json)
+        return Response(valid_teams)
 
 
 class UploadAnswerView(APIView):

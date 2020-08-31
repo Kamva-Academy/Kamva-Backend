@@ -137,6 +137,13 @@ class Team(models.Model):
         s += ")"
         return s
 
+    def is_team_active(self):
+        for p in self.participant_set.all():
+            if not p.is_activated:
+                return False
+        return True
+
+
 
 class Payment(models.Model):
     STATUS_CHOICE = (
