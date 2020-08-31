@@ -105,3 +105,14 @@ PAYMENT = {
     'FRONT_HOST_SUCCESS': 'https://rastaiha.ir/payment/success/',
     'FRONT_HOST_FAILURE': 'https://rastaiha.ir/payment/failure/'
 }
+
+REDIS_URL = get_environment_var('REDIS_URL', 'redis://localhost:6379')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
+}
