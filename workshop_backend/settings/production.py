@@ -36,29 +36,37 @@ LOG_LEVEL = get_environment_var('LOG_LEVEL', 'INFO')
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s] %(levelname)-8s [%(module)s:%(funcName)s:%(lineno)d]: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
+            'formatter': 'verbose',
             'filename': os.path.join(BASE_DIR, 'logging/debug.log'),
         },
     },
     'loggers': {
         '': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': LOG_LEVEL,
             'propagate': True
         },
         'django': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': LOG_LEVEL,
             'propagate': True,
         },
         'workshop_backend': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': LOG_LEVEL,
             'propagate': True,
         },
@@ -82,4 +90,29 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
+ZARINPAL_CONFIG = {
+    'ROUTE_START_PAY': 'https://www.zarinpal.com/pg/StartPay/',
+    'ROUTE_WEB_GATE': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
+    'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
+    'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
+    'MERCHANT': '8b469980-683d-11ea-806a-000c295eb8fc',  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا»'  # Required
+}
+
+PAYMENT = {
+    'FRONT_HOST_SUCCESS': 'https://rastaiha.ir/payment/success/',
+    'FRONT_HOST_FAILURE': 'https://rastaiha.ir/payment/failure/'
+}
+
+REDIS_URL = get_environment_var('REDIS_URL', 'redis://localhost:6379')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
 }

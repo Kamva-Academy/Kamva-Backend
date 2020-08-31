@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
-from .models import Member, Participant, Team
+from .models import Member, Participant, Team, Payment
 
 from import_export.admin import ExportActionMixin
 from import_export.fields import Field
@@ -144,7 +144,7 @@ class IsAcceptedFilter(admin.SimpleListFilter):
 
 class CustomUserAdmin(admin.ModelAdmin,):
     model = Member
-    readonly_fields = [ 'first_name', 'email', 'username']
+    # readonly_fields = [ 'first_name']
     list_display = ['email', 'first_name', 'is_active']
 
 
@@ -200,13 +200,13 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 
     def account_actions(self, obj):
         try:
-            if obj.accepted :
+            if obj.accepted:
                 return mark_safe('<a class="button" href="' + reverse('admin:unaccept_member',
-                                                                      args=[obj.pk]) + '">رد </a>' + '&nbsp;')
+                                                                      args=[obj.pk]) + '">رد کن</a>' + '&nbsp;')
 
             else:
                 return mark_safe('<a class="button" href="' + reverse('admin:accept_member',
-                                                                      args=[obj.pk]) + '">قبول</a>' + '&nbsp;')
+                                                                      args=[obj.pk]) + '">قبول کن</a>' + '&nbsp;')
         except:
             return None
 
@@ -254,7 +254,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['get_group_name','active', 'group_members_display', 'team_members_count', 'team_status']
+    list_display = ['get_group_name', 'active', 'group_members_display', 'team_members_count', 'team_status']
 
 
     def get_group_name(self, obj):
@@ -284,8 +284,6 @@ class TeamAdmin(admin.ModelAdmin):
         if accept_count == 0: return False
         elif accept_count == obj.participant_set.all().count(): return True
         else: return None
-            
- 
     # # inlines = [
     # #     ParticipantInline,
     # # ]
@@ -295,11 +293,20 @@ class TeamAdmin(admin.ModelAdmin):
     team_status.short_description = "وضعیت قبولی تیم"
     team_status.boolean = True
 
-    
 
+class PaymentAdmin(admin.ModelAdmin):
+    model = Payment
+    list_display = ['get_user_name', 'uniq_code' ]
+
+    def get_user_name(self, obj):
+        name = str(obj.user.member.first_name) + "(" + str(obj.user.member.username) + ")"
+        return name
+
+    get_user_name.short_description = "نام"
 
 
 # Register your models here.
 admin.site.register(Member, CustomUserAdmin)
 admin.site.register(Participant, ParticipantInline)
 admin.site.register(Team, TeamAdmin)
+admin.site.register(Payment, PaymentAdmin)

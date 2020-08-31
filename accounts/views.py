@@ -1,7 +1,10 @@
+import logging
 import json
 import os
 import string
 from django.contrib.auth.decorators import login_required
+
+from fsm.models import TeamHistory
 from .models import Team
 import random
 from django.db import transaction
@@ -14,9 +17,16 @@ from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
-from .models import Member, Participant
+from .models import Member, Participant, Payment
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from accounts import zarinpal
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+
+from .serializers import MyTokenObtainPairSerializer, MemberSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # def check_bibot_response(request):
@@ -36,14 +46,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 #             return False
 #     return False
 
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import status, permissions
-from rest_framework.views import APIView
-
-from .serializers import MyTokenObtainPairSerializer, MemberSerializer
 
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+    permission_classes = (permissions.AllowAny,)
 
 
 class GroupSignup(APIView):
@@ -57,17 +63,20 @@ class GroupSignup(APIView):
 
         for member_info in members_info:
             if Member.objects.filter(email__exact=member_info['email']).count() > 0:
-                return Response({'success': False, "error":  "فردی با ایمیل "+ member_info['email']+ " قبلا ثبت‌نام کرده"},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'success': False, "error": "فردی با ایمیل " + member_info['email'] + " قبلا ثبت‌نام کرده"},
+                    status=status.HTTP_400_BAD_REQUEST)
 
-        if(members_info[0]['email'] == members_info[1]['email']
+        if (members_info[0]['email'] == members_info[1]['email']
                 or members_info[1]['email'] == members_info[2]['email']
-                or members_info[2]['email'] == members_info[0]['email'] ):
-            return Response({'success':False, "error": "ایمیلهای اعضای گروه باید متمایز باشد."}, status=status.HTTP_400_BAD_REQUEST)
+                or members_info[2]['email'] == members_info[0]['email']):
+            return Response({'success': False, "error": "ایمیلهای اعضای گروه باید متمایز باشد."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if not (members_info[0]['gender'] == members_info[1]['gender']
                 and members_info[2]['gender'] == members_info[1]['gender']):
-            return Response({'success':False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if 'document1' not in request.data:
             raise ParseError("Empty content document1")
@@ -166,7 +175,7 @@ class IndividualSignup(APIView):
         if Member.objects.filter(email__exact=request.data['email']).count() > 0:
             return Response({'success': False, "error": "فردی با ایمیل " + request.data['email'] + "قبلا ثبت‌نام کرده"},
                             status=status.HTTP_400_BAD_REQUEST)
-        
+
         if 'document' not in request.data:
             raise ParseError("Empty Document content")
 
@@ -248,18 +257,155 @@ def activate(request, uidb64, token):
 class ChangePass(APIView):
 
     def post(self, request):
-        user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
+        user = JWTAuthentication.get_user(self, JWTAuthentication.get_validated_token(self,
+                                                                                      JWTAuthentication.get_raw_token(
+                                                                                          self,
+                                                                                          JWTAuthentication.get_header(
+                                                                                              JWTAuthentication,
+                                                                                              request))))
         new_pass = request.data['newPass']
         # username = request.POST.get('username')
         # member = get_object_or_404(Member, username=username)
         user.set_password(new_pass)
         user.save()
 
-        return Response({'success': True},status=status.HTTP_200_OK)
+        return Response({'success': True}, status=status.HTTP_200_OK)
+
+
+class UserInfo(APIView):
+
+    def get(self, request):
+        member = request.user
+        if "uuid" in request.GET:
+            member = Member.objects.filter(uuid=request.GET.get('uuid'))
+            if not member.count() >0:
+                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
+            member = member[0]
+        response = {
+            "email": member.email,
+            "name": member.first_name,
+            "is_participant": member.is_participant,
+            "is_mentor": member.is_mentor,
+            "uuid": member.uuid
+        }
+
+        if member.is_participant:
+            participant = member.participant
+            response['grade'] = participant.grade
+            response['gender'] = participant.gender
+            response['city'] = participant.city
+            response['school'] = participant.school
+            response['accepted'] = participant.accepted
+            response['is_activated'] = participant.is_activated
+
+            if participant.team:
+                team = participant.team
+                response['team'] = participant.team_id
+                response['team_id'] = participant.team_id
+                response['team_uuid'] = participant.team.uuid,
+                response['team_members'] = [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                                            for p in team.participant_set.all()]
+
+                if participant.team.current_state:
+                    current_state = participant.team.current_state
+                    response['current_state'] = {
+                        'state_name': current_state.name,
+                        'state_id': team.current_state_id,
+                        'fsm_name': current_state.fsm.name,
+                        'fsm_id': current_state.fsm_id,
+                        'page_id': current_state.page.id
+                    }
+                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
+                        '-start_time')
+                    if state_history:
+                        response['current_state']['start_time'] = str(state_history[0].start_time)
+                    else:
+                        response['current_state']['start_time'] = ''
+
+        return Response(response)
+
+
+class TeamInfo(APIView):
+
+    def get(self, request):
+        member = request.user
+        if "teamId" in request.GET:
+            team = Team.objects.filter(id=request.GET.get('teamId'))
+            if not team.count() > 0:
+                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
+            else: team = team[0]
+        elif "uuid" in request.GET:
+            team = Team.objects.filter(uuid=request.GET.get('uuid'))
+            if not team.count() > 0:
+                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
+            else: team = team[0]
+        else:
+                team = request.user.participant.team
+
+        if not team:
+            return Response({'success': False, "error": "team not found"}, status=status.HTTP_400_BAD_REQUEST)
+        response = {
+            "name": team.group_name,
+            "uuid": team.uuid,
+            "team_id": team.id,
+            "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                             for p in team.participant_set.all()],
+        }
+        if team.current_state:
+            current_state = team.current_state
+            response['current_state'] = {
+                'state_name': current_state.name,
+                'state_id': team.current_state_id,
+                'fsm_name': current_state.fsm.name,
+                'fsm_id': current_state.fsm_id,
+            }
+            state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
+            if state_history:
+                response['current_state']['start_time'] = str(state_history[0].start_time)
+            else:
+                response['current_state']['start_time'] = ''
+
+        return Response(response)
+
+
+class Teams(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request):
+        teams = Team.objects.all()
+        valid_teams = []
+
+        for team in teams:
+            if team.is_team_active():
+                team_json = {
+                    "name": team.group_name,
+                    "uuid": team.uuid,
+                    "team_id": team.id,
+                    "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                                     for p in team.participant_set.all()],
+                }
+                if team.current_state:
+                    current_state = team.current_state
+                    team_json['current_state'] = {
+                        'state_name': current_state.name,
+                        'state_id': team.current_state_id,
+                        'fsm_name': current_state.fsm.name,
+                        'fsm_id': current_state.fsm_id,
+                    }
+                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
+                        '-start_time')
+                    if state_history:
+                        team_json['current_state']['start_time'] = str(state_history[0].start_time)
+                    else:
+                        team_json['current_state']['start_time'] = ''
+
+                valid_teams.append(team_json)
+        return Response(valid_teams)
 
 
 class UploadAnswerView(APIView):
     parser_class = (FileUploadParser,)
+
     # permission_classes = (permissions.AllowAny,)
     @transaction.atomic
     def post(self, request):
@@ -267,7 +413,12 @@ class UploadAnswerView(APIView):
             raise ParseError("Empty content")
 
         file = request.data['file']
-        user = JWTAuthentication.get_user(self,JWTAuthentication.get_validated_token(self,JWTAuthentication.get_raw_token(self,JWTAuthentication.get_header(JWTAuthentication,request))))
+        user = JWTAuthentication.get_user(self, JWTAuthentication.get_validated_token(self,
+                                                                                      JWTAuthentication.get_raw_token(
+                                                                                          self,
+                                                                                          JWTAuthentication.get_header(
+                                                                                              JWTAuthentication,
+                                                                                              request))))
         file.name = str(user.username) + "-" + file.name
         participant = user.participant
 
@@ -281,3 +432,99 @@ class UploadAnswerView(APIView):
                 os.remove(old_file.path)
 
         return Response({'success': True}, status=status.HTTP_201_CREATED)
+
+
+class PayView(APIView):
+    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+
+    def __get_amount(self, user):
+        return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
+
+    def get(self, request, *args, **kwargs):
+        user = Participant.objects.filter(member=request.user)
+        response = dict()
+        status_r = int()
+        if user:
+            user = user[0]
+            if user.accepted and not user.is_activated:
+                amount = self.__get_amount(user)
+                res = zarinpal.send_request(amount=amount,
+                                            call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={user.member.uuid}')
+                status_r = res["status"]
+                response = {
+                    "message": res["message"],
+                    "amount": amount,
+                    "typePayment": "team" if user.team else "person"
+                } if status_r == 201 else {
+                    "message": res["message"]
+                }
+            elif not user.accepted:
+                response = {
+                    "message": "دانش آموز عزیز به علت تایید نشدن حساب کاربری شما امکان پرداخت وجود ندارد",
+                }
+                status_r = 403
+            elif user.is_activated:
+                response = {
+                    "message": "دانش آموز عزیز هزینه ثبت نام قبلا پرداخت شده است.",
+                }
+                status_r = 403
+        else:
+            response = {
+                "message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است",
+            }
+            status_r = 403
+        return Response(response, status=status_r)
+
+
+class VerifyPayView(APIView):
+    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+    permission_classes = (permissions.AllowAny,)
+
+    def __random_string(self, length=10):
+        """Generate a random string of fixed length """
+        letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
+        return ''.join(random.choice(letters) for _ in range(length))
+
+    def __get_amount(self, user):
+        return self.ZARINPAL_CONFIG['TEAM_FEE'] if user.team else self.ZARINPAL_CONFIG['PERSON_FEE']
+
+    def get(self, request, *args, **kwargs):
+        user = Participant.objects.filter(member__uuid=request.GET.get('uuid'))
+        logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
+        logger.warning(request.META.get('REMOTE_ADDR'))
+        if user:
+            user = user[0]
+            amount = self.__get_amount(user)
+            random_s = self.__random_string()
+            logger.warning(f'Zarinpal callback: {request.GET}')
+            res = zarinpal.verify(status=request.GET.get('Status'),
+                                  authority=request.GET.get('Authority'),
+                                  amount=amount)
+            if 200 <= int(res["status"]) <= 299:
+                if user.team:
+                    team = Participant.objects.filter(team=user.team)
+                    # Update is_activated for member of a group
+                    for participant in team:
+                        participant.is_activated = True
+                    Participant.objects.bulk_update(team, ['is_activated'])
+                else:
+                    user.is_activated = True
+                    user.save()
+                Payment.objects.create(user=user,
+                                       amount=amount,
+                                       ref_id=str(res['ref_id']),
+                                       authority=request.GET.get('Authority'),
+                                       status="SUCCESS" if res["status"] == 200 else "REPETITIOUS",
+                                       uniq_code=random_s)
+                return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}{random_s}')
+            else:
+                Payment.objects.create(user=user,
+                                       amount=amount,
+                                       authority=request.GET.get('Authority'),
+                                       status="FAILED",
+                                       uniq_code=random_s)
+                return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}{random_s}')
+        else:
+            return Response(
+                {"message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است"},
+                status=403)
