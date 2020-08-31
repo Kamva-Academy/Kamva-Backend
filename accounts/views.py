@@ -47,6 +47,7 @@ logger = logging.getLogger(__name__)
 
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+    permission_classes = (permissions.AllowAny,)
 
 
 class GroupSignup(APIView):
