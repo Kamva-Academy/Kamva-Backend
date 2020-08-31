@@ -9,7 +9,7 @@ from auction.views.permissions import *
 from django.utils import timezone
 def save_one_time_bid(request, auction, bid):
     try:
-        participant = request.member.participant
+        participant = request.user.participant
         auction = OneTimeAuction.objects.filter(pk=auction)[0]
         bidder = OneTimeBidder.objects.filter(participant=participant, auction=auction)[0]
     except:
@@ -18,7 +18,8 @@ def save_one_time_bid(request, auction, bid):
         print("Salam")
     bidder.bid = bid
     bidder.save()
-    if auction.winner.bid < bid:
+
+    if(not auction.winner or  auction.winner.bid < bid):
         auction.winner = bidder
         auction.save()
     return True

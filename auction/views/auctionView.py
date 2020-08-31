@@ -16,6 +16,7 @@ from django.utils import timezone
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@transaction.atomic
 def new_one_time_auction(request):
     serializer = OneTimeAuctionPostSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
