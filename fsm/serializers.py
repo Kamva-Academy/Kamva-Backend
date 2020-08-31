@@ -339,6 +339,13 @@ class FSMPageSerializer(serializers.ModelSerializer):
         instance = self.create(validated_data)
         return instance
 
+
+class WhiteboardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FSMPage
+        fields = ['init_whiteboard']
+
+
 class SubmitedAnswerSerializer(serializers.ModelSerializer):
     xanswer = AnswerSerializer()
     class Meta:
