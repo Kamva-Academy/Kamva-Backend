@@ -39,7 +39,9 @@ urlpatterns = [
      path('editedges/', edit_edges),
      path('getteamhistory/', get_team_history),
      path('setfirstcurrentpage/', set_first_current_page),
-     path('submitteam/',submit_team)
+     path('submitteam/', submit_team),
+     path('gototeam/', go_to_team),
+     path('requestmentor/', request_mentor)
 ]
 
 urlpatterns += router.urls

@@ -415,3 +415,5 @@ class TeamHistorySubmitSerializer(serializers.ModelSerializer):
         exclude = ('start_time', )
 
 
+class GoToTeamSerializer(serializers.Serializer):
+    team = serializers.IntegerField()

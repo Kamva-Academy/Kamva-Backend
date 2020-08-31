@@ -1,11 +1,13 @@
 from django.core.paginator import Paginator
 from rest_framework import status
+from accounts.models import Member
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from fsm.models import *
 from fsm.serializers import *
 from fsm.views.functions import *
+from notifications.signals import notify
 
 @transaction.atomic
 @permission_classes([IsAuthenticated])
@@ -58,3 +60,12 @@ def set_first_current_page(request):
     team_change_current_state(team, state)
     data = FSMPageSerializer().to_representation(state.page)
     return Response(data, status=status.HTTP_200_OK)
+
+
+@transaction.atomic
+@permission_classes([IsAuthenticated])
+@api_view(['POST'])
+def request_mentor(request):
+    team = request.user.participant.team
+    notify.send(team, recipient=Member.objects.filter(is_mentor=True), verb="request_mentor")
+    return Response({}, status=status.HTTP_200_OK)
