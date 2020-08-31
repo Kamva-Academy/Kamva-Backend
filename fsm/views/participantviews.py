@@ -16,8 +16,8 @@ from notifications.models import Notification
 
 
 @transaction.atomic
-@permission_classes([IsAuthenticated, TestMembersOnly ])
 @api_view(['GET'])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 def get_current_page(request):
     participant = request.user.participant
     page = participant.team.current_state.page
@@ -26,8 +26,8 @@ def get_current_page(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @transaction.atomic
-@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['GET'])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 def get_history(request):
     participant = request.user.participant
     histories = participant.team.histories.all()
@@ -36,8 +36,8 @@ def get_history(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @transaction.atomic
-@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['POST'])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 def send_answer(request):
     serializer = SubmitedAnswerPostSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
@@ -53,8 +53,8 @@ def send_answer(request):
 
 
 @transaction.atomic
-@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['POST'])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 def move_to_next_state(request):
     team = request.user.participant.team
     edges = FSMEdge.objects.filter(tail=team.current_state.id)
@@ -78,8 +78,8 @@ def get_last_state_in_fsm(team, fsm):
 
 
 @transaction.atomic
-@permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['POST'])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 def set_first_current_page(request):
     team = request.user.participant.team
     serializer = SetFirstStateSerializer(data=request.data)
@@ -96,8 +96,8 @@ def set_first_current_page(request):
 
 
 @transaction.atomic
-@permission_classes([IsAuthenticated])
 @api_view(['POST'])
+@permission_classes([IsAuthenticated, TestMembersOnly])
 def request_mentor(request):
     team = request.user.participant.team
     qs = Notification.objects.filter(
