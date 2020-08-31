@@ -293,7 +293,7 @@ class WidgetSerializer(serializers.ModelSerializer):
         elif model == Video:
             return VideoSerializer
         elif model == Image:
-            return Ima
+            return ImageSerializer
         elif model == Description:
             return DescriptionSerializer
         elif issubclass(model, Problem):
