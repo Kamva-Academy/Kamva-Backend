@@ -3,6 +3,8 @@ import json
 import os
 import string
 from django.contrib.auth.decorators import login_required
+
+from fsm.models import TeamHistory
 from .models import Team
 import random
 from django.db import transaction
@@ -299,6 +301,7 @@ class UserInfo(APIView):
             if participant.team:
                 team = participant.team
                 response['team'] = participant.team_id
+                response['team_id'] = participant.team_id
                 response['team_uuid'] = participant.team.uuid,
                 response['team_members'] = [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
                                             for p in team.participant_set.all()]
@@ -312,6 +315,13 @@ class UserInfo(APIView):
                         'fsm_id': current_state.fsm_id,
                         'page_id': current_state.page.id
                     }
+                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
+                        'start_time').latest()
+                    if state_history:
+                        response['current_state']['start_time'] = str(state_history.start_time)
+                    else:
+                        response['current_state']['start_time'] = ''
+
         return Response(response)
 
 
@@ -347,8 +357,13 @@ class TeamInfo(APIView):
                 'state_id': team.current_state_id,
                 'fsm_name': current_state.fsm.name,
                 'fsm_id': current_state.fsm_id,
-
             }
+            state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('start_time').latest()
+            if state_history:
+                response['current_state']['start_time'] = str(state_history.start_time)
+            else:
+                response['current_state']['start_time'] = ''
+
         return Response(response)
 
 class Teams(APIView):
