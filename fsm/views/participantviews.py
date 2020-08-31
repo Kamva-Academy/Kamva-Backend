@@ -54,7 +54,6 @@ def set_first_current_page(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     fsm = FSM.objects.filter(id=request.data['fsm'])[0]
     state = FSMState.objects.filter(fsm=fsm, name='start')[0]
-    #check is null
-    team_change_current_state(team, state)
+    #state is None
     data = FSMPageSerializer().to_representation(state.page)
     return Response(data, status=status.HTTP_200_OK)
