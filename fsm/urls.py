@@ -40,7 +40,9 @@ urlpatterns = [
      path('getteamhistory/', get_team_history),
      path('setfirstcurrentpage/', set_first_current_page),
      path('movetonextstate/', move_to_next_state),
-     path('submitteam/',submit_team)
+     path('submitteam/', submit_team),
+     path('gototeam/', go_to_team),
+     path('requestmentor/', request_mentor)
 ]
 
 urlpatterns += router.urls

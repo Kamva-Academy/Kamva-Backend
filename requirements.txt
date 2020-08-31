@@ -86,3 +86,4 @@ zipp==3.1.0
 zeep
 django-cors-headers==3.4.0
 zope.interface==5.1.0
+django-notifications-hq==1.6.0
