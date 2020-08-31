@@ -71,7 +71,7 @@ def is_not_in_later(team, state):
 
 def get_last_state_in_fsm(team, fsm):
     try:
-        hist = TeamHistory.objects.filter(team=team, fsm=fsm).order_by('-start_time')[0]
+        hist = TeamHistory.objects.filter(team=team, state__fsm=fsm).order_by('-start_time')[0]
         return hist.state
     except IndexError:
         return FSMState.objects.get(fsm=fsm, name='start')[0]
