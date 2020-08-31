@@ -27,7 +27,7 @@ class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateM
     @transaction.atomic
     def get_serializer_class(self):
         return FSMGetSerializer \
-            if self.request.method == 'GET' \
+            if self.request.method == 'GET' and self.request.user.is_mentor \
             else FSMSerializer
 
     def get_permissions(self):
