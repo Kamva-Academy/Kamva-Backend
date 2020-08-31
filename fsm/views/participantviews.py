@@ -68,6 +68,15 @@ def move_to_next_state(request):
 def is_not_in_later(team, state):
     return len(TeamHistory.objects.filter(team=team.id, state=state.id)) == 0
 
+
+def get_last_state_in_fsm(team, fsm):
+    try:
+        hist = TeamHistory.objects.filter(team=team, fsm=fsm).order_by('-start_time')[0]
+        return hist.state
+    except IndexError:
+        return FSMState.objects.get(fsm=fsm, name='start')[0]
+
+
 @transaction.atomic
 @permission_classes([IsAuthenticated, TestMembersOnly])
 @api_view(['POST'])
@@ -77,12 +86,12 @@ def set_first_current_page(request):
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     fsm = FSM.objects.filter(id=request.data['fsm'])[0]
-    state = FSMState.objects.filter(fsm=fsm, name='start')[0]
-    if (team.current_state is None or team.current_state.name == 'end') and is_not_in_later(team, state):
+    if (team.current_state is None or team.current_state.name == 'end'):
+        state = get_last_state_in_fsm(team, fsm)
         team_change_current_state(team, state)
         data = FSMPageSerializer().to_representation(state.page)
     else:
-         return Response(" شما در کارگاه دیگری هستید یا قبلا اینجا بوده اید",status=status.HTTP_400_BAD_REQUEST)
+         return Response("شما در کارگاه دیگری هستید!",status=status.HTTP_400_BAD_REQUEST)
     return Response(data, status=status.HTTP_200_OK)
 
 

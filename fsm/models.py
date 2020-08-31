@@ -20,6 +20,8 @@ class FSMState(models.Model):
     name = models.CharField(max_length=150)
 
     def __str__(self):
+        if self.fsm:
+            return '%s: %s' % (self.fsm.name, self.name)
         return self.name
 
 
