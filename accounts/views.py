@@ -347,6 +347,7 @@ class TeamInfo(APIView):
         response = {
             "name": team.group_name,
             "uuid": team.uuid,
+            "team_id": team.id,
             "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
                              for p in team.participant_set.all()],
         }
