@@ -162,7 +162,7 @@ ASGI_APPLICATION = 'workshop_backend.routing.application'
 DJANGO_NOTIFICATIONS_CONFIG = {
     'USE_JSONFIELD': True,
     'SOFT_DELETE': True,
-    'NUM_TO_FETCH': 40,
+    'NUM_TO_FETCH': 80,
 }
 
 REST_FRAMEWORK = {
