@@ -12,10 +12,12 @@ class MentorPermission(permissions.BasePermission):
 class TestMembersOnly(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        # user = request.user
-        # username = user.username
-        # print(request.user)
-        # if username.startswith("TEST_") or user.is_mentor:
-        #     return True
-        # return False
-        return True
+
+        user = request.user
+        try:
+            if user.participant.team.is_team_active():
+                return True
+        except:
+            return False
+        return False
+
