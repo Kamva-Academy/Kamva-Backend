@@ -2,6 +2,9 @@ from rest_framework import serializers
 from auction.models import *
 from accounts.models import *
 
+import logging
+logger = logging.getLogger(__name__)
+
 class OneTimeBidSerializer(serializers.Serializer):
     auction = serializers.IntegerField()
     bid = serializers.IntegerField()
@@ -20,7 +23,7 @@ class OneTimeAuctionPostSerializer(serializers.Serializer):
             team = Team.objects.filter(id=team)[0]
         except:
             return None
-        print(validated_data)
+        logger.debug(f'action validated data is {validated_data}')
         instance = OneTimeAuction.objects.create(**validated_data)
         participants = team.participant_set.all()
         index = 0

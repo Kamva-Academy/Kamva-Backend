@@ -8,19 +8,20 @@ import json
 from channels.db import database_sync_to_async
 from django.shortcuts import get_object_or_404
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def get_name(team_uuid, person_uuid):
     try:
         member = Member.objects.filter(uuid=person_uuid)
+        logger.info(f'try to access team_uuid {team_uuid}')
         if member:
             if member[0].is_mentor:
                 result = True
             elif member[0].is_participant:
                 participant = Participant.objects.get(member=member[0])
-                print(participant.team.uuid)
-                print(team_uuid)
                 if str(participant.team.uuid) == team_uuid:
-                    print("dfasd")
                     result = True
                 else:
                     result = False

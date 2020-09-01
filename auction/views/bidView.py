@@ -7,6 +7,10 @@ from auction.serializers import *
 from auction.models import *
 from auction.views.permissions import *
 from django.utils import timezone
+
+import logging
+logger = logging.getLogger(__name__)
+
 def save_one_time_bid(request, auction, bid):
     try:
         participant = request.user.participant
@@ -15,7 +19,7 @@ def save_one_time_bid(request, auction, bid):
     except:
         return False
     if timezone.localtime() > auction.start_time:
-        print("Salam")
+        logger.debug(f'timezone.localtime() > auction.start_time is True')
     bidder.bid = bid
     bidder.save()
 

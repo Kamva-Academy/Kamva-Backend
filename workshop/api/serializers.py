@@ -3,6 +3,8 @@ from rest_framework import serializers
 from workshop.models import Chat, Contact
 from workshop.views import get_user_contact
 
+import logging
+logger = logging.getLogger(__name__)
 
 class ContactSerializer(serializers.StringRelatedField):
     def to_internal_value(self, value):
@@ -19,7 +21,6 @@ class ChatSerializer(serializers.ModelSerializer):
 
     # gets a list of participants usernames and creates the chat group (for pv, participants are two)
     def create(self, validated_data):
-        print(validated_data)
         participants = validated_data.pop('participants')
         chat = Chat()
         chat.save()
