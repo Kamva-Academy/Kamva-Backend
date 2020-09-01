@@ -60,7 +60,7 @@ def move_to_next_state(request):
     edges = FSMEdge.objects.filter(tail=team.current_state.id)
     if team.current_state.name == 'start' and edges.count() == 1:
         team_change_current_state(team, edges[0].head)
-        data = FSMState.to_representation(edges[0].head)
+        data = FSMStateSerializer().to_representation(edges[0].head)
         return Response(data, status=status.HTTP_200_OK)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -74,7 +74,7 @@ def get_last_state_in_fsm(team, fsm):
         hist = TeamHistory.objects.filter(team=team, state__fsm=fsm).order_by('-start_time')[0]
         return hist.state
     except IndexError:
-        return FSMState.objects.get(fsm=fsm, name='start')[0]
+        return FSMState.objects.filter(fsm=fsm, name='start')[0]
 
 
 @transaction.atomic

@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('api/auction/', include('auction.urls')),
     path('chat/', include('workshop.api.urls', namespace='workshop')),
     # for auth
     # path('api-auth/', include('rest_framework.urls')),
