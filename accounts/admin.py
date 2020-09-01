@@ -2,10 +2,13 @@ from django.contrib import admin
 from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
 import sys
+import json
+import os
 
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.conf import settings
 
 from .models import Member, Participant, Team, Payment
 
@@ -14,6 +17,8 @@ from import_export.fields import Field
 from import_export import resources
 from django.urls import path, reverse
 from fsm.views.functions import team_change_current_state
+
+from datetime import datetime
 
 import logging
 logger = logging.getLogger(__name__)
@@ -258,7 +263,33 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['get_group_name', 'active', 'group_members_display', 'team_members_count', 'team_status']
+    list_display = ['get_group_name', 'active', 'group_members_display', 'team_members_count', 'team_status', 'current_state']
+
+    change_list_template = 'admin/accounts/change_list_team.html'
+
+    class Media:
+        js = (
+            'scripts/admin-confirm.js',
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'unset_all_current_states/',
+                self.unset_all_current_states,
+                name='unset_all_current_states',
+            ),
+        ]
+        return custom_urls + urls
+
+    def unset_all_current_states(self, request, *args, **kwargs):
+        qs = Team.objects.all()
+        ll = list(qs.values_list('id', 'current_state'))
+        json.dump(ll, open(os.path.join(settings.MEDIA_ROOT,
+                           'current_states_before_clear_%s.json' % datetime.now().isoformat()), 'w'))
+        qs.update(current_state=None)
+        return HttpResponse('Unseting current_states for %s teams was successfull!' % qs.count())
 
     def save_model(self, request, obj, form, change):
         if change:
