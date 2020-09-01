@@ -10,6 +10,7 @@ router.register('auction/<int:pk>', OneTimeAuctionView)
 urlpatterns = [
     path('bid/', new_one_time_bid),
     path('create/', new_one_time_auction),
+    path('lastAuction/', LastAuction.as_view()),
     
     ]
 
