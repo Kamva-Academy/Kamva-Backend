@@ -11,31 +11,41 @@ from django.utils import timezone
 import logging
 logger = logging.getLogger(__name__)
 
+@transaction.atomic
+@permission_classes([permissions.AllowAny])
 def save_one_time_bid(request, auction, bid):
     try:
         participant = request.user.participant
         auction = OneTimeAuction.objects.filter(pk=auction)[0]
         bidder = OneTimeBidder.objects.filter(participant=participant, auction=auction)[0]
     except:
-        return False
+        return {"success": False, "message":"bad request"}
+
     if timezone.localtime() > auction.start_time:
         logger.debug(f'timezone.localtime() > auction.start_time is True')
     bidder.bid = bid
     bidder.save()
+    if auction.start_time < timezone.localtime() < auction.end_time:
+        if(not auction.winner or  auction.winner.bid < bid):
+            auction.winner = bidder
+            auction.save()
+        response = {
+            "value": bidder.value,
+            "bid": bidder.bid
+        }
+        return response
+    return {"success": False, "message":"زمان مزایده به پایان رسیده",
+            "end_time": auction.end_time,
+            "local_time": timezone.localtime(),
+            "auction": auction.id}
 
-    if(not auction.winner or  auction.winner.bid < bid):
-        auction.winner = bidder
-        auction.save()
-    return True
 
 @api_view(['POST'])
+@transaction.atomic
 @permission_classes([permissions.AllowAny])
 def new_one_time_bid(request):
     serializer = OneTimeBidSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     data = serializer.validated_data
-    if save_one_time_bid(request, **data):
-        return Response(status=status.HTTP_200_OK)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    return Response(save_one_time_bid(request, **data))
