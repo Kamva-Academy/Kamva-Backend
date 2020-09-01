@@ -422,5 +422,9 @@ class TeamHistorySubmitSerializer(serializers.ModelSerializer):
         exclude = ('start_time', )
 
 
+class TeamUUIDSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField()
+
+
 class GoToTeamSerializer(serializers.Serializer):
     team = serializers.IntegerField()
