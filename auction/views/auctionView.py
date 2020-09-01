@@ -16,7 +16,7 @@ from django.utils import timezone
 
 
 @api_view(['POST'])
-@permission_classes([permissions.AllowAny])
+@permission_classes([permissions.IsAuthenticated])
 @transaction.atomic
 def new_one_time_auction(request):
     data = request.data
