@@ -13,6 +13,10 @@ from import_export.admin import ExportActionMixin
 from import_export.fields import Field
 from import_export import resources
 from django.urls import path, reverse
+from fsm.views.functions import team_change_current_state
+
+import logging
+logger = logging.getLogger(__name__)
 
 import csv
 from django.http import HttpResponse
@@ -256,6 +260,11 @@ class TeamAdmin(admin.ModelAdmin):
     model = Team
     list_display = ['get_group_name', 'active', 'group_members_display', 'team_members_count', 'team_status']
 
+    def save_model(self, request, obj, form, change):
+        if change:
+            logger.debug(f'changed state team {obj.id}')
+            team_change_current_state(obj, obj.current_state)
+        super().save_model(request, obj, form, change)
 
     def get_group_name(self, obj):
         name = str(obj.id) + "  " + str(obj.group_name)
