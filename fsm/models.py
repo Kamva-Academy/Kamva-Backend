@@ -2,6 +2,10 @@ from django.db import models
 from model_utils.managers import InheritanceManager
 from accounts.models import Team, Participant
 
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+
+
 class FSM(models.Model):
     name = models.CharField(max_length=100)
 
@@ -41,6 +45,7 @@ class FSMEdge(models.Model):
             output = output and ability.is_valid(value)
         return self.head if output else None
 
+
 class Ability(models.Model):
     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.CASCADE, related_name='abilities')
     name = models.CharField(max_length=150)
@@ -59,6 +64,11 @@ class FSMPage(models.Model):
 
     def widgets(self):
         return Widget.objects.filter(page=self).select_subclasses()
+
+
+@receiver(post_delete, sender=FSMState)
+def auto_delete_page_with_state(sender, instance, **kwargs):
+    instance.page.delete()
 
 
 class Widget(models.Model):
