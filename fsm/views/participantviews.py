@@ -22,10 +22,20 @@ logger = logging.getLogger(__name__)
 @permission_classes([IsAuthenticated, TestMembersOnly])
 def get_current_page(request):
     participant = request.user.participant
-    page = participant.team.current_state.page
-    serializer = FSMPageSerializer()
-    data = serializer.to_representation(page)
-    return Response(data, status=status.HTTP_200_OK)
+    if not participant.team:
+        #TODO test
+        logger.error("participant %s is not a member of any team", request.user.email)
+        return Response({},status=status.HTTP_400_BAD_REQUEST)
+    if participant.team.current_state:
+        page = participant.team.current_state.page
+        serializer = FSMPageSerializer()
+        data = serializer.to_representation(page)
+        return Response(data, status=status.HTTP_200_OK)
+    else:
+        #TODO more info
+        logger.error("current_state is not set")
+        return Response({},status=status.HTTP_400_BAD_REQUEST)
+
 
 @transaction.atomic
 @api_view(['GET'])
