@@ -14,6 +14,8 @@ from fsm.views.functions import *
 from notifications.signals import notify
 from notifications.models import Notification
 
+import logging
+logger = logging.getLogger(__name__)
 
 @transaction.atomic
 @api_view(['GET'])
@@ -59,6 +61,8 @@ def move_to_next_state(request):
     team = request.user.participant.team
     edges = FSMEdge.objects.filter(tail=team.current_state.id)
     if team.current_state.name == 'start' and edges.count() == 1:
+        logger.info(
+            f'team {request.user.participant.team.id} changed state team from {team.current_state.name} to {edges[0].head.name}')
         team_change_current_state(team, edges[0].head)
         data = FSMStateSerializer().to_representation(edges[0].head)
         return Response(data, status=status.HTTP_200_OK)
@@ -88,6 +92,8 @@ def set_first_current_page(request):
     fsm = FSM.objects.filter(id=request.data['fsm'])[0]
     if (team.current_state is None or team.current_state.name == 'end'):
         state = get_last_state_in_fsm(team, fsm)
+        logger.info(
+            f'changed state team {team.id} from {team.current_state.name} to {state.name}')
         team_change_current_state(team, state)
         data = FSMPageSerializer().to_representation(state.page)
     else:

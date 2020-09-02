@@ -13,6 +13,9 @@ from fsm.views import permissions as customPermissions
 from fsm.views.functions import *
 from notifications.models import Notification
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 @transaction.atomic
 @api_view(['POST'])
@@ -93,6 +96,7 @@ def submit_team(request):
     validated_data['pk'] = history.pk
     history.delete()
     history = TeamHistory.objects.create(**validated_data)
+    logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
     team_change_current_state(history.team, history.edge.head)
     data = TeamHistorySerializer().to_representation(history)
     return Response(data, status=status.HTTP_200_OK)
