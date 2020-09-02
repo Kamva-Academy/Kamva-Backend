@@ -28,7 +28,7 @@ def save_one_time_bid(request, auction, bid):
     remained_time = (auction.end_time - datetime.now(auction.end_time.tzinfo)).seconds
     if auction.end_time < datetime.now(auction.end_time.tzinfo):
         remained_time = -10000
-    if auction.start_time < datetime.now(auction.end_time.tzinfo) + timedelta(days=1) < auction.end_time:
+    if auction.start_time < datetime.now(auction.end_time.tzinfo)  < auction.end_time:
         if(not auction.winner or  auction.winner.bid < bid):
             auction.winner = bidder
             auction.save()
