@@ -42,7 +42,8 @@ def new_one_time_auction(request):
                 "auction_pay_type": auction.auction_pay_type,
                 "start_time": str(auction.start_time),
                 "end_time": str(auction.end_time),
-                "winner": auction.winner_id
+                "winner": auction.winner_id,
+                "remained_time": auction.end_time - datetime.now()
             }
     }
     if bider.count()>0:
@@ -67,7 +68,8 @@ class LastAuction(APIView):
                     "auction_pay_type": last_auction.auction_pay_type,
                     "start_time": str(last_auction.start_time),
                     "end_time": str(last_auction.end_time),
-                    "winner": last_auction.winner_id
+                    "winner": last_auction.winner_id,
+                    "remained_time": last_auction.end_time - datetime.now()
                 }
         }
 
@@ -92,6 +94,7 @@ class AuctionResult(APIView):
                     "start_time": str(last_auction.start_time),
                     "end_time": str(last_auction.end_time),
                     "winner": last_auction.winner_id,
+                    "remained_time": last_auction.end_time - datetime.now()
 
                 },
             "bidders": []

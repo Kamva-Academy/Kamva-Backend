@@ -25,19 +25,21 @@ def save_one_time_bid(request, auction, bid):
         logger.debug(f'timezone.localtime() > auction.start_time is True')
     bidder.bid = bid
     bidder.save()
-    if auction.start_time < timezone.localtime() + timedelta(days=1) < auction.end_time:
+    if auction.start_time < datetime.now() + timedelta(days=1) < auction.end_time:
         if(not auction.winner or  auction.winner.bid < bid):
             auction.winner = bidder
             auction.save()
         response = {
             "value": bidder.value,
-            "bid": bidder.bid
+            "bid": bidder.bid,
+            "remained_time": auction.end_time - datetime.now()
         }
         return response
     return {"success": False, "message":"زمان مزایده به پایان رسیده",
             "end_time": auction.end_time,
-            "local_time": timezone.localtime(),
-            "auction": auction.id}
+            "local_time": datetime.now(),
+            "auction": auction.id,
+            "remained_time": auction.end_time - datetime.now()}
 
 
 @api_view(['POST'])
