@@ -88,7 +88,11 @@ def get_last_state_in_fsm(team, fsm):
         hist = TeamHistory.objects.filter(team=team, state__fsm=fsm).order_by('-start_time')[0]
         return hist.state
     except IndexError:
-        return FSMState.objects.filter(fsm=fsm, name='start')[0]
+        try:
+            return FSMState.objects.filter(fsm=fsm, name='start')[0]
+        except IndexError:
+            logger.error("fsm %s has no start state")
+            return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @transaction.atomic
