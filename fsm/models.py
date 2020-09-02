@@ -169,4 +169,6 @@ class TeamHistory(models.Model):
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.SET_NULL)
-    
+
+    def __str__(self):
+        return f'{self.team.id}-{self.state.name}'
