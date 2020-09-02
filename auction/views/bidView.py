@@ -25,7 +25,7 @@ def save_one_time_bid(request, auction, bid):
         logger.debug(f'timezone.localtime() > auction.start_time is True')
     bidder.bid = bid
     bidder.save()
-    if auction.start_time < timezone.localtime() < auction.end_time:
+    if auction.start_time < timezone.localtime() + timedelta(days=1) < auction.end_time:
         if(not auction.winner or  auction.winner.bid < bid):
             auction.winner = bidder
             auction.save()
