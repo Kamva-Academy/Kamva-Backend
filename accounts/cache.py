@@ -1,6 +1,7 @@
 from accounts.models import Team
 from django.utils import timezone
 from datetime import timedelta
+from fsm.models import TeamHistory
 
 
 class TeamsCache:
