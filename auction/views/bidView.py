@@ -25,10 +25,10 @@ def save_one_time_bid(request, auction, bid):
         logger.debug(f'timezone.localtime() > auction.start_time is True')
     bidder.bid = bid
     bidder.save()
-    remained_time = (auction.end_time - datetime.now(auction.end_time.tzinfo)).seconds
-    if auction.end_time < datetime.now(auction.end_time.tzinfo):
+    remained_time = (auction.end_time() - datetime.now(auction.end_time().tzinfo)).seconds
+    if auction.end_time() < datetime.now(auction.end_time().tzinfo):
         remained_time = -10000
-    if auction.start_time < datetime.now(auction.end_time.tzinfo)  < auction.end_time:
+    if auction.start_time < datetime.now(auction.end_time().tzinfo)  < auction.end_time():
         if(not auction.winner or  auction.winner.bid < bid):
             auction.winner = bidder
             auction.save()
@@ -40,8 +40,8 @@ def save_one_time_bid(request, auction, bid):
         }
         return response
     return {"success": False, "message":"زمان مزایده به پایان رسیده",
-            "end_time": auction.end_time,
-            "local_time": datetime.now(auction.end_time.tzinfo),
+            "end_time": auction.end_time(),
+            "local_time": datetime.now(auction.end_time().tzinfo),
             "auction": auction.id,
             "remained_time": remained_time}
 

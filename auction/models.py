@@ -7,8 +7,13 @@ from accounts.models import *
 class OneTimeAuction(models.Model):
     auction_pay_type = models.IntegerField(default=1)
     winner =  models.ForeignKey('OneTimeBidder', null=True, on_delete=models.CASCADE)
-    start_time = models.DateTimeField(default=datetime.now(), null=True, blank=True)
-    end_time = models.DateTimeField(null=True, blank=True, default=datetime.now() + timedelta(minutes=3))
+    start_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    # end_time = models.DateTimeField(null=True, blank=True, default=timezone.localtime()+timedelta(minutes=3))
+
+    def end_time(self):
+        return self.start_time + timedelta(minutes=3)
+
 
 class OneTimeBidder(models.Model):
     auction = models.ForeignKey(OneTimeAuction, on_delete=models.CASCADE, related_name='bidders')

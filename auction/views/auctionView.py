@@ -36,8 +36,8 @@ def new_one_time_auction(request):
         index += 1
     participant = request.user.participant
     bider = OneTimeBidder.objects.filter(participant=participant, auction=auction)
-    remained_time = (auction.end_time - datetime.now(auction.end_time.tzinfo)).seconds
-    if  auction.end_time < datetime.now(auction.end_time.tzinfo):
+    remained_time = (auction.end_time() - datetime.now(auction.end_time().tzinfo)).seconds
+    if  auction.end_time() < datetime.now(auction.start_time.tzinfo):
         remained_time = -10000
     response = {
         "auction":
@@ -45,9 +45,10 @@ def new_one_time_auction(request):
                 "id": auction.id,
                 "auction_pay_type": auction.auction_pay_type,
                 "start_time": str(auction.start_time),
-                "end_time": str(auction.end_time),
+                "end_time": str(auction.end_time()),
                 "winner": auction.winner_id,
-                "remained_time": remained_time
+                "remained_time": remained_time,
+
             }
     }
     if bider.count()>0:
@@ -64,9 +65,9 @@ class LastAuction(APIView):
         biders = OneTimeBidder.objects.filter(participant=participant).order_by("-auction__start_time")
         last_auction = biders[0].auction
         my_bidder = OneTimeBidder.objects.filter(participant=participant, auction=last_auction)
-        remained_time = (last_auction.end_time - datetime.now(last_auction.end_time.tzinfo)).seconds
+        remained_time = (last_auction.end_time() - datetime.now(last_auction.end_time.tzinfo)).seconds
 
-        if last_auction.end_time < datetime.now(last_auction.end_time.tzinfo):
+        if last_auction.end_time() < datetime.now(last_auction.end_time().tzinfo):
             remained_time = -10000
         response = {
             "my_value": my_bidder[0].value,
@@ -75,7 +76,8 @@ class LastAuction(APIView):
                     "id": last_auction.id,
                     "auction_pay_type": last_auction.auction_pay_type,
                     "start_time": str(last_auction.start_time),
-                    "end_time": str(last_auction.end_time),
+                    "end_time": str(last_auction.end_time()),
+                    "current_time": str(datetime.now(last_auction.end_time().tzinfo)),
                     "winner": last_auction.winner_id,
                     "remained_time":remained_time
                 }
@@ -89,13 +91,13 @@ class AuctionResult(APIView):
 
     def get(self, request):
         participant = request.user.participant
-        biders = OneTimeBidder.objects.filter(participant=participant).order_by("-auction__start_time")
+        biders = OneTimeBidder.objects.filter(participant=participant).order_by("-auction__id")
         last_auction = biders[0].auction
         my_bidder = OneTimeBidder.objects.filter(participant=participant, auction=last_auction)
         all_bidders = OneTimeBidder.objects.filter(auction=last_auction)
 
-        remained_time = (last_auction.end_time - datetime.now(last_auction.end_time.tzinfo)).seconds
-        if last_auction.end_time < datetime.now(last_auction.end_time.tzinfo):
+        remained_time = (last_auction.end_time() - datetime.now(last_auction.end_time().tzinfo)).seconds
+        if last_auction.end_time() < datetime.now(last_auction.end_time().tzinfo):
             remained_time = -10000
         response = {
             "my_value": my_bidder[0].value,
@@ -104,7 +106,7 @@ class AuctionResult(APIView):
                     "id": last_auction.id,
                     "auction_pay_type": last_auction.auction_pay_type,
                     "start_time": str(last_auction.start_time),
-                    "end_time": str(last_auction.end_time),
+                    "end_time": str(last_auction.end_time()),
                     "winner": last_auction.winner_id,
                     "remained_time":remained_time
 
