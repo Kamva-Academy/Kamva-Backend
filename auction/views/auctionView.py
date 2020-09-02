@@ -92,10 +92,12 @@ class AuctionResult(APIView):
                     "start_time": str(last_auction.start_time),
                     "end_time": str(last_auction.end_time),
                     "winner": last_auction.winner_id,
-                    "winner_value": last_auction.winner.value
+
                 },
             "bidders": []
         }
+        if last_auction.winner:
+            response['winner_value'] = last_auction.winner.value
         for bid in all_bidders:
             response['bidders'].append(
                 {
