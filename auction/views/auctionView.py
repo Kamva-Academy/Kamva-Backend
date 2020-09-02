@@ -1,3 +1,4 @@
+import pytz
 from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.parsers import JSONParser
@@ -35,8 +36,8 @@ def new_one_time_auction(request):
         index += 1
     participant = request.user.participant
     bider = OneTimeBidder.objects.filter(participant=participant, auction=auction)
-    remained_time = (auction.end_time - datetime.now()).seconds
-    if  auction.end_time > datetime.now():
+    remained_time = (auction.end_time - datetime.now(auction.end_time.tzinfo)).seconds
+    if  auction.end_time < datetime.now(auction.end_time.tzinfo):
         remained_time = -10000
     response = {
         "auction":
@@ -63,8 +64,9 @@ class LastAuction(APIView):
         biders = OneTimeBidder.objects.filter(participant=participant).order_by("-auction__start_time")
         last_auction = biders[0].auction
         my_bidder = OneTimeBidder.objects.filter(participant=participant, auction=last_auction)
-        remained_time = (last_auction.end_time - datetime.now()).seconds
-        if last_auction.end_time > datetime.now():
+        remained_time = (last_auction.end_time - datetime.now(last_auction.end_time.tzinfo)).seconds
+
+        if last_auction.end_time < datetime.now(last_auction.end_time.tzinfo):
             remained_time = -10000
         response = {
             "my_value": my_bidder[0].value,
@@ -92,8 +94,8 @@ class AuctionResult(APIView):
         my_bidder = OneTimeBidder.objects.filter(participant=participant, auction=last_auction)
         all_bidders = OneTimeBidder.objects.filter(auction=last_auction)
 
-        remained_time = (last_auction.end_time - datetime.now()).seconds
-        if last_auction.end_time > datetime.now():
+        remained_time = (last_auction.end_time - datetime.now(last_auction.end_time.tzinfo)).seconds
+        if last_auction.end_time < datetime.now(last_auction.end_time.tzinfo):
             remained_time = -10000
         response = {
             "my_value": my_bidder[0].value,
