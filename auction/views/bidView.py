@@ -31,13 +31,15 @@ def save_one_time_bid(request, auction, bid):
             auction.save()
         response = {
             "value": bidder.value,
-            "bid": bidder.bid
+            "bid": bidder.bid,
+            "remained_time": auction.end_time - datetime.now()
         }
         return response
     return {"success": False, "message":"زمان مزایده به پایان رسیده",
             "end_time": auction.end_time,
             "local_time": datetime.now(),
-            "auction": auction.id}
+            "auction": auction.id,
+            "remained_time": auction.end_time - datetime.now()}
 
 
 @api_view(['POST'])
