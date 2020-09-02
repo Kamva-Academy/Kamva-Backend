@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
 from .models import Member, Participant, Payment
+from accounts.cache import TeamsCache
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from accounts import zarinpal
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -373,36 +374,7 @@ class Teams(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request):
-        teams = Team.objects.all()
-        valid_teams = []
-
-        for team in teams:
-            if team.is_team_active():
-                team_json = {
-                    "name": team.group_name,
-                    "uuid": team.uuid,
-                    "team_id": team.id,
-                    "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
-                                     for p in team.participant_set.all()],
-                }
-                if team.current_state:
-                    current_state = team.current_state
-                    team_json['current_state'] = {
-                        'state_name': current_state.name,
-                        'state_id': team.current_state_id,
-                        'fsm_name': current_state.fsm.name,
-                        'fsm_id': current_state.fsm_id,
-                        'page_id': current_state.page_id
-                    }
-
-                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
-                        '-start_time')
-                    if state_history:
-                        team_json['current_state']['start_time'] = str(state_history[0].start_time)
-                    else:
-                        team_json['current_state']['start_time'] = ''
-
-                valid_teams.append(team_json)
+        valid_teams = TeamsCache.get_data()
         return Response(valid_teams)
 
 
