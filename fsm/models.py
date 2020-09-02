@@ -86,7 +86,7 @@ class Game(Widget):
     name = models.CharField(max_length=100, null=True)
     link = models.TextField()
     def __str__(self):
-        return self.name
+        return f'{self.pk}-{self.link}'
 
 class Video(Widget):
     name = models.CharField(max_length=100, null=True)
