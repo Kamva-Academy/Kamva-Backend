@@ -62,10 +62,10 @@ class LastAuction(APIView):
 
     def get(self, request):
         participant = request.user.participant
-        biders = OneTimeBidder.objects.filter(participant=participant).order_by("-auction__start_time")
+        biders = OneTimeBidder.objects.filter(participant=participant).order_by("-auction__id")
         last_auction = biders[0].auction
         my_bidder = OneTimeBidder.objects.filter(participant=participant, auction=last_auction)
-        remained_time = (last_auction.end_time() - datetime.now(last_auction.end_time.tzinfo)).seconds
+        remained_time = (last_auction.end_time() - datetime.now(last_auction.end_time().tzinfo)).seconds
 
         if last_auction.end_time() < datetime.now(last_auction.end_time().tzinfo):
             remained_time = -10000
