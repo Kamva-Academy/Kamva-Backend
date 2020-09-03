@@ -108,8 +108,12 @@ def set_first_current_page(request):
             logger.info(
                 f'changed state team {team.id} from {team.current_state.name} to {state.name}')
         except:
-            logger.info(
-                f'changed state team {team.id} from None to {state.name}')
+            if state:
+                logger.info(
+                    f'changed state team {team.id} from None to {state.name}')
+            elif not team.current_state:
+                logger.info(
+                    f'changed state team {team.id} from {team.current_state.name} to None')
         team_change_current_state(team, state)
         data = FSMPageSerializer().to_representation(state.page)
     else:
