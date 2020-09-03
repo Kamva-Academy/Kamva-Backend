@@ -23,8 +23,7 @@ logger = logging.getLogger(__name__)
 def get_current_page(request):
     participant = request.user.participant
     if not participant.team:
-        #TODO test
-        logger.error("participant %s is not a member of any team", request.user.email)
+        logger.error(f'participant {request.user} is not member of any team')
         return Response({},status=status.HTTP_400_BAD_REQUEST)
     if participant.team.current_state:
         page = participant.team.current_state.page
@@ -32,8 +31,7 @@ def get_current_page(request):
         data = serializer.to_representation(page)
         return Response(data, status=status.HTTP_200_OK)
     else:
-        #TODO more info
-        logger.error("current_state is not set")
+        logger.error(f'participant {request.user} : current_state is not set')
         return Response({},status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -91,7 +89,7 @@ def get_last_state_in_fsm(team, fsm):
         try:
             return FSMState.objects.filter(fsm=fsm, name='start')[0]
         except IndexError:
-            logger.error("fsm %s has no start state")
+            logger.error(f'fsm {fsm.name} has no start state')
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -106,8 +104,12 @@ def set_first_current_page(request):
     fsm = FSM.objects.filter(id=request.data['fsm'])[0]
     if (team.current_state is None or team.current_state.name == 'end'):
         state = get_last_state_in_fsm(team, fsm)
-        logger.info(
-            f'changed state team {team.id} from {team.current_state.name} to {state.name}')
+        try:
+            logger.info(
+                f'changed state team {team.id} from {team.current_state.name} to {state.name}')
+        except:
+            logger.info(
+                f'changed state team {team.id} from None to {state.name}')
         team_change_current_state(team, state)
         data = FSMPageSerializer().to_representation(state.page)
     else:
