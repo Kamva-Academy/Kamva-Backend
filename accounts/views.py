@@ -105,7 +105,7 @@ class ObtainTokenPair(TokenObtainPairView):
                         response['current_state']['start_time'] = str(state_history[0].start_time)
                     else:
                         response['current_state']['start_time'] = ''
-            validated_data['user_info'] = response
+        validated_data['user_info'] = response
 
         return Response(validated_data, status=status.HTTP_200_OK)
 
