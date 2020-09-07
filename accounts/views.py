@@ -3,6 +3,7 @@ import json
 import os
 import string
 from django.contrib.auth.decorators import login_required
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from fsm.models import TeamHistory
 from .models import Team
@@ -51,6 +52,62 @@ logger = logging.getLogger(__name__)
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
     permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+        validated_data = serializer.validated_data
+        member = Member.objects.filter(username = request.data['username'])[0]
+
+        response = {
+            "email": member.email,
+            "name": member.first_name,
+            "is_participant": member.is_participant,
+            "is_mentor": member.is_mentor,
+            "uuid": member.uuid
+        }
+
+        if member.is_participant:
+            participant = member.participant
+            response['grade'] = participant.grade
+            response['gender'] = participant.gender
+            response['city'] = participant.city
+            response['school'] = participant.school
+            response['accepted'] = participant.accepted
+            response['is_activated'] = participant.is_activated
+
+            if participant.team:
+                team = participant.team
+                response['team'] = participant.team_id
+                response['team_id'] = participant.team_id
+                response['team_uuid'] = participant.team.uuid,
+                response['team_members'] = [
+                    {"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
+                    for p in team.participant_set.all()]
+
+                if participant.team.current_state:
+                    current_state = participant.team.current_state
+                    response['current_state'] = {
+                        'state_name': current_state.name,
+                        'state_id': team.current_state_id,
+                        'fsm_name': current_state.fsm.name,
+                        'fsm_id': current_state.fsm_id,
+                        'page_id': current_state.page.id
+                    }
+                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
+                        '-start_time')
+                    if state_history:
+                        response['current_state']['start_time'] = str(state_history[0].start_time)
+                    else:
+                        response['current_state']['start_time'] = ''
+            validated_data['user_info'] = response
+
+        return Response(validated_data, status=status.HTTP_200_OK)
 
 
 class GroupSignup(APIView):
