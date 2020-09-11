@@ -26,6 +26,7 @@ router.register('ability', AbilityView)
 router.register('ability/<int:pk>', AbilityView)
 router.register('widget', WidgetView)
 router.register('widget/<int:pk>', WidgetView)
+# TODO check if fsm is team or individual
 router.register('history', TeamHistoryView)
 router.register('history/<int:pk>', TeamHistoryView)
 router.register('team', TeamView)
@@ -37,11 +38,15 @@ urlpatterns = [
      path('gethistory/', get_history),
      path('sendanswer/', send_answer),
      path('editedges/', edit_edges),
+     # TODO check if fsm is team or individual
      path('getteamhistory/', get_team_history),
+     path('getteamfsmhistory/', get_team_fsm_history),
+     # TODO for individual fsm
      path('getteamoutwardedges/', get_team_outward_edges),
      path('set_first_current_page/', set_first_current_page),
      path('movetonextstate/', move_to_next_state),
      path('submitteam/', submit_team),
+     path('go/', submit_team),
      path('gototeam/', go_to_team),
      path('requestmentor/', request_mentor)
 ]

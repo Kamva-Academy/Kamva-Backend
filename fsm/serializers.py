@@ -54,6 +54,8 @@ class FSMStateGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = FSMState
         fields = '__all__'
+        queryset = FSM.objects.filter(active=True)
+        instance = FSM.objects.filter(active=True)
 
 
 class FSMSerializer(serializers.ModelSerializer):
@@ -75,15 +77,18 @@ class GameSerializer(serializers.ModelSerializer):
         model = Game
         fields = '__all__'
 
+
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         fields = '__all__'
 
+
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = '__all__'
+
 
 class DescriptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -107,6 +112,8 @@ class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiChoiceAnswer
         fields = '__all__'
+
+
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -204,6 +211,10 @@ class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
         fields = '__all__'
+
+    def create(self, validated_data):
+        print(validated_data)
+
 
 class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True)
@@ -393,33 +404,77 @@ class TeamHistorySerializer(serializers.ModelSerializer):
         instance = TeamHistory.objects.create(**validated_data)
         return instance
 
-    def update(self, instance, validated_data):    
+    def update(self, instance, validated_data):
         validated_data.pop('answers')
         validated_data['pk'] = instance.pk
         instance.delete()
         instance = self.create(validated_data)
         return instance
 
+
+# class UserHistorySerializer(serializers.ModelSerializer):
+#     answers = SubmitedAnswerSerializer(many=True)
+#
+#     class Meta:
+#         model = UserHistory
+#         fields = '__all__'
+#
+#     def create(self, validated_data):
+#         validated_data.pop('answers')
+#         instance = UserHistory.objects.create(**validated_data)
+#         return instance
+#
+#     def update(self, instance, validated_data):
+#         validated_data.pop('answers')
+#         validated_data['pk'] = instance.pk
+#         instance.delete()
+#         instance = self.create(validated_data)
+#         return instance
+#
+
 class TeamSerializer(serializers.ModelSerializer):
     histories = TeamHistorySerializer(many=True)
+
     class Meta:
         model = Team
         fields = '__all__'
+
+
+# class ParticipantSerializer(serializers.ModelSerializer):
+#     histories = UserHistorySerializer(many=True)
+#     #TODO check the fields
+#     class Meta:
+#         model = Participant
+#         fields = '__all__'
 
 class EditEdgesSerializer(serializers.Serializer):
     edges = serializers.ListField(child=FSMEdgeSerializer())
     tail = serializers.IntegerField()
 
+
 class GetTeamHistorySerializer(serializers.Serializer):
     team = serializers.IntegerField()
 
+
+# class GetUserHistorySerializer(serializers.Serializer):
+#     team = serializers.IntegerField()
+
+
+
 class SetFirstStateSerializer(serializers.Serializer):
     fsm = serializers.IntegerField()
+
 
 class TeamHistorySubmitSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamHistory
         exclude = ('start_time', )
+
+
+# class UserHistorySubmitSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = UserHistory
+#         exclude = ('start_time', )
 
 
 class TeamUUIDSerializer(serializers.Serializer):

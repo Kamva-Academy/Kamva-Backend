@@ -36,7 +36,7 @@ class TeamsCache:
                         'fsm_id': current_state.fsm_id,
                         'page_id': current_state.page_id
                     }
-
+            #TODO Team_history may not be a good thing for individual 
                     state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
                         '-start_time')
                     if state_history:

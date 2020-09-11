@@ -1,5 +1,5 @@
 from django.core.paginator import Paginator
-from rest_framework import status
+from rest_framework import status, permissions
 from accounts.models import Member
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -22,23 +22,32 @@ logger = logging.getLogger(__name__)
 @permission_classes([IsAuthenticated, TestMembersOnly])
 def get_current_page(request):
     participant = request.user.participant
+    fsm_id = request.GET.get('fsmId')
     if not participant.team:
         logger.error(f'participant {request.user} is not member of any team')
         return Response({},status=status.HTTP_400_BAD_REQUEST)
-    if participant.team.current_state:
-        page = participant.team.current_state.page
+    # if participant.team.current_state:
+    #     page = participant.team.current_state.page
+    #     serializer = FSMPageSerializer()
+    #     data = serializer.to_representation(page)
+    #     return Response(data, status=status.HTTP_200_OK)
+    # else:
+    #     logger.error(f'participant {request.user} : current_state is not set')
+    #     return Response({},status=status.HTTP_400_BAD_REQUEST)
+    try:
+        fsm = FSM.objects.get(id=fsm_id)
+        page = get_last_state_in_fsm(participant.team, fsm).page
         serializer = FSMPageSerializer()
         data = serializer.to_representation(page)
         return Response(data, status=status.HTTP_200_OK)
-    else:
-        logger.error(f'participant {request.user} : current_state is not set')
-        return Response({},status=status.HTTP_400_BAD_REQUEST)
-
+    except:
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 @transaction.atomic
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, TestMembersOnly])
 def get_history(request):
+    #TODO get history for individual
     participant = request.user.participant
     histories = participant.team.histories.all()
     serializer = TeamHistorySerializer(histories, many=True)
@@ -58,7 +67,15 @@ def send_answer(request):
     instance.team_history = history
     instance.participant = participant
     instance.save()
+    correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(id = request.data['problem']).answer
+    if correct_answer.text == request.data['answer']['text']:
+        result = True
+    else:
+        result = False
     data = SubmitedAnswerSerializer(instance).data
+    data['result']= result
+    correct_answer = AnswerSerializer().to_representation(correct_answer)
+    data['correct_answer'] = correct_answer
     return Response(data, status=status.HTTP_200_OK)
 
 
@@ -90,7 +107,8 @@ def get_last_state_in_fsm(team, fsm):
             return FSMState.objects.filter(fsm=fsm, name='start')[0]
         except IndexError:
             logger.error(f'fsm {fsm.name} has no start state')
-            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+            return None
+            # return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @transaction.atomic
@@ -136,3 +154,25 @@ def request_mentor(request):
         return Response({"text": "قبلا درخواست دادی. یکم بیشتر صبر کن."}, status=status.HTTP_200_OK)
     notify.send(team, recipient=Member.objects.filter(is_mentor=True), verb="request_mentor")
     return Response({"text": "درخواست ارسال شد. به زودی یکی از منتورا میاد اینجا."}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated,])
+def get_team_fsm_history(request):
+    serializer = GetTeamHistorySerializer(data=request.data)
+    if not serializer.is_valid(raise_exception=True):
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    try:
+        team = Team.objects.filter(id=request.data['team'])[0]
+    except:
+        return Response("team not found",status=status.HTTP_400_BAD_REQUEST)
+    try:
+        fsm = FSM.objects.get(id=request.data['fsm'])
+    except:
+        return Response("FSM not found",status=status.HTTP_400_BAD_REQUEST)
+    histories = TeamHistory.objects.filter(team=team, state__fsm=fsm).order_by('start_time')
+    json_result = []
+    for history in histories:
+        serializer = TeamHistorySerializer(history)
+        data = serializer.data
+        json_result.append(data)
+    return Response(json_result, status=status.HTTP_200_OK)

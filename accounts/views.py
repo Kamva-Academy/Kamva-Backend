@@ -25,7 +25,7 @@ from accounts import zarinpal
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
 from rest_framework.views import APIView
-
+from .utils import *
 from .serializers import MyTokenObtainPairSerializer, MemberSerializer
 
 logger = logging.getLogger(__name__)
@@ -63,48 +63,8 @@ class ObtainTokenPair(TokenObtainPairView):
 
         validated_data = serializer.validated_data
         member = Member.objects.filter(username = request.data['username'])[0]
-
-        response = {
-            "email": member.email,
-            "name": member.first_name,
-            "is_participant": member.is_participant,
-            "is_mentor": member.is_mentor,
-            "uuid": member.uuid
-        }
-
-        if member.is_participant:
-            participant = member.participant
-            response['grade'] = participant.grade
-            response['gender'] = participant.gender
-            response['city'] = participant.city
-            response['school'] = participant.school
-            response['accepted'] = participant.accepted
-            response['is_activated'] = participant.is_activated
-
-            if participant.team:
-                team = participant.team
-                response['team'] = participant.team_id
-                response['team_id'] = participant.team_id
-                response['team_uuid'] = participant.team.uuid,
-                response['team_members'] = [
-                    {"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
-                    for p in team.participant_set.all()]
-
-                if participant.team.current_state:
-                    current_state = participant.team.current_state
-                    response['current_state'] = {
-                        'state_name': current_state.name,
-                        'state_id': team.current_state_id,
-                        'fsm_name': current_state.fsm.name,
-                        'fsm_id': current_state.fsm_id,
-                        'page_id': current_state.page.id
-                    }
-                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
-                        '-start_time')
-                    if state_history:
-                        response['current_state']['start_time'] = str(state_history[0].start_time)
-                    else:
-                        response['current_state']['start_time'] = ''
+        response = get_member_json_info(member)
+        # response = member.get_member_info()
         validated_data['user_info'] = response
 
         return Response(validated_data, status=status.HTTP_200_OK)
@@ -339,47 +299,7 @@ class UserInfo(APIView):
             if not member.count() >0:
                 return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
             member = member[0]
-        response = {
-            "email": member.email,
-            "name": member.first_name,
-            "is_participant": member.is_participant,
-            "is_mentor": member.is_mentor,
-            "uuid": member.uuid
-        }
-
-        if member.is_participant:
-            participant = member.participant
-            response['grade'] = participant.grade
-            response['gender'] = participant.gender
-            response['city'] = participant.city
-            response['school'] = participant.school
-            response['accepted'] = participant.accepted
-            response['is_activated'] = participant.is_activated
-
-            if participant.team:
-                team = participant.team
-                response['team'] = participant.team_id
-                response['team_id'] = participant.team_id
-                response['team_uuid'] = participant.team.uuid,
-                response['team_members'] = [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
-                                            for p in team.participant_set.all()]
-
-                if participant.team.current_state:
-                    current_state = participant.team.current_state
-                    response['current_state'] = {
-                        'state_name': current_state.name,
-                        'state_id': team.current_state_id,
-                        'fsm_name': current_state.fsm.name,
-                        'fsm_id': current_state.fsm_id,
-                        'page_id': current_state.page.id
-                    }
-                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
-                        '-start_time')
-                    if state_history:
-                        response['current_state']['start_time'] = str(state_history[0].start_time)
-                    else:
-                        response['current_state']['start_time'] = ''
-
+        response = get_member_json_info(member)
         return Response(response)
 
 
@@ -402,28 +322,7 @@ class TeamInfo(APIView):
 
         if not team:
             return Response({'success': False, "error": "team not found"}, status=status.HTTP_400_BAD_REQUEST)
-        response = {
-            "name": team.group_name,
-            "uuid": team.uuid,
-            "team_id": team.id,
-            "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
-                             for p in team.participant_set.all()],
-        }
-        if team.current_state:
-            current_state = team.current_state
-            response['current_state'] = {
-                'state_name': current_state.name,
-                'state_id': team.current_state_id,
-                'fsm_name': current_state.fsm.name,
-                'fsm_id': current_state.fsm_id,
-                'page_id': current_state.page.id
-            }
-            state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
-            if state_history:
-                response['current_state']['start_time'] = str(state_history[0].start_time)
-            else:
-                response['current_state']['start_time'] = ''
-
+        response = get_team_json_info(team)
         return Response(response)
 
 

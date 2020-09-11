@@ -33,6 +33,6 @@ urlpatterns = [
             activate, name='activate'),
     path('userInfo/', UserInfo.as_view(), name="user_info"),
     path('teamInfo/', TeamInfo.as_view(), name="team_info"),
-    path('teams/', Teams.as_view(), name="team_info"),
+    path('teams/', Teams.as_view(), name="teams"),
 
 ]

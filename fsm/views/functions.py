@@ -8,3 +8,9 @@ def team_change_current_state(team, state):
     if state and len(TeamHistory.objects.filter(team=team.id, state=state.id)) == 0:
         history = TeamHistory.objects.create(start_time=timezone.localtime(), team=team, state=state)
     team.save()
+
+
+def user_change_current_state(participant, state):
+    #TODO change_current_state body
+    # check if it is in history or next state
+    pass

@@ -12,6 +12,7 @@ from fsm.models import FSM
 from fsm.views import permissions as customPermissions
 from fsm.serializers import FSMSerializer, FSMGetSerializer
 
+
 class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission]
@@ -23,6 +24,12 @@ class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateM
 
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_mentor:
+            return FSM.objects.all()
+        return FSM.objects.filter(active=True)
 
     @transaction.atomic
     def get_serializer_class(self):

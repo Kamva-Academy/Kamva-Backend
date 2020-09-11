@@ -1,13 +1,19 @@
 from django.db import models
 from model_utils.managers import InheritanceManager
-from accounts.models import Team, Participant
+from accounts.models import *
 
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
 
+class StateType(Enum):
+    withMentor = 'withMentor'
+    withoutMentor = 'withoutMentor'
+
+
 class FSM(models.Model):
     name = models.CharField(max_length=100)
+    active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -22,6 +28,7 @@ class FSMState(models.Model):
     page = models.OneToOneField('FSMPage', null=True, on_delete=models.CASCADE, unique=True, related_name='state')
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
     name = models.CharField(max_length=150)
+    type = models.CharField(max_length=40, default=StateType.withoutMentor, choices=[(tag.value, tag.name) for tag in StateType])
 
     def __str__(self):
         if self.fsm:
@@ -34,6 +41,7 @@ class FSMEdge(models.Model):
     head = models.ForeignKey(FSMState, on_delete=models.CASCADE, related_name='inward_edges')
     priority = models.IntegerField()
     text = models.TextField(null=True)
+
     def get_next_state(self, abilities):
         output = True
         for ability in Ability.objects.filter(edge=self):
@@ -51,6 +59,7 @@ class Ability(models.Model):
     name = models.CharField(max_length=150)
     value = models.BooleanField()
     team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
+    # user_history = models.ForeignKey('UserHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
     def __str__(self):
         return self.name
 
@@ -88,11 +97,13 @@ class Game(Widget):
     def __str__(self):
         return f'{self.pk}-{self.link}'
 
+
 class Video(Widget):
     name = models.CharField(max_length=100, null=True)
     link = models.TextField()
     def __str__(self):
         return self.name
+
 
 class Image(Widget):
     name = models.CharField(max_length=100, null=True)
@@ -126,9 +137,6 @@ class Problem(Widget):
     text = models.TextField()
     objects = InheritanceManager()
 
-    def __str__(self):
-        return self.name
-
 
 class ProblemSmallAnswer(Problem):
     pass
@@ -146,10 +154,15 @@ class Choice(models.Model):
     problem = models.ForeignKey(ProblemMultiChoice, null=True, on_delete=models.CASCADE, related_name='choices')
     text = models.TextField()
 
+    def __str__(self):
+        return str(self.id) + "-" + self.text
+
+
 class SubmitedAnswer(models.Model):
     participant = models.ForeignKey(Participant, null=True, on_delete=models.CASCADE, related_name='submited_answers')
     publish_date = models.DateTimeField(null=True, blank=True)
     team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='answers')
+    # user_history = models.ForeignKey('UserHistory', null=True, on_delete=models.CASCADE, related_name='answers')
     answer = models.OneToOneField(Answer, null=True, on_delete=models.CASCADE, unique=True)
     problem = models.ForeignKey('Problem', null=True, on_delete=models.CASCADE, related_name='submited_answers')
     
@@ -160,11 +173,9 @@ class SubmitedAnswer(models.Model):
             return None
  
 
-    
-
 class TeamHistory(models.Model):
     team = models.ForeignKey(Team, null=True, on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='histories')
+    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='team_histories')
     grade = models.IntegerField(default=0)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
@@ -172,3 +183,15 @@ class TeamHistory(models.Model):
 
     def __str__(self):
         return f'{self.team.id}-{self.state.name}'
+
+
+# class UserHistory(models.Model):
+#     user = models.ForeignKey(Participant, null=True, on_delete=models.CASCADE, related_name='histories')
+#     state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='user_histories')
+#     grade = models.IntegerField(default=0)
+#     start_time = models.DateTimeField(null=True, blank=True)
+#     end_time = models.DateTimeField(null=True, blank=True)
+#     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.SET_NULL)
+#
+#     def __str__(self):
+#         return f'{self.user.id}-{self.state.name}'
