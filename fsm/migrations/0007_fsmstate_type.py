@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='fsmstate',
             name='type',
-            field=models.CharField(choices=[('withMentor', 'withMentor'), ('withoutMentor', 'withoutMentor')], default=fsm.models.StateType['withoutMentor'], max_length=40),
+            field=models.CharField(choices=[('withMentor', 'withMentor'), ('withoutMentor', 'withoutMentor')], default=fsm.models.StateType['withMentor'], max_length=40),
         ),
     ]
