@@ -47,6 +47,7 @@ urlpatterns = [
      path('set_first_current_page/', set_first_current_page),
      path('movetonextstate/', move_to_next_state),
      path('submitteam/', submit_team),
+     path('goforward/', team_go_forward),
      path('gobackto/', team_go_back_to_state),
      path('gototeam/', go_to_team),
      path('requestmentor/', request_mentor)

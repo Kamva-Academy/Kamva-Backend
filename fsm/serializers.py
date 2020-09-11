@@ -471,6 +471,12 @@ class TeamHistorySubmitSerializer(serializers.ModelSerializer):
         exclude = ('start_time', )
 
 
+class TeamHistoryGoForwardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamHistory
+        exclude = ('start_time', 'grade')
+
+
 # class UserHistorySubmitSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = UserHistory
