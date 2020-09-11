@@ -35,6 +35,7 @@ router.register('team/<int:pk>', TeamView)
 # router.register('small/<int:pk>', SmallView)
 urlpatterns = [
      path('getcurrentpage/', get_current_page),
+     path('getstatepage/', get_state_page),
      path('gethistory/', get_history),
      path('sendanswer/', send_answer),
      path('editedges/', edit_edges),

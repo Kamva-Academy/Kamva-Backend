@@ -43,6 +43,7 @@ def get_current_page(request):
     except:
         return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
+
 @transaction.atomic
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, TestMembersOnly])
