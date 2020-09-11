@@ -176,3 +176,19 @@ def get_team_fsm_history(request):
         data = serializer.data
         json_result.append(data)
     return Response(json_result, status=status.HTTP_200_OK)
+
+@transaction.atomic
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated,])
+def team_go_back_to_state(request):
+    team = Team.objects.get(id=request.data['team'])
+    state = FSMState.objects.get(id=request.data['state'])
+    try:
+        history = TeamHistory.objects.filter(team=team, state=state)[0]
+    except:
+        return Response({"error": "state is not in history"}, status=status.HTTP_400_BAD_REQUEST)
+
+    team_change_current_state(team, state)
+    data = FSMStateSerializer().to_representation(state)
+    return Response(data, status=status.HTTP_200_OK)
+
