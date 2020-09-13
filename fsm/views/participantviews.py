@@ -182,6 +182,7 @@ def get_team_fsm_history(request):
     for history in histories:
         serializer = TeamHistorySerializer(history)
         data = serializer.data
+        data['state_name'] = history.state.name
         json_result.append(data)
     return Response(json_result, status=status.HTTP_200_OK)
 
