@@ -162,11 +162,15 @@ def request_mentor(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated,])
 def get_team_fsm_history(request):
+    user = request.user
+    par = user.participant
     serializer = GetTeamHistorySerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     try:
         team = Team.objects.filter(id=request.data['team'])[0]
+        if par.team != team:
+            return Response("you can not see other team's history", status=status.HTTP_403_FORBIDDEN)
     except:
         return Response("team not found",status=status.HTTP_400_BAD_REQUEST)
     try:
