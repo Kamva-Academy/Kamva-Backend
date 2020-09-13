@@ -207,10 +207,6 @@ def team_go_forward(request):
     state = validated_data['state']
     if state.type == str(StateType.withMentor):
         return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
-    if state.type== StateType.withoutMentor.name:
-        pass
-    if state.type is not StateType.withMentor.name:
-        pass
 
     history = TeamHistory.objects.filter(team=validated_data['team'], state=validated_data['state'])[0]
     validated_data['start_time'] = history.start_time
@@ -221,3 +217,27 @@ def team_go_forward(request):
     team_change_current_state(history.team, history.edge.head)
     data = TeamHistorySerializer().to_representation(history)
     return Response(data, status=status.HTTP_200_OK)
+
+
+@transaction.atomic
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, ])
+def user_get_team_outward_edges(request):
+    state = FSMState.objects.get(id=request.data['state'])
+    serializer = TeamUUIDSerializer(data=request.data)
+    if not serializer.is_valid(raise_exception=True):
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    try:
+        team = Team.objects.get(uuid=serializer.validated_data['uuid'])
+        if state != team.current_state:
+            return Response("this state is not the team's current state", status=status.HTTP_400_BAD_REQUEST)
+        if state.type == str(StateType.withMentor):
+            return Response("this state with mentor and user doesn't have permission to get forward edges", status=status.HTTP_403_FORBIDDEN)
+
+        edges = team.state.outward_edges.all()
+        output_serializer = serializers.ListField(child=FSMEdgeSerializer())
+        data = output_serializer.to_representation(edges)
+        return Response(data, status=status.HTTP_200_OK)
+    except Team.DoesNotExist:
+        return Response("team not found", status=status.HTTP_400_BAD_REQUEST)
+

@@ -144,7 +144,6 @@ class Team(models.Model):
         return True
 
 
-
 class Payment(models.Model):
     STATUS_CHOICE = (
         ("SUCCESS", "SUCCESS"),
