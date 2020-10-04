@@ -22,29 +22,29 @@ logger = logging.getLogger(__name__)
 @permission_classes([IsAuthenticated, TestMembersOnly])
 def get_current_page(request):
     participant = request.user.participant
-    fsm_id = request.GET.get('fsmId')
+    # fsm_id = request.GET.get('fsmId')
     if not participant.team:
         logger.error(f'participant {request.user} is not member of any team')
         return Response({},status=status.HTTP_400_BAD_REQUEST)
-    # if participant.team.current_state:
-    #     page = participant.team.current_state.page
-    #     serializer = FSMPageSerializer()
-    #     data = serializer.to_representation(page)
-    #     return Response(data, status=status.HTTP_200_OK)
-    # else:
-    #     logger.error(f'participant {request.user} : current_state is not set')
-    #     return Response({},status=status.HTTP_400_BAD_REQUEST)
-    try:
-        fsm = FSM.objects.get(id=fsm_id)
-        state = get_last_state_in_fsm(participant.team, fsm)
-        page = state.page
+    if participant.team.current_state:
+        page = participant.team.current_state.page
         serializer = FSMPageSerializer()
-        participant.team.current_state = state
-        participant.team.save()
         data = serializer.to_representation(page)
         return Response(data, status=status.HTTP_200_OK)
-    except:
-        return Response({}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        logger.error(f'participant d cd {request.user} : current_state is not set')
+        return Response({},status=status.HTTP_400_BAD_REQUEST)
+    # try:
+    #     fsm = FSM.objects.get(id=fsm_id)
+    #     state = get_last_state_in_fsm(participant.team, fsm)
+    #     page = state.page
+    #     serializer = FSMPageSerializer()
+    #     participant.team.current_state = state
+    #     participant.team.save()
+    #     data = serializer.to_representation(page)
+    #     return Response(data, status=status.HTTP_200_OK)
+    # except:
+    #     return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @transaction.atomic
