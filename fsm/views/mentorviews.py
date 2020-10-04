@@ -53,7 +53,7 @@ def edit_edges(request):
 def get_team_outward_edges(request):
     serializer = TeamUUIDSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response("team UUID problem ", status=status.HTTP_400_BAD_REQUEST)
     try:
         team = Team.objects.get(uuid=serializer.validated_data['uuid'])
         edges = team.current_state.outward_edges.all()

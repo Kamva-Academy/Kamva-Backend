@@ -336,13 +336,19 @@ class TeamAdmin(admin.ModelAdmin):
 
 class PaymentAdmin(admin.ModelAdmin):
     model = Payment
-    list_display = ['get_user_name', 'uniq_code' ]
+    list_display = ['get_user_name', 'uniq_code', 'status', 'amount' , 'get_team' ]
 
     def get_user_name(self, obj):
         name = str(obj.user.member.first_name) + "(" + str(obj.user.member.username) + ")"
         return name
 
+    def get_team(self, obj):
+        name = str(obj.user.team)
+        return name
+
+
     get_user_name.short_description = "نام"
+    get_team.short_description = "تیم"
 
 
 # Register your models here.
