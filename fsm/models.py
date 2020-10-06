@@ -28,7 +28,7 @@ class FSMState(models.Model):
     page = models.OneToOneField('FSMPage', null=True, on_delete=models.CASCADE, unique=True, related_name='state')
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
     name = models.CharField(max_length=150)
-    type = models.CharField(max_length=40, default=StateType.withMentor, choices=[(tag.value, tag.name) for tag in StateType])
+    # type = models.CharField(max_length=40, default=StateType.withMentor, choices=[(tag.value, tag.name) for tag in StateType])
 
     def __str__(self):
         if self.fsm:

@@ -210,8 +210,8 @@ def team_go_forward(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     validated_data = serializer.validated_data
     state = validated_data['state']
-    if state.type == str(StateType.withMentor):
-        return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
+    # if state.type == str(StateType.withMentor):
+    #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
 
     history = TeamHistory.objects.filter(team=validated_data['team'], state=validated_data['state'])[0]
     validated_data['start_time'] = history.start_time
@@ -236,8 +236,8 @@ def user_get_team_outward_edges(request):
         team = Team.objects.get(uuid=serializer.validated_data['uuid'])
         if state != team.current_state:
             return Response("this state is not the team's current state", status=status.HTTP_400_BAD_REQUEST)
-        if state.type == str(StateType.withMentor):
-            return Response("this state with mentor and user doesn't have permission to get forward edges", status=status.HTTP_403_FORBIDDEN)
+        # if state.type == str(StateType.withMentor):
+        #     return Response("this state with mentor and user doesn't have permission to get forward edges", status=status.HTTP_403_FORBIDDEN)
 
         edges = team.state.outward_edges.all()
         output_serializer = serializers.ListField(child=FSMEdgeSerializer())
