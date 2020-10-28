@@ -30,16 +30,14 @@ class WidgetView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Crea
             except:
                 pass
         
-        class WidgetInstanceSerializer(WidgetSerializer): 
-            class Meta:
-                try:
-                    model =  getattr(sys.modules[__name__], 
-                        self.request.data['widget_type']
-                    ) if self.request.data['widget_type'] else Widget
-                except:
-                    model = Widget
-                    
-                fields = '__all__'
-        
-        return WidgetInstanceSerializer
-    
+        # class WidgetInstanceSerializer(WidgetSerializer):
+        #     class Meta:
+        #         try:
+        #             model =  getattr(sys.modules[__name__],
+        #                 self.request.data['widget_type']
+        #             ) if self.request.data['widget_type'] else Widget
+        #         except:
+        #             model = Widget
+        #
+        #         fields = '__all__'vah
+        # return WidgetInstanceSerializer
