@@ -132,6 +132,11 @@ class MultiChoiceAnswer(Answer):
     text = models.IntegerField()
 
 
+class UploadFileAnswer(Answer):
+    problem = models.OneToOneField('ProblemUploadFileAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
+    answer_file = models.FileField(upload_to='AnswerFile', max_length=4000, blank=False)
+
+
 class Problem(Widget):
     name = models.CharField(max_length=100, null=True)
     text = models.TextField()
@@ -147,6 +152,9 @@ class ProblemBigAnswer(Problem):
 
 
 class ProblemMultiChoice(Problem):
+    pass
+
+class ProblemUploadFileAnswer(Problem):
     pass
 
 

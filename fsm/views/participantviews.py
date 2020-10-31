@@ -77,7 +77,7 @@ def send_answer(request):
     else:
         result = False
     data = SubmitedAnswerSerializer(instance).data
-    data['result']= result
+    data['result'] = result
     correct_answer = AnswerSerializer().to_representation(correct_answer)
     data['correct_answer'] = correct_answer
     return Response(data, status=status.HTTP_200_OK)

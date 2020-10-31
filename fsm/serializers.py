@@ -114,6 +114,11 @@ class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class UploadFileAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UploadFileAnswer
+        fields = '__all__'
+
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -128,6 +133,8 @@ class AnswerSerializer(serializers.ModelSerializer):
             return BigAnswerSerializer
         elif model == MultiChoiceAnswer:
             return MultiChoiceAnswerSerializer
+        elif model == UploadFileAnswer:
+            return UploadFileAnswerSerializer
 
     def to_representation(self, instance):
         serializer = AnswerSerializer.get_serializer(instance.__class__)
@@ -262,6 +269,37 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
         return instance
 
 
+
+class ProblemUploadFileAnswerSerializer(serializers.ModelSerializer):
+    answer = UploadFileAnswerSerializer()
+
+    class Meta:
+        model = ProblemUploadFileAnswer
+        fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+        answer_data = validated_data.pop('answer')
+        instance = ProblemUploadFileAnswer.objects.create(**validated_data)
+        answer = UploadFileAnswer.objects.create(**answer_data)
+        answer.problem = instance
+        answer.save()
+
+        return instance
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        validated_data['pk'] = instance.pk
+        try:
+            answer = UploadFileAnswer.objects.filter(problem=instance)[0]
+            validated_data['answer']['pk'] = answer.pk
+            answer.delete()
+        except:
+            pass
+        instance.delete()
+        instance = self.create(validated_data)
+        return instance
+
 class ProblemSerializer(serializers.ModelSerializer):
 
     @classmethod
@@ -272,6 +310,8 @@ class ProblemSerializer(serializers.ModelSerializer):
             return ProblemBigAnswerSerializer
         elif model == ProblemMultiChoice:
             return ProblemMultiChoiceSerializer
+        elif model == ProblemUploadFileAnswer:
+            return ProblemUploadFileAnswerSerializer
 
     def to_representation(self, instance):
         serializer = ProblemSerializer.get_serializer(instance.__class__)

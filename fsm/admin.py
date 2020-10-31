@@ -33,5 +33,8 @@ admin.site.register(BigAnswer)
 admin.site.register(ProblemMultiChoice)
 admin.site.register(MultiChoiceAnswer)
 admin.site.register(Choice)
+admin.site.register(UploadFileAnswer)
+admin.site.register(ProblemUploadFileAnswer)
+
 
 admin.site.register(TeamHistory)
