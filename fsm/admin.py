@@ -18,9 +18,32 @@ class EdgeAdmin(admin.ModelAdmin):
     tail_name.short_description = "ته یال "
 
 
+class AnswerAdmin(admin.ModelAdmin):
+    model = UploadFileAnswer
+    list_display = ['name', 'answer_file', ]
+
+    def name(self, obj):
+        name = obj.problem.name
+        return name
+
+
+class SubmittedAnswerAdmin(admin.ModelAdmin):
+    model = UploadFileAnswer
+    list_display = ['name', 'answer_file', 'team_name']
+
+    def name(self, obj):
+        name = obj.problem.name
+        return name
+
+    def answer_file(self, obj):
+        ans_file = obj.answer.uploadfileanswer.answer_file
+
+
+    def team_name(self, obj):
+        return str(obj.team_history.team.team_name)
+
 
 admin.site.register(FSM)
-admin.site.register(FSMPage)
 admin.site.register(FSMEdge, EdgeAdmin)
 admin.site.register(Ability)
 admin.site.register(FSMState)
@@ -33,8 +56,10 @@ admin.site.register(BigAnswer)
 admin.site.register(ProblemMultiChoice)
 admin.site.register(MultiChoiceAnswer)
 admin.site.register(Choice)
-admin.site.register(UploadFileAnswer)
+admin.site.register(Answer)
+admin.site.register(UploadFileAnswer, AnswerAdmin)
 admin.site.register(ProblemUploadFileAnswer)
+admin.site.register(SubmitedAnswer, SubmittedAnswerAdmin)
 
 
 admin.site.register(TeamHistory)
