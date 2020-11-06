@@ -25,7 +25,6 @@ class FSM(models.Model):
     
 
 class FSMState(models.Model):
-    page = models.OneToOneField('FSMPage', null=True, on_delete=models.CASCADE, unique=True, related_name='state')
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
     name = models.CharField(max_length=150)
     # type = models.CharField(max_length=40, default=StateType.withMentor, choices=[(tag.value, tag.name) for tag in StateType])
@@ -34,6 +33,9 @@ class FSMState(models.Model):
         if self.fsm:
             return '%s: %s' % (self.fsm.name, self.name)
         return self.name
+
+    def widgets(self):
+        return Widget.objects.filter(state=self).select_subclasses()
 
 
 class FSMEdge(models.Model):
@@ -59,29 +61,19 @@ class Ability(models.Model):
     name = models.CharField(max_length=150)
     value = models.BooleanField()
     team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
-    # user_history = models.ForeignKey('UserHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
+
     def __str__(self):
         return self.name
 
     def is_valid(self, value):
         return self.value == value
 
-
-class FSMPage(models.Model):
-    page_type = models.CharField(max_length=20)
-    init_whiteboard = models.CharField(max_length=100000, null=True, blank=True)
-
     def widgets(self):
-        return Widget.objects.filter(page=self).select_subclasses()
-
-
-@receiver(post_delete, sender=FSMState)
-def auto_delete_page_with_state(sender, instance, **kwargs):
-    instance.page.delete()
+        return Widget.objects.filter(state=self).select_subclasses()
 
 
 class Widget(models.Model):
-    page = models.ForeignKey(FSMPage, null =True, on_delete=models.CASCADE, related_name='%(class)s')
+    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='%(class)s')
     priority = models.IntegerField()
     widget_type = models.CharField(max_length=20)
     objects = InheritanceManager()
@@ -94,6 +86,7 @@ class Description(Widget):
 class Game(Widget):
     name = models.CharField(max_length=100, null=True)
     link = models.TextField()
+
     def __str__(self):
         return f'{self.pk}-{self.link}'
 
@@ -101,6 +94,7 @@ class Game(Widget):
 class Video(Widget):
     name = models.CharField(max_length=100, null=True)
     link = models.TextField()
+
     def __str__(self):
         return self.name
 
@@ -108,6 +102,7 @@ class Video(Widget):
 class Image(Widget):
     name = models.CharField(max_length=100, null=True)
     link = models.TextField()
+
     def __str__(self):
         return self.name
 
@@ -153,6 +148,7 @@ class ProblemBigAnswer(Problem):
 
 class ProblemMultiChoice(Problem):
     pass
+
 
 class ProblemUploadFileAnswer(Problem):
     pass

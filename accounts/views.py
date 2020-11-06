@@ -2,6 +2,8 @@ import logging
 import json
 import os
 import string
+from datetime import datetime
+
 from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
@@ -330,7 +332,15 @@ class Teams(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request):
+        start = datetime.now()
+        print(datetime.now())
         valid_teams = TeamsCache.get_data()
+        end = datetime.now()
+        print(datetime.now())
+        dureation = end-start
+        print(dureation)
+        print("--------------------------------------")
+
         return Response(valid_teams)
 
 

@@ -20,16 +20,16 @@ logger = logging.getLogger(__name__)
 @transaction.atomic
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, TestMembersOnly])
-def get_current_page(request):
+def get_current_state(request):
     participant = request.user.participant
     # fsm_id = request.GET.get('fsmId')
     if not participant.team:
         logger.error(f'participant {request.user} is not member of any team')
-        return Response({},status=status.HTTP_400_BAD_REQUEST)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
     if participant.team.current_state:
-        page = participant.team.current_state.page
-        serializer = FSMPageSerializer()
-        data = serializer.to_representation(page)
+        state = participant.team.current_state
+        serializer = FSMStateSerializer()
+        data = serializer.to_representation(state)
         return Response(data, status=status.HTTP_200_OK)
     else:
         logger.error(f'participant d cd {request.user} : current_state is not set')
@@ -118,13 +118,13 @@ def get_last_state_in_fsm(team, fsm):
 @transaction.atomic
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, TestMembersOnly])
-def set_first_current_page(request):
+def set_first_current_state(request):
     team = request.user.participant.team
     serializer = SetFirstStateSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     fsm = FSM.objects.filter(id=request.data['fsm'])[0]
-    if (team.current_state is None or team.current_state.name == 'end'):
+    if team.current_state is None or team.current_state.name == 'end':
         state = get_last_state_in_fsm(team, fsm)
         try:
             logger.info(
@@ -137,7 +137,7 @@ def set_first_current_page(request):
                 logger.info(
                     f'changed state team {team.id} from {team.current_state.name} to None')
         team_change_current_state(team, state)
-        data = FSMPageSerializer().to_representation(state.page)
+        data = FSMStateSerializer().to_representation(state)
     else:
          return Response("شما در کارگاه دیگری هستید!",status=status.HTTP_400_BAD_REQUEST)
     return Response(data, status=status.HTTP_200_OK)

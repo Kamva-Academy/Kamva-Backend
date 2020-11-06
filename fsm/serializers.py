@@ -42,11 +42,11 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
         return instance
     '''
 
-class FSMStateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FSMState
-        fields = '__all__'
-
+# class FSMStateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = FSMState
+#         fields = '__all__'
+#
 
 class FSMStateGetSerializer(serializers.ModelSerializer):
     outward_edges = FSMEdgeSerializer(many=True)
@@ -185,6 +185,7 @@ class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
         instance = self.create(validated_data)
         return instance
 
+
 class ProblemBigAnswerSerializer(serializers.ModelSerializer):
     answer = BigAnswerSerializer()
     class Meta:
@@ -213,6 +214,7 @@ class ProblemBigAnswerSerializer(serializers.ModelSerializer):
         instance.delete()
         instance = self.create(validated_data)
         return instance
+
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -269,7 +271,6 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class ProblemUploadFileAnswerSerializer(serializers.ModelSerializer):
     answer = UploadFileAnswerSerializer()
 
@@ -299,6 +300,7 @@ class ProblemUploadFileAnswerSerializer(serializers.ModelSerializer):
         instance.delete()
         instance = self.create(validated_data)
         return instance
+
 
 class ProblemSerializer(serializers.ModelSerializer):
 
@@ -368,34 +370,6 @@ class WidgetSerializer(serializers.ModelSerializer):
         serializer = WidgetSerializer.get_serializer(instance.__class__)
         return serializer(instance, context=self.context).data
 
-    
-class FSMPageSerializer(serializers.ModelSerializer):
-    state = FSMStateSerializer()
-    widgets = WidgetSerializer(many=True)
-
-    class Meta:
-        model = FSMPage
-        fields = '__all__'
-    
-    def create(self, validated_data):
-        validated_data.pop('widgets')
-        validated_data.pop('state')
-        instance = FSMPage.objects.create(**validated_data)
-        return instance
-    
-    def update(self, instance, validated_data):  
-        validated_data.pop('widgets')
-        validated_data['pk'] = instance.pk
-        instance.delete()
-        instance = self.create(validated_data)
-        return instance
-
-
-class WhiteboardSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FSMPage
-        fields = ['init_whiteboard']
-
 
 class SubmitedAnswerSerializer(serializers.ModelSerializer):
     xanswer = AnswerSerializer()
@@ -431,7 +405,45 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
- 
+
+class FSMStateSerializer(serializers.ModelSerializer):
+    widgets = WidgetSerializer(many=True)
+
+    class Meta:
+        model = FSMState
+        fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data.pop('widgets')
+        instance = FSMState.objects.create(**validated_data)
+        return instance
+
+    def update(self, instance, validated_data):
+        validated_data.pop('widgets')
+        validated_data.pop('fsm')
+        validated_data['pk'] = instance.pk
+        instance.delete()
+        instance = self.create(validated_data)
+        return instance
+
+
+class FSMStateGetSerializer(serializers.ModelSerializer):
+    outward_edges = FSMEdgeSerializer(many=True)
+    inward_edges = FSMEdgeSerializer(many=True)
+    widgets = WidgetSerializer(many=True)
+
+    class Meta:
+        model = FSMState
+        fields = '__all__'
+        queryset = FSM.objects.filter(active=True)
+        instance = FSM.objects.filter(active=True)
+
+
+# class WhiteboardSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = FSMPage
+#         fields = ['init_whiteboard']
+
 
 class TeamHistorySerializer(serializers.ModelSerializer):
     answers = SubmitedAnswerSerializer(many=True)

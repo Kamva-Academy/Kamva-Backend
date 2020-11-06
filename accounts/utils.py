@@ -36,7 +36,7 @@ def get_member_json_info(member):
                     'state_id': team.current_state_id,
                     'fsm_name': current_state.fsm.name,
                     'fsm_id': current_state.fsm_id,
-                    'page_id': current_state.page.id
+                    # 'page_id': current_state.page.id
                 }
                 state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
                 if state_history:
@@ -65,7 +65,7 @@ def get_team_json_info(team):
             'state_id': team.current_state_id,
             'fsm_name': current_state.fsm.name,
             'fsm_id': current_state.fsm_id,
-            'page_id': current_state.page.id
+            # 'page_id': current_state.page.id
         }
         state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
         if state_history:
@@ -87,7 +87,7 @@ def get_team_current_states_json(team):
                 'state_id': team.current_state_id,
                 'fsm_name': current_state.fsm.name,
                 'fsm_id': current_state.fsm_id,
-                'page_id': current_state.page.id
+                # 'page_id': current_state.page.id
             }
             state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
             if state_history:
