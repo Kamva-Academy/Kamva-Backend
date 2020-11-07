@@ -8,7 +8,7 @@ from rest_framework import mixins
 from rest_framework.decorators import api_view
 from rest_framework import permissions
 
-from fsm.models import FSM
+from fsm.models import FSM, FSMState
 from fsm.views import permissions as customPermissions
 from fsm.serializers import FSMSerializer, FSMGetSerializer
 
@@ -44,3 +44,21 @@ class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateM
         except KeyError:
             # action is not set return default permission_classes
             return [permission() for permission in self.permission_classes]
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        serializer = FSMSerializer(data=data)
+        if not serializer.is_valid(raise_exception=True):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.validated_data
+        instance = serializer.create(data)
+        first_state = FSMState.objects.create(name='شروع', fsm=instance)
+        instance.first_state = first_state
+        instance.save()
+        # response
+        response = serializer.to_representation(instance)
+        return Response(response, status=status.HTTP_200_OK)
+
+
+

@@ -1,33 +1,41 @@
+
 from django.db import models
 from model_utils.managers import InheritanceManager
 from accounts.models import *
+from enum import Enum
 
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
-
-
-class StateType(Enum):
-    withMentor = 'withMentor'
-    withoutMentor = 'withoutMentor'
 
 
 class FSM(models.Model):
+    class FSMLearningType(models.TextChoices):
+        withMentor = 'withMentor'
+        noMentor = 'noMentor'
+
+    class FSMPType(models.TextChoices):
+        team = 'team'
+        individual = 'individual'
+        hybrid = 'hybrid'
+
     name = models.CharField(max_length=100)
     active = models.BooleanField(default=False)
+    first_state = models.OneToOneField('FSMState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
+    fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.noMentor,
+                                         choices=FSMLearningType.choices)
+    fsm_p_type = models.CharField(max_length=40, default=FSMPType.hybrid,
+                                  choices=FSMPType.choices)
 
     def __str__(self):
         return self.name
-    
+
     def teams(self):
         states = FSMState.objects.filter(fsm=self)
         teams = Team.objects.filter(current_state__in=states)
         return len(teams)
-    
+
 
 class FSMState(models.Model):
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
     name = models.CharField(max_length=150)
-    # type = models.CharField(max_length=40, default=StateType.withMentor, choices=[(tag.value, tag.name) for tag in StateType])
 
     def __str__(self):
         if self.fsm:
@@ -48,7 +56,7 @@ class FSMEdge(models.Model):
         output = True
         for ability in Ability.objects.filter(edge=self):
             try:
-                value = abilities.filter(name = ability.name)[0].value
+                value = abilities.filter(name=ability.name)[0].value
             except:
                 output = False
                 return
@@ -78,7 +86,7 @@ class Widget(models.Model):
     widget_type = models.CharField(max_length=20)
     objects = InheritanceManager()
 
-    
+
 class Description(Widget):
     text = models.TextField()
 
@@ -110,25 +118,29 @@ class Image(Widget):
 class Answer(models.Model):
     answer_type = models.CharField(max_length=20, default="Answer")
     objects = InheritanceManager()
- 
+
 
 class SmallAnswer(Answer):
-    problem = models.OneToOneField('ProblemSmallAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
+    problem = models.OneToOneField('ProblemSmallAnswer', null=True, on_delete=models.CASCADE, unique=True,
+                                   related_name='answer')
     text = models.TextField()
 
 
 class BigAnswer(Answer):
-    problem = models.OneToOneField('ProblemBigAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
+    problem = models.OneToOneField('ProblemBigAnswer', null=True, on_delete=models.CASCADE, unique=True,
+                                   related_name='answer')
     text = models.TextField()
 
 
 class MultiChoiceAnswer(Answer):
-    problem = models.OneToOneField('ProblemMultiChoice', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
+    problem = models.OneToOneField('ProblemMultiChoice', null=True, on_delete=models.CASCADE, unique=True,
+                                   related_name='answer')
     text = models.IntegerField()
 
 
 class UploadFileAnswer(Answer):
-    problem = models.OneToOneField('ProblemUploadFileAnswer', null=True, on_delete=models.CASCADE, unique=True, related_name='answer')
+    problem = models.OneToOneField('ProblemUploadFileAnswer', null=True, on_delete=models.CASCADE, unique=True,
+                                   related_name='answer')
     answer_file = models.FileField(upload_to='AnswerFile', max_length=4000, blank=False)
 
 
@@ -169,13 +181,13 @@ class SubmitedAnswer(models.Model):
     # user_history = models.ForeignKey('UserHistory', null=True, on_delete=models.CASCADE, related_name='answers')
     answer = models.OneToOneField(Answer, null=True, on_delete=models.CASCADE, unique=True)
     problem = models.ForeignKey('Problem', null=True, on_delete=models.CASCADE, related_name='submited_answers')
-    
+
     def xanswer(self):
         try:
             return Answer.objects.filter(id=self.answer.id).select_subclasses()[0]
         except:
             return None
- 
+
 
 class TeamHistory(models.Model):
     team = models.ForeignKey(Team, null=True, on_delete=models.CASCADE, related_name='histories')
@@ -187,7 +199,6 @@ class TeamHistory(models.Model):
 
     def __str__(self):
         return f'{self.team.id}-{self.state.name}'
-
 
 # class UserHistory(models.Model):
 #     user = models.ForeignKey(Participant, null=True, on_delete=models.CASCADE, related_name='histories')

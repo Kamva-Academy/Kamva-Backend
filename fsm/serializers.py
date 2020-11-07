@@ -42,11 +42,6 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
         return instance
     '''
 
-# class FSMStateSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = FSMState
-#         fields = '__all__'
-#
 
 class FSMStateGetSerializer(serializers.ModelSerializer):
     outward_edges = FSMEdgeSerializer(many=True)
@@ -59,9 +54,21 @@ class FSMStateGetSerializer(serializers.ModelSerializer):
 
 
 class FSMSerializer(serializers.ModelSerializer):
+    # fsm_learning_type = FSMLearningTypeSerializer(required=False)
+    # fsm_p_type = FSMPTypeSerializer(required=False)
     class Meta:
         model = FSM
         fields = '__all__'
+
+    def get_validation_exclusions(self):
+        exclusions = super(FSMSerializer, self).get_validation_exclusions()
+        return exclusions + ['first_state', 'fsm_learning_type', 'fsm_p_type']
+
+#
+# class FSMCreatSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = FSM
+#         fields = ['name', 'type', 'active', ]
 
 
 class FSMGetSerializer(serializers.ModelSerializer):
