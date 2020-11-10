@@ -59,7 +59,8 @@ admin.site.register(Choice)
 admin.site.register(Answer)
 admin.site.register(UploadFileAnswer, AnswerAdmin)
 admin.site.register(ProblemUploadFileAnswer)
-admin.site.register(SubmitedAnswer, SubmittedAnswerAdmin)
+admin.site.register(SubmittedAnswer, SubmittedAnswerAdmin)
 
 
 admin.site.register(TeamHistory)
+admin.site.register(PlayerWorkshop)

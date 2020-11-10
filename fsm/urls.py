@@ -48,8 +48,12 @@ urlpatterns = [
      path('submitteam/', submit_team),
      path('goforward/', team_go_forward),
      path('gobackto/', team_go_back_to_state),
-     path('gototeam/', go_to_team),
-     path('requestmentor/', request_mentor)
+     path('visitteam/', go_to_team),
+     path('requestmentor/', request_mentor),
+
+     # new ones
+     path('userworkshops/', user_workshops, name="user_workshops"),
+     path('workshopplayers/', workshop_players, name="workshop_players"),
 ]
 
 urlpatterns += router.urls

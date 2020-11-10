@@ -2,8 +2,6 @@
 from django.db import models
 from model_utils.managers import InheritanceManager
 from accounts.models import *
-from enum import Enum
-
 
 
 class FSM(models.Model):
@@ -174,8 +172,8 @@ class Choice(models.Model):
         return str(self.id) + "-" + self.text
 
 
-class SubmitedAnswer(models.Model):
-    participant = models.ForeignKey(Participant, null=True, on_delete=models.CASCADE, related_name='submited_answers')
+class SubmittedAnswer(models.Model):
+    participant = models.ForeignKey('accounts.Participant', on_delete=models.CASCADE, related_name='submited_answers')
     publish_date = models.DateTimeField(null=True, blank=True)
     team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='answers')
     # user_history = models.ForeignKey('UserHistory', null=True, on_delete=models.CASCADE, related_name='answers')
@@ -190,7 +188,7 @@ class SubmitedAnswer(models.Model):
 
 
 class TeamHistory(models.Model):
-    team = models.ForeignKey(Team, null=True, on_delete=models.CASCADE, related_name='histories')
+    team = models.ForeignKey('accounts.Team', null=True, on_delete=models.CASCADE, related_name='histories')
     state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='team_histories')
     grade = models.IntegerField(default=0)
     start_time = models.DateTimeField(null=True, blank=True)
@@ -210,3 +208,9 @@ class TeamHistory(models.Model):
 #
 #     def __str__(self):
 #         return f'{self.user.id}-{self.state.name}'
+
+
+class PlayerWorkshop (models.Model):
+    player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
+    workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
+    current_state = models.ForeignKey(FSMState, null=True, on_delete=models.SET_NULL, related_name='player_workshop')

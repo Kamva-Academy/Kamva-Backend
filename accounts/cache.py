@@ -25,7 +25,7 @@ class TeamsCache:
                     "uuid": team.uuid,
                     "team_id": team.id,
                     "team_members": [{"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
-                                     for p in team.participant_set.all()],
+                                     for p in team.team_members.all()],
                 }
                 if team.current_state:
                     current_state = team.current_state

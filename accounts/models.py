@@ -12,7 +12,6 @@ from django.utils.encoding import force_bytes
 from accounts.tokens import account_activation_token
 import uuid
 
-from enum import Enum
 
 
 from collections import defaultdict
@@ -21,30 +20,49 @@ import logging
 import random
 import re
 
+from fsm.models import *
+
 logger = logging.getLogger(__file__)
 
 
-# Create your models here.
-class Gender(Enum):
-    Man = 'Man'
-    Woman = 'Woman'
-
-
-class Grade(Enum):
-    Ten = 'ten'
-    Eleven = 'eleven'
-    Twelve = 'twelve'
-
-
-class ParticipantStatus(Enum):
-    Pending = 'Pending'
-    Verified = 'Verified'
-    Rejected = 'Rejected'
+#
+# class ParticipantStatus(Enum):
+#     Pending = 'Pending'
+#     Verified = 'Verified'
+#     Rejected = 'Rejected'
 
 
 class Member(AbstractUser):
+    class Grade(models.TextChoices):
+        Pre = 'پیش‌ از دبستان'
+        One = 'اول'
+        Two = 'دوم'
+        Three = 'سوم'
+        four = 'چهارم'
+        Five = 'پنچم'
+        Six = 'ششم'
+        Seven = 'هفتم'
+        Eight = 'هشتم'
+        Nine = 'نهم'
+        Ten = 'دهم'
+        Eleven = 'یازدهم'
+        Twelve = 'دوازدهم'
+
+    class Gender(models.TextChoices):
+        Man = 'Man'
+        Woman = 'Woman'
+
     is_participant = models.BooleanField(default=True)
     is_mentor = models.BooleanField(default=False)
+
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    school = models.CharField(max_length=50, null=True, blank=True)
+    city = models.CharField(max_length=20, null=True, blank=True)
+    document = models.ImageField(upload_to='documents/', null=True, blank=True)
+    gender = models.CharField(max_length=10, null=True, blank=True,
+                              choices=Gender.choices)
+    grade = models.CharField(max_length=15, null=True, blank=True,
+                             choices=Grade.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
     def send_signup_email(self, base_url, password=''):
@@ -65,6 +83,7 @@ class Member(AbstractUser):
         msg = EmailMultiAlternatives('تایید ثبت‌نام اولیه', text_content, 'Rastaiha <info@rastaiha.ir>', [self.email])
         msg.attach_alternative(html_content, "text/html")
         msg.send()
+
     class Meta:
         db_table = "auth_user"
 
@@ -105,43 +124,38 @@ class Mentor(models.Model):
         msg.send()
 
 
-class Participant(models.Model):
+class Player(models.Model):
+    class PlayerType(models.TextChoices):
+        TEAM = 'TEAM'
+        PARTICIPANT = 'PARTICIPANT'
+
+    player_type = models.CharField(max_length=15, choices=PlayerType.choices)
+    score = models.IntegerField(null=True, blank=True)
+    active = models.BooleanField(default=False)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    workshops = models.ManyToManyField(FSM, through='fsm.PlayerWorkshop', related_name='players')
+
+
+class Participant(Player):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
-    school = models.CharField(max_length=50)
-    grade = models.CharField(max_length=10, choices=[(tag.value, tag.name) for tag in Grade])
-    city = models.CharField(max_length=20)
-    document = models.ImageField(upload_to='documents/')
-    gender = models.CharField(max_length=10, default=Gender.Man, choices=[(tag.value, tag.name) for tag in Gender])
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
-    is_activated = models.BooleanField(default=False)
-    team = models.ForeignKey('Team', models.SET_NULL,
-        blank=True, null=True)
-    accepted = models.BooleanField(default=False)
-    ent_answer = models.FileField(blank=True, null=True, upload_to='ent_answers')
 
     def __str__(self):
         return str(self.member)
 
 
-class Team(models.Model):
+class Team(Player):
     group_name = models.CharField(max_length=30, blank=True)
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    active = models.BooleanField(default=False)
-    current_state = models.ForeignKey('fsm.FSMState', null=True, blank=True, on_delete=models.SET_NULL, related_name='teams')
+    # uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    # current_state = models.ForeignKey('fsm.FSMState', null=True, blank=True, on_delete=models.SET_NULL, related_name='teams')
+    team_members = models.ManyToManyField(Participant, related_name='team_set')
 
     def __str__(self):
         s = str(self.id) + "-" +self.group_name + " ("
 
-        for p in self.participant_set.all():
-            s+= str(p) + ", "
+        for p in self.team_members.all():
+            s += str(p) + ", "
         s += ")"
         return s
-
-    def is_team_active(self):
-        for p in self.participant_set.all():
-            if not p.is_activated:
-                return False
-        return True
 
 
 class Payment(models.Model):

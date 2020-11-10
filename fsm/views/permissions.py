@@ -9,7 +9,20 @@ class MentorPermission(permissions.BasePermission):
         return bool(request.user and request.user.is_authenticated and request.user.is_mentor)
 
 
-class TestMembersOnly(permissions.BasePermission):
+class ParticipantPermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+
+        user = request.user
+        try:
+            if user.is_participant and user.participant:
+                return True
+        except:
+            return False
+        return False
+
+
+class ActiveTeamsPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
 

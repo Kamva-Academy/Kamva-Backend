@@ -1,7 +1,8 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from .models import Member, Participant
+
+from .models import Member, Participant, Team
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -15,7 +16,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['is_participant'] = user.is_participant
         if user.is_participant:
             token['name'] = user.first_name
-            token['team'] = str(user.participant.team_id)
+            # token['team'] = str(user.participant.team_id)
             token['uuid'] = str(user.uuid)
         return token
 
@@ -42,3 +43,56 @@ class MemberSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class TeamMembetListField(serializers.RelatedField):
+    def to_representation(self, value):
+        return value.member.first_name + value.member.username
+
+
+class TeamSerializer(serializers.ModelSerializer):
+    # histories = TeamHistorySerializer(many=True)
+    # p_type = serializers.Field(source="team")
+    team_members = TeamMembetListField(many=True, read_only=True)
+
+    class Meta:
+        model = Team
+        fields = ['player_type', 'id', 'uuid', 'group_name', 'score', 'team_members']
+
+
+class PlayerSerializer(serializers.Serializer):
+    @classmethod
+    def get_serializer(cls, model):
+        try:
+            model.team
+            return TeamSerializer
+        except:
+            return ParticipantSerializer
+
+    def to_representation(self, instance):
+        try:
+            instance.team
+            serializer = TeamSerializer
+            return serializer(instance.team).data
+        except:
+            try:
+                instance.participant
+                serializer = ParticipantSerializer
+                return serializer(instance.participant).data
+            except:
+                return {}
+
+
+class ParticipantSerializer(serializers.Serializer):
+    # player_type = serializers.CharField(source='player_type()', read_only=True)
+    # customField = serializers.Field(source='get_absolute_url')
+    class Meta:
+        model = Participant
+
+    def to_representation(self, instance):
+        return {
+            'player_type': instance.player_type,
+            'name': instance.member.first_name,
+            'id': instance.id,
+            'score': instance.score
+        }

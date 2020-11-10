@@ -25,7 +25,7 @@ def new_one_time_auction(request):
     team = participant.team
     values = data['values']
     auction = OneTimeAuction.objects.create(auction_pay_type= data['auction_pay_type'])
-    participants = team.participant_set.all()
+    participants = team.team_members.all()
     index = 0
     while index < len(values):
         OneTimeBidder.objects.create(

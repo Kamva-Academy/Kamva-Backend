@@ -1,10 +1,10 @@
 from django.core.paginator import Paginator
-from rest_framework import status, permissions
+from rest_framework import status, permissions, viewsets
 from accounts.models import Member
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .permissions import TestMembersOnly
+from .permissions import ParticipantPermission
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 @transaction.atomic
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, TestMembersOnly])
+@permission_classes([IsAuthenticated, ParticipantPermission])
 def get_current_state(request):
     participant = request.user.participant
     # fsm_id = request.GET.get('fsmId')
@@ -49,7 +49,7 @@ def get_current_state(request):
 
 @transaction.atomic
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, TestMembersOnly])
+@permission_classes([IsAuthenticated, ParticipantPermission])
 def get_history(request):
     #TODO get history for individual
     participant = request.user.participant
@@ -60,7 +60,7 @@ def get_history(request):
 
 @transaction.atomic
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, TestMembersOnly])
+@permission_classes([IsAuthenticated, ParticipantPermission])
 def send_answer(request):
     serializer = SubmitedAnswerPostSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
@@ -85,7 +85,7 @@ def send_answer(request):
 
 @transaction.atomic
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, TestMembersOnly])
+@permission_classes([IsAuthenticated, ParticipantPermission])
 def move_to_next_state(request):
     team = request.user.participant.team
     edges = FSMEdge.objects.filter(tail=team.current_state.id)
@@ -117,7 +117,7 @@ def get_last_state_in_fsm(team, fsm):
 
 @transaction.atomic
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, TestMembersOnly])
+@permission_classes([IsAuthenticated, ParticipantPermission])
 def set_first_current_state(request):
     team = request.user.participant.team
     serializer = SetFirstStateSerializer(data=request.data)
@@ -145,7 +145,7 @@ def set_first_current_state(request):
 
 @transaction.atomic
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, TestMembersOnly])
+@permission_classes([IsAuthenticated, ParticipantPermission])
 def request_mentor(request):
     team = request.user.participant.team
     qs = Notification.objects.filter(
@@ -246,3 +246,17 @@ def user_get_team_outward_edges(request):
     except Team.DoesNotExist:
         return Response("team not found", status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated, ParticipantPermission])
+def user_workshops(request):
+    participant = request.user.participant
+    if request.method == 'GET':
+        individual_workshops = FSM.objects.filter(players=participant)
+        if participant.team_set.count() > 0:
+            for team in participant.team_set.all():
+                team_workshops = FSM.objects.filter(players=team)
+        workshops = (team_workshops|individual_workshops).distinct()
+        serializer = FSMSerializer(workshops, many=True)
+        return Response(serializer.data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)

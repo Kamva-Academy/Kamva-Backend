@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-from .models import Member, Participant, Team, Payment, Mentor
+from .models import Member, Participant, Team, Payment, Mentor, Player
 
 from import_export.admin import ExportActionMixin
 from import_export.fields import Field
@@ -75,7 +75,7 @@ class ParticipantResource(resources.ModelResource):
             if participant.team:
                 team = participant.team
                 team_name = str(team.id) + " ("
-                for p in team.participant_set.all():
+                for p in team.team_members.all():
                     team_name += str(p.member.first_name) + ", "
                 team_name += ")"
                 return team_name
@@ -157,113 +157,113 @@ class CustomUserAdmin(admin.ModelAdmin,):
     list_display = ['email', 'first_name', 'is_active']
 
 
-class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
-    resource_class = ParticipantResource
-    readonly_fields = ['document', 'gender', 'grade']
-    list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team','account_actions', 'is_accepted', 'is_paid', 'is_email_verified']
-    # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
-    list_filter = ("gender", IsEmailVerifiedFilter, IsAcceptedFilter, IsPaidFilter)
-    # inlines = [CustomUserAdmin]
-
-    def get_name(self, obj):
-        try:
-            return obj.member.first_name
-        except:
-            return False
-
-    def is_email_verified(self, obj):
-        try:
-            return obj.member.is_active
-        except:
-            return False
-
-    def is_paid(self, obj):
-        try:
-            return obj.is_activated
-        except:
-            return False
-
-    def is_accepted(self, obj):
-        try:
-            return obj.accepted
-        except:
-            return False
-
-    def get_team(self, obj):
-        try:
-            if(obj.team):
-                display_text = str(obj.team.id) + obj.team.group_name + " (" + ", ".join([
-                    "<a href={}>{}</a>".format(
-                        reverse('admin:{}_{}_change'.format(Participant._meta.app_label, Participant._meta.model_name),
-                                args=(member.pk,)),
-                        member.member.email)
-                    for member in obj.team.participant_set.all()
-                ]) + ")"
-                if display_text:
-                    return mark_safe(display_text)
-                return "-"
-        except:
-            return ''
-
-
-
-    def account_actions(self, obj):
-        try:
-            if obj.accepted:
-                return mark_safe('<a class="button" href="' + reverse('admin:unaccept_member',
-                                                                      args=[obj.pk]) + '">رد کن</a>' + '&nbsp;')
-
-            else:
-                return mark_safe('<a class="button" href="' + reverse('admin:accept_member',
-                                                                      args=[obj.pk]) + '">قبول کن</a>' + '&nbsp;')
-        except:
-            return None
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                'accept/<int:pk>/',
-                self.accept_member,
-                name='accept_member',
-            ),
-            path(
-                'unaccept/<int:pk>/',
-                self.unaccept_member,
-                name='unaccept_member',
-            )
-        ]
-        return custom_urls + urls
-
-    def accept_member(self, request, *args, **kwargs):
-        participant = Participant.objects.get(pk=kwargs['pk'])
-        participant.accepted = True
-        participant.save()
-        return redirect('/api/admin/accounts/participant')
-
-    def unaccept_member(self, request, *args, **kwargs):
-        participant = Participant.objects.get(pk=kwargs['pk'])
-        participant.accepted = False
-        participant.save()
-        return redirect('/api/admin/accounts/participant')
-
-    get_name.short_description = 'name'
-    is_email_verified.short_description = 'تایید ایمیل'
-    is_paid.short_description = 'تایید پرداخت'
-    is_accepted.short_description = 'accepted'
-    get_team.short_description = 'team'
-    is_accepted.boolean = True
-    is_email_verified.boolean = True
-    is_paid.boolean = True
-    account_actions.short_description = 'ACCEPT'
-
-
-    list_per_page = sys.maxsize
+# class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
+#     resource_class = ParticipantResource
+#     readonly_fields = ['document', 'gender', 'grade']
+#     list_display = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team','account_actions', 'is_accepted', 'is_paid', 'is_email_verified']
+#     # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
+#     list_filter = ("gender", IsEmailVerifiedFilter, IsAcceptedFilter, IsPaidFilter)
+#     # inlines = [CustomUserAdmin]
+#
+#     def get_name(self, obj):
+#         try:
+#             return obj.member.first_name
+#         except:
+#             return False
+#
+#     def is_email_verified(self, obj):
+#         try:
+#             return obj.member.is_active
+#         except:
+#             return False
+#
+#     def is_paid(self, obj):
+#         try:
+#             return obj.is_activated
+#         except:
+#             return False
+#
+#     def is_accepted(self, obj):
+#         try:
+#             return obj.accepted
+#         except:
+#             return False
+#
+#     def get_team(self, obj):
+#         try:
+#             if(obj.team):
+#                 display_text = str(obj.team.id) + obj.team.group_name + " (" + ", ".join([
+#                     "<a href={}>{}</a>".format(
+#                         reverse('admin:{}_{}_change'.format(Participant._meta.app_label, Participant._meta.model_name),
+#                                 args=(member.pk,)),
+#                         member.member.email)
+#                     for member in obj.team.participant_set.all()
+#                 ]) + ")"
+#                 if display_text:
+#                     return mark_safe(display_text)
+#                 return "-"
+#         except:
+#             return ''
+#
+#
+#
+#     def account_actions(self, obj):
+#         try:
+#             if obj.accepted:
+#                 return mark_safe('<a class="button" href="' + reverse('admin:unaccept_member',
+#                                                                       args=[obj.pk]) + '">رد کن</a>' + '&nbsp;')
+#
+#             else:
+#                 return mark_safe('<a class="button" href="' + reverse('admin:accept_member',
+#                                                                       args=[obj.pk]) + '">قبول کن</a>' + '&nbsp;')
+#         except:
+#             return None
+#
+#     def get_urls(self):
+#         urls = super().get_urls()
+#         custom_urls = [
+#             path(
+#                 'accept/<int:pk>/',
+#                 self.accept_member,
+#                 name='accept_member',
+#             ),
+#             path(
+#                 'unaccept/<int:pk>/',
+#                 self.unaccept_member,
+#                 name='unaccept_member',
+#             )
+#         ]
+#         return custom_urls + urls
+#
+#     def accept_member(self, request, *args, **kwargs):
+#         participant = Participant.objects.get(pk=kwargs['pk'])
+#         participant.accepted = True
+#         participant.save()
+#         return redirect('/api/admin/accounts/participant')
+#
+#     def unaccept_member(self, request, *args, **kwargs):
+#         participant = Participant.objects.get(pk=kwargs['pk'])
+#         participant.accepted = False
+#         participant.save()
+#         return redirect('/api/admin/accounts/participant')
+#
+#     get_name.short_description = 'name'
+#     is_email_verified.short_description = 'تایید ایمیل'
+#     is_paid.short_description = 'تایید پرداخت'
+#     is_accepted.short_description = 'accepted'
+#     get_team.short_description = 'team'
+#     is_accepted.boolean = True
+#     is_email_verified.boolean = True
+#     is_paid.boolean = True
+#     account_actions.short_description = 'ACCEPT'
+#
+#
+#     list_per_page = sys.maxsize
 
 
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['get_group_name', 'active', 'group_members_display', 'team_members_count', 'team_status', 'current_state']
+    list_display = ['get_group_name', 'active', 'group_members_display', 'team_members_count', 'team_status']
 
     change_list_template = 'admin/accounts/change_list_team.html'
 
@@ -307,26 +307,23 @@ class TeamAdmin(admin.ModelAdmin):
                 reverse('admin:{}_{}_change'.format(Participant._meta.app_label, Participant._meta.model_name),
                         args=(member.pk,)),
                 member.member.email)
-            for member in obj.participant_set.all()
+            for member in obj.team_members.all()
         ])
         if display_text:
             return mark_safe(display_text)
         return "-"
 
     def team_members_count(self, obj):
-        return obj.participant_set.all().count()
+        return obj.team_members.all().count()
     
     def team_status(self, obj):
         accept_count = 0
-        for p in obj.participant_set.all():
-            if p.accepted:
-                accept_count += 1  
+        for p in obj.team_members.all():
+            accept_count += 1
         if accept_count == 0: return False
-        elif accept_count == obj.participant_set.all().count(): return True
+        elif accept_count == obj.team_members.all().count(): return True
         else: return None
-    # # inlines = [
-    # #     ParticipantInline,
-    # # ]
+
     group_members_display.short_description = "اعضای تیم"
     get_group_name.short_description = "تیم "
     team_members_count.short_description = "تعداد اعضا"
@@ -353,7 +350,8 @@ class PaymentAdmin(admin.ModelAdmin):
 
 # Register your models here.
 admin.site.register(Member, CustomUserAdmin)
-admin.site.register(Participant, ParticipantInline)
+admin.site.register(Participant)
 admin.site.register(Team, TeamAdmin)
 admin.site.register(Mentor)
+admin.site.register(Player)
 admin.site.register(Payment, PaymentAdmin)

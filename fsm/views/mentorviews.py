@@ -121,3 +121,16 @@ def go_to_team(request):
     )
     qs.mark_all_as_read()
     return Response({}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
+def workshop_players(request):
+    # TODO: add time to api
+    player_workshops = PlayerWorkshop.objects.filter(workshop=request.data['fsm'])
+    serializer = PlayerWorkshopSerializer(player_workshops, many=True)
+    return Response(serializer.data)
+
+
+
+

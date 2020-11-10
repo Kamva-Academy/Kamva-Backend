@@ -9,8 +9,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 
 from accounts.models import Team
+from accounts.serializers import TeamSerializer
 from fsm.views import permissions as customPermissions
-from fsm.serializers import TeamSerializer
+
 
 class TeamView(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]

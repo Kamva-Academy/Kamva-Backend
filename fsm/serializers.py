@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import transaction
 from rest_framework import serializers
+
+from accounts.serializers import PlayerSerializer
 from fsm.models import *
 from accounts.models import Team
 import sys
@@ -54,8 +56,6 @@ class FSMStateGetSerializer(serializers.ModelSerializer):
 
 
 class FSMSerializer(serializers.ModelSerializer):
-    # fsm_learning_type = FSMLearningTypeSerializer(required=False)
-    # fsm_p_type = FSMPTypeSerializer(required=False)
     class Meta:
         model = FSM
         fields = '__all__'
@@ -235,6 +235,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True)
     answer = MultiChoiceAnswerSerializer()
+
     class Meta:
         model = ProblemMultiChoice
         fields = '__all__'
@@ -381,14 +382,14 @@ class WidgetSerializer(serializers.ModelSerializer):
 class SubmitedAnswerSerializer(serializers.ModelSerializer):
     xanswer = AnswerSerializer()
     class Meta:
-        model = SubmitedAnswer
+        model = SubmittedAnswer
         fields = '__all__'
 
 
 class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
     answer = AnswerSerializer()
     class Meta:
-        model = SubmitedAnswer
+        model = SubmittedAnswer
         fields = ['answer', 'problem']
     
     @transaction.atomic
@@ -398,7 +399,7 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         validated_data.pop('answer')
-        instance = SubmitedAnswer.objects.create(**validated_data)
+        instance = SubmittedAnswer.objects.create(**validated_data)
 
         serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
             answer_data['answer_type']))
@@ -446,6 +447,11 @@ class FSMStateGetSerializer(serializers.ModelSerializer):
         instance = FSM.objects.filter(active=True)
 
 
+class CurrentStateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FSMState
+        fields = ['id', 'name']
+
 # class WhiteboardSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = FSMPage
@@ -490,14 +496,6 @@ class TeamHistorySerializer(serializers.ModelSerializer):
 #         instance = self.create(validated_data)
 #         return instance
 #
-
-class TeamSerializer(serializers.ModelSerializer):
-    histories = TeamHistorySerializer(many=True)
-
-    class Meta:
-        model = Team
-        fields = '__all__'
-
 
 # class ParticipantSerializer(serializers.ModelSerializer):
 #     histories = UserHistorySerializer(many=True)
@@ -548,3 +546,18 @@ class TeamUUIDSerializer(serializers.Serializer):
 
 class GoToTeamSerializer(serializers.Serializer):
     team = serializers.IntegerField()
+
+
+class PlayerWorkshopSerializer(serializers.Serializer):
+    player = PlayerSerializer()
+    # workshop = FSMSerializer()
+    current_state = CurrentStateSerializer()
+
+    class Meta:
+        model = PlayerWorkshop
+
+    # def to_representation(self, instant):
+    #     result = {
+    #     }
+    #     return result
+
