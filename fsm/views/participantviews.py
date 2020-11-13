@@ -1,5 +1,9 @@
+import json
+
 from django.core.paginator import Paginator
 from rest_framework import status, permissions, viewsets
+
+import accounts
 from accounts.models import Member
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -7,6 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from .permissions import ParticipantPermission
 
 from django.contrib.contenttypes.models import ContentType
+from rest_framework.exceptions import ParseError
+
 
 from fsm.models import *
 from fsm.serializers import *
@@ -62,25 +68,62 @@ def get_history(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, ParticipantPermission])
 def send_answer(request):
+    if request.data['problem_type'] == 'ProblemUploadFileAnswer':
+        return send_pdf_answer(request)
+
     serializer = SubmitedAnswerPostSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     instance = serializer.create(request.data)
-    participant = request.user.participant
-    history = participant.team.histories.filter(state=participant.team.current_state.id)[0]
-    instance.team_history = history
-    instance.participant = participant
+    # participant = request.user.participant
+    # history = participant.team.histories.filter(state=participant.team.current_state.id)[0]
+    # instance.team_history = history
+    # instance.participant = participant
     instance.save()
-    correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(id = request.data['problem']).answer
-    if correct_answer.text == request.data['answer']['text']:
-        result = True
-    else:
-        result = False
+    # correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(id = request.data['problem']).answer
+    # if correct_answer.text == request.data['answer']['text']:
+    #     result = True
+    # else:
+    #     result = False
     data = SubmitedAnswerSerializer(instance).data
-    data['result'] = result
-    correct_answer = AnswerSerializer().to_representation(correct_answer)
-    data['correct_answer'] = correct_answer
+    # data['result'] = result
+    # correct_answer = AnswerSerializer().to_representation(correct_answer)
+    # data['correct_answer'] = correct_answer
     return Response(data, status=status.HTTP_200_OK)
+
+@transaction.atomic
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated, ParticipantPermission])
+def send_pdf_answer(request):
+    # answer = request.data['answer']
+    # if type(answer) is str:
+    #     answer = json.loads(answer)
+    player = accounts.models.Player.objects.get(id=request.data['player'])
+    problem = Problem.objects.get(id=request.data['problem'])
+    if 'answer_file' not in request.data:
+        raise ParseError("Empty content answer file")
+    answer_file = request.data['answer_file']
+    file_name = answer_file.name
+    answer_file.name = str(player.uuid) + "-" + str(problem.name) + '.pdf'
+
+    upload_file_answer = UploadFileAnswer.objects.create(
+        answer_file=answer_file,
+        answer_type='UploadFileAnswer',
+        file_name = file_name
+    )
+
+    instance = SubmittedAnswer.objects.create(
+        problem=problem,
+        answer=upload_file_answer,
+        player=player,
+        publish_date=timezone.localtime()
+    )
+    data = SubmitedAnswerSerializer(instance).data
+
+    return Response(data)
+
+
+
 
 
 @transaction.atomic
@@ -96,11 +139,6 @@ def move_to_next_state(request):
         data = FSMStateSerializer().to_representation(edges[0].head)
         return Response(data, status=status.HTTP_200_OK)
     return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-def is_not_in_later(team, state):
-    return len(TeamHistory.objects.filter(team=team.id, state=state.id)) == 0
-
 
 def get_last_state_in_fsm(team, fsm):
     try:
@@ -148,6 +186,7 @@ def set_first_current_state(request):
 @permission_classes([IsAuthenticated, ParticipantPermission])
 def request_mentor(request):
     team = request.user.participant.team
+    team = request.user.participant.team
     qs = Notification.objects.filter(
         actor_content_type=ContentType.objects.get_for_model(team).id,
         actor_object_id=team.pk,
@@ -186,42 +225,42 @@ def get_team_fsm_history(request):
         json_result.append(data)
     return Response(json_result, status=status.HTTP_200_OK)
 
-@transaction.atomic
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,])
-def team_go_back_to_state(request):
-    team = Team.objects.get(id=request.data['team'])
-    state = FSMState.objects.get(id=request.data['state'])
-    try:
-        history = TeamHistory.objects.filter(team=team, state=state)[0]
-    except:
-        return Response({"error": "state is not in history"}, status=status.HTTP_400_BAD_REQUEST)
+# @transaction.atomic
+# @api_view(['POST'])
+# @permission_classes([permissions.IsAuthenticated,])
+# def team_go_back_to_state(request):
+#     team = Team.objects.get(id=request.data['team'])
+#     state = FSMState.objects.get(id=request.data['state'])
+#     try:
+#         history = TeamHistory.objects.filter(team=team, state=state)[0]
+#     except:
+#         return Response({"error": "state is not in history"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#     team_change_current_state(team, state)
+#     data = FSMStateSerializer().to_representation(state)
+#     return Response(data, status=status.HTTP_200_OK)
 
-    team_change_current_state(team, state)
-    data = FSMStateSerializer().to_representation(state)
-    return Response(data, status=status.HTTP_200_OK)
-
-@transaction.atomic
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny,])
-def team_go_forward(request):
-    serializer = TeamHistoryGoForwardSerializer(data=request.data)
-    if not serializer.is_valid(raise_exception=True):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    validated_data = serializer.validated_data
-    state = validated_data['state']
-    # if state.type == str(StateType.withMentor):
-    #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
-
-    history = TeamHistory.objects.filter(team=validated_data['team'], state=validated_data['state'])[0]
-    validated_data['start_time'] = history.start_time
-    validated_data['pk'] = history.pk
-    history.delete()
-    history = TeamHistory.objects.create(**validated_data)
-    logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
-    team_change_current_state(history.team, history.edge.head)
-    data = TeamHistorySerializer().to_representation(history)
-    return Response(data, status=status.HTTP_200_OK)
+# @transaction.atomic
+# @api_view(['POST'])
+# @permission_classes([permissions.AllowAny,])
+# def team_go_forward(request):
+#     serializer = TeamHistoryGoForwardSerializer(data=request.data)
+#     if not serializer.is_valid(raise_exception=True):
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
+#     validated_data = serializer.validated_data
+#     state = validated_data['state']
+#     # if state.type == str(StateType.withMentor):
+#     #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#     history = TeamHistory.objects.filter(team=validated_data['team'], state=validated_data['state'])[0]
+#     validated_data['start_time'] = history.start_time
+#     validated_data['pk'] = history.pk
+#     history.delete()
+#     history = TeamHistory.objects.create(**validated_data)
+#     logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
+#     team_change_current_state(history.team, history.edge.head)
+#     data = TeamHistorySerializer().to_representation(history)
+#     return Response(data, status=status.HTTP_200_OK)
 
 
 @transaction.atomic
@@ -260,3 +299,26 @@ def user_workshops(request):
         return Response(serializer.data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, ParticipantPermission])
+def get_player_current_state(request):
+
+    fsm = request.data['fsm']
+    fsm = FSM.objects.get(id=fsm)
+    if fsm.fsm_p_type == 'hybrid':
+        player = request.user.participant
+    else:
+        player = request.data['player']
+        player = accounts.models.Player.objects.get(id=player)
+
+
+    player_workshop = PlayerWorkshop.objects.get(player=player, workshop=fsm)
+    if player_workshop:
+        current_state = player_workshop.current_state
+    else:
+        PlayerWorkshop.objects.create(workshop=fsm, player=player, current_state=fsm.first_state)
+        current_state = fsm.first_state
+    serializer = FSMStateSerializer(current_state)
+    return Response(serializer.data, status=status.HTTP_200_OK)

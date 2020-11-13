@@ -32,7 +32,7 @@ router.register('team/<int:pk>', TeamView)
 # router.register('small', SmallView)
 # router.register('small/<int:pk>', SmallView)
 urlpatterns = [
-     path('getcurrentstate/', get_current_state),
+     path('getcurrentstate/', get_player_current_state),
      # path('getstatepage/', get_state_),
      path('gethistory/', get_history),
      path('sendanswer/', send_answer),
@@ -46,8 +46,8 @@ urlpatterns = [
      path('set_first_current_page/', set_first_current_state),
      path('movetonextstate/', move_to_next_state),
      path('submitteam/', submit_team),
-     path('goforward/', team_go_forward),
-     path('gobackto/', team_go_back_to_state),
+     # path('goforward/', team_go_forward),
+     # path('gobackto/', team_go_back_to_state),
      path('visitteam/', go_to_team),
      path('requestmentor/', request_mentor),
 

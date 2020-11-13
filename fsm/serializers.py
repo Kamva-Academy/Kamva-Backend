@@ -173,6 +173,7 @@ class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         answer_data = validated_data.pop('answer')
         instance = ProblemSmallAnswer.objects.create(**validated_data)
+        answer_data['answer_type'] = 'SmallAnswer'
         answer = SmallAnswer.objects.create(**answer_data)
         answer.problem = instance
         answer.save()
@@ -203,6 +204,7 @@ class ProblemBigAnswerSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         answer_data = validated_data.pop('answer')
         instance = ProblemBigAnswer.objects.create(**validated_data)
+        answer_data['answer_type'] = 'BigAnswer'
         answer = BigAnswer.objects.create(**answer_data)
         answer.problem = instance
         answer.save()
@@ -226,7 +228,7 @@ class ProblemBigAnswerSerializer(serializers.ModelSerializer):
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = '__all__'
+        fields = ['text']
 
     def create(self, validated_data):
         print(validated_data)
@@ -249,6 +251,7 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
             choice = Choice.objects.create(**choice_data)
             choice.problem = instance
             choice.save()
+        answer_data['answer_type'] = 'MultiChoiceAnswer'
         answer = MultiChoiceAnswer.objects.create(**answer_data)
         answer.problem = instance
         answer.save()
@@ -290,6 +293,7 @@ class ProblemUploadFileAnswerSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         answer_data = validated_data.pop('answer')
         instance = ProblemUploadFileAnswer.objects.create(**validated_data)
+        answer_data['answer_type'] = 'UploadFileAnswer'
         answer = UploadFileAnswer.objects.create(**answer_data)
         answer.problem = instance
         answer.save()
@@ -390,7 +394,7 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
     answer = AnswerSerializer()
     class Meta:
         model = SubmittedAnswer
-        fields = ['answer', 'problem']
+        fields = ['answer', 'problem', 'player']
     
     @transaction.atomic
     def create(self, validated_data):

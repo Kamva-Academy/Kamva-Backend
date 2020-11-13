@@ -132,8 +132,8 @@ class Player(models.Model):
     player_type = models.CharField(max_length=15, choices=PlayerType.choices)
     score = models.IntegerField(null=True, blank=True)
     active = models.BooleanField(default=False)
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    workshops = models.ManyToManyField(FSM, through='fsm.PlayerWorkshop', related_name='players')
+    # uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    workshops = models.ManyToManyField('fsm.FSM', through='fsm.PlayerWorkshop', related_name='players')
 
 
 class Participant(Player):
@@ -145,7 +145,8 @@ class Participant(Player):
 
 class Team(Player):
     group_name = models.CharField(max_length=30, blank=True)
-    # uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    team_code = models.CharField(max_length=10)
     # current_state = models.ForeignKey('fsm.FSMState', null=True, blank=True, on_delete=models.SET_NULL, related_name='teams')
     team_members = models.ManyToManyField(Participant, related_name='team_set')
 
