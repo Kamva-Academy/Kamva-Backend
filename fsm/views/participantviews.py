@@ -91,25 +91,21 @@ def send_answer(request):
     # data['correct_answer'] = correct_answer
     return Response(data, status=status.HTTP_200_OK)
 
+
 @transaction.atomic
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated, ParticipantPermission])
 def send_pdf_answer(request):
-    # answer = request.data['answer']
-    # if type(answer) is str:
-    #     answer = json.loads(answer)
     player = accounts.models.Player.objects.get(id=request.data['player'])
     problem = Problem.objects.get(id=request.data['problem'])
     if 'answer_file' not in request.data:
         raise ParseError("Empty content answer file")
     answer_file = request.data['answer_file']
     file_name = answer_file.name
-    answer_file.name = str(player.uuid) + "-" + str(problem.name) + '.pdf'
+    answer_file.name = str(player.id) + "-" + str(problem.name) + '.pdf'
 
     upload_file_answer = UploadFileAnswer.objects.create(
         answer_file=answer_file,
         answer_type='UploadFileAnswer',
-        file_name = file_name
+        file_name=file_name
     )
 
     instance = SubmittedAnswer.objects.create(
@@ -121,9 +117,6 @@ def send_pdf_answer(request):
     data = SubmitedAnswerSerializer(instance).data
 
     return Response(data)
-
-
-
 
 
 @transaction.atomic
