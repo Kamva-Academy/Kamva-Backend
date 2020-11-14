@@ -7,7 +7,7 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
-from fsm.models import TeamHistory
+from fsm.models import PlayerHistory
 from .models import Team
 import random
 from django.db import transaction

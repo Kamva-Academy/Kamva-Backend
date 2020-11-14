@@ -39,7 +39,7 @@ urlpatterns = [
      path('editedges/', edit_edges),
      # TODO check if fsm is team or individual
      path('getteamhistory/', get_team_history),
-     path('getteamfsmhistory/', get_team_fsm_history),
+     # path('getteamfsmhistory/', get_team_fsm_history),
      # TODO for individual fsm
      path('getteamoutwardedges/', get_team_outward_edges),
      path('usergetteamoutwardedges/', user_get_team_outward_edges),
@@ -54,6 +54,8 @@ urlpatterns = [
      # new ones
      path('userworkshops/', user_workshops, name="user_workshops"),
      path('workshopplayers/', workshop_players, name="workshop_players"),
+     path('goforward/', player_go_forward_on_edge, name="player_go_forward_on_edge"),
+     path('gobackward/', player_go_backward_on_edge, name="player_go_backward_on_edge"),
 ]
 
 urlpatterns += router.urls

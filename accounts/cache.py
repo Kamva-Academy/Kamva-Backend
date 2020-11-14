@@ -1,7 +1,7 @@
 from accounts.models import Team
 from django.utils import timezone
 from datetime import timedelta
-from fsm.models import TeamHistory
+from fsm.models import PlayerHistory
 
 
 class TeamsCache:
@@ -37,7 +37,7 @@ class TeamsCache:
                         # 'page_id': current_state.page_id
                     }
             #TODO Team_history may not be a good thing for individual 
-                    state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by(
+                    state_history = PlayerHistory.objects.filter(team=team, state=current_state).order_by(
                         '-start_time')
                     if state_history:
                         team_json['current_state']['start_time'] = str(state_history[0].start_time)

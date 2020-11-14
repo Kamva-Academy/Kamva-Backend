@@ -465,12 +465,12 @@ class CurrentStateSerializer(serializers.ModelSerializer):
 class TeamHistorySerializer(serializers.ModelSerializer):
     answers = SubmitedAnswerSerializer(many=True)
     class Meta:
-        model = TeamHistory
+        model = PlayerHistory
         fields = '__all__'
 
     def create(self, validated_data):
         validated_data.pop('answers')
-        instance = TeamHistory.objects.create(**validated_data)
+        instance = PlayerHistory.objects.create(**validated_data)
         return instance
 
     def update(self, instance, validated_data):
@@ -508,6 +508,7 @@ class TeamHistorySerializer(serializers.ModelSerializer):
 #         model = Participant
 #         fields = '__all__'
 
+
 class EditEdgesSerializer(serializers.Serializer):
     edges = serializers.ListField(child=FSMEdgeSerializer())
     tail = serializers.IntegerField()
@@ -521,20 +522,19 @@ class GetTeamHistorySerializer(serializers.Serializer):
 #     team = serializers.IntegerField()
 
 
-
 class SetFirstStateSerializer(serializers.Serializer):
     fsm = serializers.IntegerField()
 
 
 class TeamHistorySubmitSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TeamHistory
+        model = PlayerHistory
         exclude = ('start_time', )
 
 
 class TeamHistoryGoForwardSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TeamHistory
+        model = PlayerHistory
         exclude = ('start_time', 'grade')
 
 
@@ -560,8 +560,4 @@ class PlayerWorkshopSerializer(serializers.Serializer):
     class Meta:
         model = PlayerWorkshop
 
-    # def to_representation(self, instant):
-    #     result = {
-    #     }
-    #     return result
 

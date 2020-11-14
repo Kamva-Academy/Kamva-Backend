@@ -1,6 +1,7 @@
 import json
 
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions, viewsets
 
 import accounts
@@ -23,23 +24,23 @@ from notifications.models import Notification
 import logging
 logger = logging.getLogger(__name__)
 
-@transaction.atomic
-@api_view(['GET'])
-@permission_classes([IsAuthenticated, ParticipantPermission])
-def get_current_state(request):
-    participant = request.user.participant
-    # fsm_id = request.GET.get('fsmId')
-    if not participant.team:
-        logger.error(f'participant {request.user} is not member of any team')
-        return Response({}, status=status.HTTP_400_BAD_REQUEST)
-    if participant.team.current_state:
-        state = participant.team.current_state
-        serializer = FSMStateSerializer()
-        data = serializer.to_representation(state)
-        return Response(data, status=status.HTTP_200_OK)
-    else:
-        logger.error(f'participant d cd {request.user} : current_state is not set')
-        return Response({},status=status.HTTP_400_BAD_REQUEST)
+# @transaction.atomic
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated, ParticipantPermission])
+# def get_current_state(request):
+#     participant = request.user.participant
+#     # fsm_id = request.GET.get('fsmId')
+#     if not participant.team:
+#         logger.error(f'participant {request.user} is not member of any team')
+#         return Response({}, status=status.HTTP_400_BAD_REQUEST)
+#     if participant.team.current_state:
+#         state = participant.team.current_state
+#         serializer = FSMStateSerializer()
+#         data = serializer.to_representation(state)
+#         return Response(data, status=status.HTTP_200_OK)
+#     else:
+#         logger.error(f'participant d cd {request.user} : current_state is not set')
+#         return Response({},status=status.HTTP_400_BAD_REQUEST)
     # try:
     #     fsm = FSM.objects.get(id=fsm_id)
     #     state = get_last_state_in_fsm(participant.team, fsm)
@@ -135,7 +136,7 @@ def move_to_next_state(request):
 
 def get_last_state_in_fsm(team, fsm):
     try:
-        hist = TeamHistory.objects.filter(team=team, state__fsm=fsm).order_by('-start_time')[0]
+        hist = PlayerHistory.objects.filter(team=team, state__fsm=fsm).order_by('-start_time')[0]
         return hist.state
     except IndexError:
         try:
@@ -191,32 +192,32 @@ def request_mentor(request):
     notify.send(team, recipient=Member.objects.filter(is_mentor=True), verb="request_mentor")
     return Response({"text": "درخواست ارسال شد. به زودی یکی از منتورا میاد اینجا."}, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,])
-def get_team_fsm_history(request):
-    user = request.user
-    par = user.participant
-    serializer = GetTeamHistorySerializer(data=request.data)
-    if not serializer.is_valid(raise_exception=True):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    try:
-        team = Team.objects.filter(id=request.data['team'])[0]
-        if par.team != team:
-            return Response("you can not see other team's history", status=status.HTTP_403_FORBIDDEN)
-    except:
-        return Response("team not found",status=status.HTTP_400_BAD_REQUEST)
-    try:
-        fsm = FSM.objects.get(id=request.data['fsm'])
-    except:
-        return Response("FSM not found",status=status.HTTP_400_BAD_REQUEST)
-    histories = TeamHistory.objects.filter(team=team, state__fsm=fsm).order_by('start_time')
-    json_result = []
-    for history in histories:
-        serializer = TeamHistorySerializer(history)
-        data = serializer.data
-        data['state_name'] = history.state.name
-        json_result.append(data)
-    return Response(json_result, status=status.HTTP_200_OK)
+# @api_view(['POST'])
+# @permission_classes([permissions.IsAuthenticated,])
+# def get_team_fsm_history(request):
+#     user = request.user
+#     par = user.participant
+#     serializer = GetTeamHistorySerializer(data=request.data)
+#     if not serializer.is_valid(raise_exception=True):
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
+#     try:
+#         team = Team.objects.filter(id=request.data['team'])[0]
+#         if par.team != team:
+#             return Response("you can not see other team's history", status=status.HTTP_403_FORBIDDEN)
+#     except:
+#         return Response("team not found",status=status.HTTP_400_BAD_REQUEST)
+#     try:
+#         fsm = FSM.objects.get(id=request.data['fsm'])
+#     except:
+#         return Response("FSM not found",status=status.HTTP_400_BAD_REQUEST)
+#     histories = PlayerHistory.objects.filter(team=team, state__fsm=fsm).order_by('start_time')
+#     json_result = []
+#     for history in histories:
+#         serializer = TeamHistorySerializer(history)
+#         data = serializer.data
+#         data['state_name'] = history.state.name
+#         json_result.append(data)
+#     return Response(json_result, status=status.HTTP_200_OK)
 
 # @transaction.atomic
 # @api_view(['POST'])
@@ -233,27 +234,91 @@ def get_team_fsm_history(request):
 #     data = FSMStateSerializer().to_representation(state)
 #     return Response(data, status=status.HTTP_200_OK)
 
-# @transaction.atomic
-# @api_view(['POST'])
-# @permission_classes([permissions.AllowAny,])
-# def team_go_forward(request):
-#     serializer = TeamHistoryGoForwardSerializer(data=request.data)
-#     if not serializer.is_valid(raise_exception=True):
-#         return Response(status=status.HTTP_400_BAD_REQUEST)
-#     validated_data = serializer.validated_data
-#     state = validated_data['state']
-#     # if state.type == str(StateType.withMentor):
-#     #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
-#
-#     history = TeamHistory.objects.filter(team=validated_data['team'], state=validated_data['state'])[0]
-#     validated_data['start_time'] = history.start_time
-#     validated_data['pk'] = history.pk
-#     history.delete()
-#     history = TeamHistory.objects.create(**validated_data)
-#     logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
-#     team_change_current_state(history.team, history.edge.head)
-#     data = TeamHistorySerializer().to_representation(history)
-#     return Response(data, status=status.HTTP_200_OK)
+@transaction.atomic
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def player_go_forward_on_edge(request):
+    edge = request.data['edge']
+    player = request.data['player']
+    fsm = request.data['fsm']
+
+    fsm = get_object_or_404(FSM, id=fsm)
+    edge = get_object_or_404(FSMEdge, id=edge)
+    if fsm.fsm_p_type == 'hybrid':
+        player = request.user.participant
+    else:
+        player = get_object_or_404(Player, id=player)
+
+    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)
+    if playerWorkshop.current_state == edge.tail:
+        playerWorkshop.current_state = edge.head
+        # TODO set the currect player history based on your need
+        # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state= edge.head)
+    else:
+        return Response({"error": "transmission is not accessable from this state"},
+                          status=status.HTTP_400_BAD_REQUEST)
+    # serializer = TeamHistoryGoForwardSerializer(data=request.data)
+    # if not serializer.is_valid(raise_exception=True):
+    #     return Response(status=status.HTTP_400_BAD_REQUEST)
+    # validated_data = serializer.validated_data
+    # state = validated_data['state']
+    # # if state.type == str(StateType.withMentor):
+    # #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    # history = PlayerHistory.objects.filter(player=validated_data['player'], state=validated_data['state'])[0]
+    # validated_data['start_time'] = history.start_time
+    # validated_data['pk'] = history.pk
+    # history.delete()
+    # history = PlayerHistory.objects.create(**validated_data)
+    # logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
+    # team_change_current_state(history.team, history.edge.head)
+    # data = TeamHistorySerializer().to_representation(history)
+    serializer = FSMStateSerializer(playerWorkshop.current_state)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@transaction.atomic
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def player_go_backward_on_edge(request):
+    edge = request.data['edge']
+    player = request.data['player']
+    fsm = request.data['fsm']
+
+    fsm = get_object_or_404(FSM, id=fsm)
+    edge = get_object_or_404(FSMEdge, id=edge)
+    if fsm.fsm_p_type == 'hybrid':
+        player = request.user.participant
+    else:
+        player = get_object_or_404(Player, id=player)
+
+    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)[0]
+    if playerWorkshop.current_state == edge.head:
+        playerWorkshop.current_state = edge.tail
+        # TODO set the currect player history based on your need
+        # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state= edge.head)
+    else:
+        return Response({"error": "transmission is not accessable from this state"},
+                          status=status.HTTP_400_BAD_REQUEST)
+    # serializer = TeamHistoryGoForwardSerializer(data=request.data)
+    # if not serializer.is_valid(raise_exception=True):
+    #     return Response(status=status.HTTP_400_BAD_REQUEST)
+    # validated_data = serializer.validated_data
+    # state = validated_data['state']
+    # # if state.type == str(StateType.withMentor):
+    # #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    # history = PlayerHistory.objects.filter(player=validated_data['player'], state=validated_data['state'])[0]
+    # validated_data['start_time'] = history.start_time
+    # validated_data['pk'] = history.pk
+    # history.delete()
+    # history = PlayerHistory.objects.create(**validated_data)
+    # logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
+    # team_change_current_state(history.team, history.edge.head)
+    # data = TeamHistorySerializer().to_representation(history)
+    serializer = FSMStateSerializer(playerWorkshop.current_state)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 @transaction.atomic

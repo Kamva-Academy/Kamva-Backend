@@ -1,4 +1,4 @@
-from fsm.models import TeamHistory, FSM
+from fsm.models import PlayerHistory, FSM
 from fsm.views.participantviews import get_last_state_in_fsm
 
 
@@ -67,7 +67,7 @@ def get_team_json_info(team):
             'fsm_id': current_state.fsm_id,
             # 'page_id': current_state.page.id
         }
-        state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
+        state_history = PlayerHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
         if state_history:
             response['current_state']['start_time'] = str(state_history[0].start_time)
         else:
@@ -89,7 +89,7 @@ def get_team_current_states_json(team):
                 'fsm_id': current_state.fsm_id,
                 # 'page_id': current_state.page.id
             }
-            state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
+            state_history = PlayerHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
             if state_history:
                 state_info['start_time'] = str(state_history[0].start_time)
             else:

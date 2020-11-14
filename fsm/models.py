@@ -66,7 +66,7 @@ class Ability(models.Model):
     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.CASCADE, related_name='abilities')
     name = models.CharField(max_length=150)
     value = models.BooleanField()
-    team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
+    player_history = models.ForeignKey('fsm.PlayerHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
 
     def __str__(self):
         return self.name
@@ -197,30 +197,20 @@ class SubmittedAnswer(models.Model):
             return None
 
 
-class TeamHistory(models.Model):
-    team = models.ForeignKey('accounts.Team', null=True, on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='team_histories')
+class PlayerHistory(models.Model):
+    player = models.ForeignKey('accounts.Player', null=True, on_delete=models.CASCADE, related_name='histories')
+    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='player_histories')
     grade = models.IntegerField(default=0)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
-        return f'{self.team.id}-{self.state.name}'
-
-# class UserHistory(models.Model):
-#     user = models.ForeignKey(Participant, null=True, on_delete=models.CASCADE, related_name='histories')
-#     state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='user_histories')
-#     grade = models.IntegerField(default=0)
-#     start_time = models.DateTimeField(null=True, blank=True)
-#     end_time = models.DateTimeField(null=True, blank=True)
-#     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.SET_NULL)
-#
-#     def __str__(self):
-#         return f'{self.user.id}-{self.state.name}'
+        return f'{self.player.id}-{self.state.name}'
 
 
 class PlayerWorkshop (models.Model):
     player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
     workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
     current_state = models.ForeignKey(FSMState, null=True, on_delete=models.SET_NULL, related_name='player_workshop')
+    last_visit = models.DateTimeField(null=True, blank=True)

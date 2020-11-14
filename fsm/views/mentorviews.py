@@ -1,4 +1,5 @@
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -91,11 +92,11 @@ def submit_team(request):
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     validated_data = serializer.validated_data
-    history = TeamHistory.objects.filter(team=validated_data['team'], state=validated_data['state'])[0]
+    history = PlayerHistory.objects.filter(team=validated_data['team'], state=validated_data['state'])[0]
     validated_data['start_time'] = history.start_time
     validated_data['pk'] = history.pk
     history.delete()
-    history = TeamHistory.objects.create(**validated_data)
+    history = PlayerHistory.objects.create(**validated_data)
     logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
     team_change_current_state(history.team, history.edge.head)
     data = TeamHistorySerializer().to_representation(history)
@@ -126,8 +127,12 @@ def go_to_team(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def workshop_players(request):
+    fsm = get_object_or_404(FSM, id=request.data['fsm'])
+    if fsm.fsm_p_type == "hybrid":
+        player_workshops = PlayerWorkshop.objects.filter(workshop=fsm, player__player_type__iexact='TEAM')
     # TODO: add time to api
-    player_workshops = PlayerWorkshop.objects.filter(workshop=request.data['fsm'])
+    else:
+        player_workshops = PlayerWorkshop.objects.filter(workshop=fsm)
     serializer = PlayerWorkshopSerializer(player_workshops, many=True)
     return Response(serializer.data)
 

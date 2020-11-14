@@ -40,7 +40,7 @@ class SubmittedAnswerAdmin(admin.ModelAdmin):
 
 
     def team_name(self, obj):
-        return str(obj.team_history.team.team_name)
+        return str(obj.player.team.group_name)
 
 
 admin.site.register(FSM)
@@ -62,5 +62,5 @@ admin.site.register(ProblemUploadFileAnswer)
 admin.site.register(SubmittedAnswer, SubmittedAnswerAdmin)
 
 
-admin.site.register(TeamHistory)
+admin.site.register(PlayerHistory)
 admin.site.register(PlayerWorkshop)
