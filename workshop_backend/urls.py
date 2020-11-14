@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/auth/', include(('accounts.urls', 'accounts'), namespace='accounts')),
     path('api/fsm/', include('fsm.urls')),
     path('api/notifications/', include('notifications_jwt.urls', namespace='notifications')),
+    path('api/notice/', include('notice.urls')),
 
     # path('api(?P<format>\.json|\.yaml)/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
