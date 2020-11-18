@@ -56,6 +56,9 @@ urlpatterns = [
      path('workshopplayers/', workshop_players, name="workshop_players"),
      path('goforward/', player_go_forward_on_edge, name="player_go_forward_on_edge"),
      path('gobackward/', player_go_backward_on_edge, name="player_go_backward_on_edge"),
+     path('startWorkshop/', start_workshop, name="start_workshop"),
+     path('mentorgetstate/', mentor_get_state, name="mentor_get_state"),
+     path('mentorgetplayerstate/', mentor_get_workshop_player, name="mentor_get_workshop_player"),
 ]
 
 urlpatterns += router.urls

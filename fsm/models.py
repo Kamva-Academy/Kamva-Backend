@@ -212,5 +212,5 @@ class PlayerHistory(models.Model):
 class PlayerWorkshop (models.Model):
     player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
     workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
-    current_state = models.ForeignKey(FSMState, null=True, on_delete=models.SET_NULL, related_name='player_workshop')
+    current_state = models.ForeignKey(FSMState, null=True, blank=True, on_delete=models.SET_NULL, related_name='player_workshop')
     last_visit = models.DateTimeField(null=True, blank=True)

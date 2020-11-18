@@ -549,15 +549,23 @@ class TeamUUIDSerializer(serializers.Serializer):
 
 
 class GoToTeamSerializer(serializers.Serializer):
-    team = serializers.IntegerField()
+    player_workshop = serializers.IntegerField()
 
 
-class PlayerWorkshopSerializer(serializers.Serializer):
+class PlayerWorkshopSerializer(serializers.ModelSerializer):
     player = PlayerSerializer()
-    # workshop = FSMSerializer()
     current_state = CurrentStateSerializer()
+    # id = serializers.UUIDField()
 
     class Meta:
         model = PlayerWorkshop
+        fields = ['id', 'player', 'current_state', 'last_visit']
 
 
+class MentorPlayerWorkshopSerializer(serializers.ModelSerializer):
+    player = PlayerSerializer()
+    current_state = FSMStateGetSerializer()
+
+    class Meta:
+        model = PlayerWorkshop
+        fields = ['id', 'player', 'current_state', 'last_visit']

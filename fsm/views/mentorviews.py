@@ -114,10 +114,10 @@ def go_to_team(request):
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     validated_data = serializer.validated_data
-    team = Team.objects.get(pk=validated_data['team'])
+    player_workshop = PlayerWorkshop.objects.get(pk=validated_data['player_workshop'])
     qs = Notification.objects.filter(
-        actor_content_type=ContentType.objects.get_for_model(team).id,
-        actor_object_id=team.pk,
+        actor_content_type=ContentType.objects.get_for_model(player_workshop).id,
+        actor_object_id=player_workshop.pk,
         recipient__is_mentor=True
     )
     qs.mark_all_as_read()
@@ -130,11 +130,28 @@ def workshop_players(request):
     fsm = get_object_or_404(FSM, id=request.data['fsm'])
     if fsm.fsm_p_type == "hybrid":
         player_workshops = PlayerWorkshop.objects.filter(workshop=fsm, player__player_type__iexact='TEAM')
-    # TODO: add time to api
     else:
         player_workshops = PlayerWorkshop.objects.filter(workshop=fsm)
     serializer = PlayerWorkshopSerializer(player_workshops, many=True)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
+def mentor_get_workshop_player(request):
+    player_workshop = get_object_or_404(PlayerWorkshop, id=request.data['player_workshop'])
+    serializer = MentorPlayerWorkshopSerializer(player_workshop)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
+def mentor_get_state(request):
+    state = get_object_or_404(FSMState, id=request.data['state'])
+    serializer = FSMStateGetSerializer(state)
+    return Response(serializer.data)
+
+
 
 
 

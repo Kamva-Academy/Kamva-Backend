@@ -94,5 +94,6 @@ class ParticipantSerializer(serializers.Serializer):
             'player_type': instance.player_type,
             'name': instance.member.first_name,
             'id': instance.id,
-            'score': instance.score
+            'score': instance.score,
+            'uuid': instance.member.uuid
         }
