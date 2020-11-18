@@ -48,7 +48,6 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
 # class FSMStateGetSerializer(serializers.ModelSerializer):
 #     outward_edges = FSMEdgeSerializer(many=True)
 #     inward_edges = FSMEdgeSerializer(many=True)
-#     widgets = WidgetSerializer(many=True)
 #     class Meta:
 #         model = FSMState
 #         fields = '__all__'
@@ -70,8 +69,6 @@ class FSMSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = FSM
 #         fields = ['name', 'type', 'active', ]
-
-
 
 class GameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -412,6 +409,9 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
         return instance
 
 
+class FSMStateSerializer(serializers.ModelSerializer):
+    widgets = WidgetSerializer(many=True)
+
     class Meta:
         model = FSMState
         fields = '__all__'
@@ -447,16 +447,18 @@ class CurrentStateSerializer(serializers.ModelSerializer):
         model = FSMState
         fields = ['id', 'name']
 
-# class WhiteboardSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = FSMPage
-#         fields = ['init_whiteboard']
 
 class FSMGetSerializer(serializers.ModelSerializer):
     states = FSMStateGetSerializer(many=True)
     class Meta:
         model = FSM
         fields = '__all__'
+
+
+# class WhiteboardSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = FSMPage
+#         fields = ['init_whiteboard']
 
 
 class TeamHistorySerializer(serializers.ModelSerializer):
