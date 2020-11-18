@@ -412,8 +412,6 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
         return instance
 
 
-    widgets = WidgetSerializer(many=True)
-
     class Meta:
         model = FSMState
         fields = '__all__'
