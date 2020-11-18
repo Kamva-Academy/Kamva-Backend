@@ -73,7 +73,6 @@ class FSMSerializer(serializers.ModelSerializer):
 
 class FSMGetSerializer(serializers.ModelSerializer):
     states = FSMStateGetSerializer(many=True)
-    teams = serializers.IntegerField()
     class Meta:
         model = FSM
         fields = '__all__'
