@@ -1,6 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .models import Message
-from accounts.models import Member, Participant
+from accounts.models import Member, Participant, Team
 from .views import get_last_10_messages, get_user_contact, get_current_chat, get_message_by_id
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 def get_name(team_uuid, person_uuid):
     try:
+        # TODO kinda access uuid
         member = Member.objects.filter(uuid=person_uuid)
         logger.info(f'try to access team_uuid {team_uuid}')
         if member:
@@ -21,7 +22,11 @@ def get_name(team_uuid, person_uuid):
                 result = True
             elif member[0].is_participant:
                 participant = Participant.objects.get(member=member[0])
-                if str(participant.team.uuid) == team_uuid:
+                try:
+                    team = Team.objects.get(uuid=team_uuid)
+                except:
+                    return False
+                if participant in team.team_members.all():
                     result = True
                 else:
                     result = False
