@@ -101,7 +101,7 @@ def send_pdf_answer(request):
         raise ParseError("Empty content answer file")
     answer_file = request.data['answer_file']
     file_name = answer_file.name
-    answer_file.name = str(player.id) + "-" + str(problem.name) + '.pdf'
+    answer_file.name = str(player.id) + "-" + str(problem.id) + '.pdf'
 
     upload_file_answer = UploadFileAnswer.objects.create(
         answer_file=answer_file,
