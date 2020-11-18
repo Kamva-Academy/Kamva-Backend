@@ -25,11 +25,6 @@ class FSM(models.Model):
     def __str__(self):
         return self.name
 
-    def teams(self):
-        states = FSMState.objects.filter(fsm=self)
-        teams = Team.objects.filter(current_state__in=states)
-        return len(teams)
-
 
 class FSMState(models.Model):
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
