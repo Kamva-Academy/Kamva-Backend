@@ -85,7 +85,7 @@ class Widget(models.Model):
         ProblemUploadFileAnswer = 'ProblemUploadFileAnswer'
 
     state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='%(class)s')
-    priority = models.IntegerField()
+    priority = models.IntegerField(default=1, null=True, blank=True)
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices)
     objects = InheritanceManager()
 

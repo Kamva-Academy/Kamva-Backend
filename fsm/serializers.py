@@ -274,35 +274,35 @@ class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
 
 
 class ProblemUploadFileAnswerSerializer(serializers.ModelSerializer):
-    answer = UploadFileAnswerSerializer()
+    # answer = UploadFileAnswerSerializer()
 
     class Meta:
         model = ProblemUploadFileAnswer
         fields = '__all__'
 
-    @transaction.atomic
-    def create(self, validated_data):
-        answer_data = validated_data.pop('answer')
-        instance = ProblemUploadFileAnswer.objects.create(**validated_data)
-        answer_data['answer_type'] = 'UploadFileAnswer'
-        answer = UploadFileAnswer.objects.create(**answer_data)
-        answer.problem = instance
-        answer.save()
+    # @transaction.atomic
+    # def create(self, validated_data):
+    #     # answer_data = validated_data.pop('answer')
+    #     instance = ProblemUploadFileAnswer.objects.create(**validated_data)
+    #     # answer_data['answer_type'] = 'UploadFileAnswer'
+    #     # answer = UploadFileAnswer.objects.create(**answer_data)
+    #     # answer.problem = instance
+    #     # answer.save()
+    #
+    #     return instance
 
-        return instance
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        validated_data['pk'] = instance.pk
-        try:
-            answer = UploadFileAnswer.objects.filter(problem=instance)[0]
-            validated_data['answer']['pk'] = answer.pk
-            answer.delete()
-        except:
-            pass
-        instance.delete()
-        instance = self.create(validated_data)
-        return instance
+    # @transaction.atomic
+    # def update(self, instance, validated_data):
+    #     validated_data['pk'] = instance.pk
+    #     try:
+    #         answer = UploadFileAnswer.objects.filter(problem=instance)[0]
+    #         validated_data['answer']['pk'] = answer.pk
+    #         answer.delete()
+    #     except:
+    #         pass
+    #     instance.delete()
+    #     instance = self.create(validated_data)
+    #     return instance
 
 
 class ProblemSerializer(serializers.ModelSerializer):
