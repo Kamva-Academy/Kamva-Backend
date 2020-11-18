@@ -20,11 +20,11 @@ class EdgeAdmin(admin.ModelAdmin):
 
 class AnswerAdmin(admin.ModelAdmin):
     model = UploadFileAnswer
-    list_display = ['name', 'answer_file', ]
+    list_display = ['id', 'answer_file', ]
 
-    def name(self, obj):
-        name = obj.problem.name
-        return name
+    # def name(self, obj):
+    #     name = obj.problem.name
+    #     return name
 
 
 class SubmittedAnswerAdmin(admin.ModelAdmin):

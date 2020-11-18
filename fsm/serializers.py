@@ -45,14 +45,14 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
     '''
 
 
-# class FSMStateGetSerializer(serializers.ModelSerializer):
-#     outward_edges = FSMEdgeSerializer(many=True)
-#     inward_edges = FSMEdgeSerializer(many=True)
-#     class Meta:
-#         model = FSMState
-#         fields = '__all__'
-#         queryset = FSM.objects.filter(active=True)
-#         instance = FSM.objects.filter(active=True)
+class PlayerFSMStateGetSerializer(serializers.ModelSerializer):
+    outward_edges = FSMEdgeSerializer(many=True)
+    inward_edges = FSMEdgeSerializer(many=True)
+    class Meta:
+        model = FSMState
+        fields = '__all__'
+        queryset = FSM.objects.filter(active=True)
+        instance = FSM.objects.filter(active=True)
 
 
 class FSMSerializer(serializers.ModelSerializer):

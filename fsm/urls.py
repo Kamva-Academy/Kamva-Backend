@@ -43,7 +43,7 @@ urlpatterns = [
      # TODO for individual fsm
      path('getteamoutwardedges/', get_team_outward_edges),
      path('usergetteamoutwardedges/', user_get_team_outward_edges),
-     path('set_first_current_page/', set_first_current_state),
+     # path('set_first_current_page/', set_first_current_state),
      path('movetonextstate/', move_to_next_state),
      path('submitteam/', submit_team),
      # path('goforward/', team_go_forward),

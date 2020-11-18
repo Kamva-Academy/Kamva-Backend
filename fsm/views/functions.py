@@ -2,7 +2,8 @@
 from fsm.models import *
 from django.utils import timezone
 
-from fsm.serializers import FSMStateSerializer, FSMStateGetSerializer
+from fsm.serializers import FSMStateSerializer, FSMStateGetSerializer, WidgetSerializer, SubmitedAnswerSerializer, \
+    AnswerSerializer
 
 
 def team_change_current_state(team, state):
@@ -32,5 +33,19 @@ def user_get_current_state(player, fsm):
         PlayerWorkshop.objects.create(workshop=fsm, player=player,
                                       current_state=fsm.first_state, last_visit=timezone.now())
         current_state = fsm.first_state
-    serializer = FSMStateGetSerializer(current_state)
-    return serializer
+
+    return current_state
+
+
+def current_state_widgets_json(state, player):
+    widgets = []
+    for widget in state.widgets():
+        widgetJson = WidgetSerializer().to_representation(widget)
+        widgetJson.pop('answer', None)
+        widgets.append(widgetJson)
+
+        last_answer = SubmittedAnswer.objects.filter(problem_id=widget.id, player=player).order_by('-publish_dat')
+        if len(last_answer) > 0:
+            submitted_answer = AnswerSerializer().to_representation(last_answer[0].xanswer())
+            widgetJson['last_submit'] = submitted_answer
+    return widgets

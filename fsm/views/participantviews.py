@@ -147,32 +147,32 @@ def get_last_state_in_fsm(team, fsm):
             # return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@transaction.atomic
-@api_view(['POST'])
-@permission_classes([IsAuthenticated, ParticipantPermission])
-def set_first_current_state(request):
-    team = request.user.participant.team
-    serializer = SetFirstStateSerializer(data=request.data)
-    if not serializer.is_valid(raise_exception=True):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    fsm = FSM.objects.filter(id=request.data['fsm'])[0]
-    if team.current_state is None or team.current_state.name == 'end':
-        state = get_last_state_in_fsm(team, fsm)
-        try:
-            logger.info(
-                f'changed state team {team.id} from {team.current_state.name} to {state.name}')
-        except:
-            if state:
-                logger.info(
-                    f'changed state team {team.id} from None to {state.name}')
-            elif not team.current_state:
-                logger.info(
-                    f'changed state team {team.id} from {team.current_state.name} to None')
-        team_change_current_state(team, state)
-        data = FSMStateGetSerializer().to_representation(state)
-    else:
-         return Response("شما در کارگاه دیگری هستید!", status=status.HTTP_400_BAD_REQUEST)
-    return Response(data, status=status.HTTP_200_OK)
+# @transaction.atomic
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated, ParticipantPermission])
+# def set_first_current_state(request):
+#     team = request.user.participant.team
+#     serializer = SetFirstStateSerializer(data=request.data)
+#     if not serializer.is_valid(raise_exception=True):
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
+#     fsm = FSM.objects.filter(id=request.data['fsm'])[0]
+#     if team.current_state is None or team.current_state.name == 'end':
+#         state = get_last_state_in_fsm(team, fsm)
+#         try:
+#             logger.info(
+#                 f'changed state team {team.id} from {team.current_state.name} to {state.name}')
+#         except:
+#             if state:
+#                 logger.info(
+#                     f'changed state team {team.id} from None to {state.name}')
+#             elif not team.current_state:
+#                 logger.info(
+#                     f'changed state team {team.id} from {team.current_state.name} to None')
+#         team_change_current_state(team, state)
+#         data = FSMStateGetSerializer().to_representation(state)
+#     else:
+#          return Response("شما در کارگاه دیگری هستید!", status=status.HTTP_400_BAD_REQUEST)
+#     return Response(data, status=status.HTTP_200_OK)
 
 
 @transaction.atomic
@@ -373,14 +373,17 @@ def user_workshops(request):
 def get_player_current_state(request):
     fsm = request.data['fsm']
     fsm = FSM.objects.get(id=fsm)
+    player1 = request.data['player']
     if fsm.fsm_p_type == 'hybrid':
         player = request.user.participant
     else:
-        player = request.data['player']
+        player = player1
         player = accounts.models.Player.objects.get(id=player)
 
-    serializer = user_get_current_state(player, fsm)
-    if fsm.fsm_p_type == 'hybrid' and serializer is None:
+    current_state = user_get_current_state(player, fsm)
+    # result = current_state_json(current_state)
+    # serializer = FSMStateGetSerializer(current_state)
+    if fsm.fsm_p_type == 'hybrid' and current_state is None:
         team = request.data['player']
         team = accounts.models.Team.objects.get(id=team)
         PlayerWorkshop.objects.create(workshop=fsm, player=team,
@@ -388,9 +391,12 @@ def get_player_current_state(request):
         for member in team.team_members.all():
             PlayerWorkshop.objects.create(workshop=fsm, player=member,
                                           current_state=fsm.first_state, last_visit=timezone.now())
-        serializer = FSMStateGetSerializer(fsm.first_state)
+    result = PlayerFSMStateGetSerializer(fsm.first_state).data
+    widgets = current_state_widgets_json(current_state, player1)
+    result['widgets'] = widgets
 
-    return Response(serializer.data, status=status.HTTP_200_OK)
+
+    return Response(result, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
