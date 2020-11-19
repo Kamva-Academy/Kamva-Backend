@@ -412,7 +412,7 @@ def start_workshop(request):
         try:
             player_workshop = PlayerWorkshop.objects.filter(
                 workshop=fsm,
-                player__player_type='PARTICIPANT',
+                player__player_type='TEAM',
                 player__team__team_members=player
             )[0]
         except:
