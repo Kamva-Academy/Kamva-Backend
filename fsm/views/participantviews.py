@@ -417,7 +417,7 @@ def start_workshop(request):
             )[0]
         except:
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."})
-        current_state = user_get_current_state(player, fsm).data
+        # current_state = user_get_current_state(player, fsm)
         player_data = PlayerSerializer().to_representation(player_workshop.player)
 
     elif fsm_type == 'team':
@@ -430,17 +430,16 @@ def start_workshop(request):
             )[0]
         except:
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."})
-        current_state = player_workshop.current_state
+        # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
 
     else:
         player = request.user.participant
-        current_state = user_get_current_state(player, fsm).data
-        current_state = FSMStateGetSerializer(current_state).data
+        # current_state = user_get_current_state(player, fsm).data
+        # current_state = FSMStateGetSerializer(current_state).data
         player_data = PlayerSerializer().to_representation(player)
 
-    result = {'player': player_data, 'current_state': current_state}
-
+    result = {'player': player_data}
     return Response(result, status=status.HTTP_200_OK)
 
 
