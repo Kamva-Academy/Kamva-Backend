@@ -244,6 +244,7 @@ def request_mentor(request):
 def player_go_forward_on_edge(request):
     edge = request.data['edge']
     player = request.data['player']
+    player1 = get_object_or_404(Player, id=player)
     fsm = request.data['fsm']
 
     fsm = get_object_or_404(FSM, id=fsm)
@@ -251,7 +252,7 @@ def player_go_forward_on_edge(request):
     if fsm.fsm_p_type == 'hybrid':
         player = request.user.participant
     else:
-        player = get_object_or_404(Player, id=player)
+        player = player1
 
     playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)[0]
     if playerWorkshop.current_state == edge.tail:
@@ -279,8 +280,9 @@ def player_go_forward_on_edge(request):
     # logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
     # team_change_current_state(history.team, history.edge.head)
     # data = TeamHistorySerializer().to_representation(history)
-    serializer = FSMStateGetSerializer(playerWorkshop.current_state)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    # serializer = FSMStateGetSerializer(playerWorkshop.current_state)
+    state_result = player_state(playerWorkshop.current_state, player)
+    return Response(state_result, status=status.HTTP_200_OK)
 
 
 @transaction.atomic
@@ -324,8 +326,10 @@ def player_go_backward_on_edge(request):
     # logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
     # team_change_current_state(history.team, history.edge.head)
     # data = TeamHistorySerializer().to_representation(history)
-    serializer = FSMStateGetSerializer(playerWorkshop.current_state)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    # serializer = FSMStateGetSerializer(playerWorkshop.current_state)
+
+    state_result = player_state(playerWorkshop.current_state, player)
+    return Response(state_result, status=status.HTTP_200_OK)
 
 
 
@@ -441,5 +445,22 @@ def start_workshop(request):
 
     result = {'player': player_data}
     return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, ParticipantPermission])
+def participant_get_player_state(request):
+    perticipant = request.user.participant
+    state = get_object_or_404(FSMState, id=request.data['state'])
+    player = get_object_or_404(Player, id=request.data['player'])
+    if player.player_type == "TEAM":
+        if not (perticipant in player.team.team_members.all()):
+            return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
+
+    else:
+        if not (player == perticipant):
+            return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
+    state_result = player_state(state, player)
+    return Response(state_result)
 
 

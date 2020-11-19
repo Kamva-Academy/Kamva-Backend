@@ -3,7 +3,7 @@ from fsm.models import *
 from django.utils import timezone
 
 from fsm.serializers import FSMStateSerializer, FSMStateGetSerializer, WidgetSerializer, SubmitedAnswerSerializer, \
-    AnswerSerializer
+    AnswerSerializer, PlayerFSMStateGetSerializer
 
 
 def team_change_current_state(team, state):
@@ -50,3 +50,10 @@ def current_state_widgets_json(state, player):
             submitted_answer = AnswerSerializer().to_representation(last_answer[0].xanswer())
             widgetJson['last_submit'] = submitted_answer
     return widgets
+
+
+def player_state(state, player):
+    state_result = PlayerFSMStateGetSerializer(state).data
+    widgets = current_state_widgets_json(state, player)
+    state_result['widgets'] = widgets
+    return state_result
