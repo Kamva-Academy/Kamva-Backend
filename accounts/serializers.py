@@ -47,7 +47,7 @@ class MemberSerializer(serializers.ModelSerializer):
 
 class TeamMembetListField(serializers.RelatedField):
     def to_representation(self, value):
-        return value.member.first_name + value.member.username
+        return value.member.first_name
 
 
 class TeamSerializer(serializers.ModelSerializer):
