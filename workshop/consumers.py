@@ -42,20 +42,19 @@ def get_name(team_uuid, person_uuid):
 class BoardConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
-        # self.room_name = self.scope['url_route']['kwargs']['team_uuid']
-        # person_uuid = self.scope['url_route']['kwargs']['person_uuid']
+        self.room_name = self.scope['url_route']['kwargs']['team_uuid']
+        person_uuid = self.scope['url_route']['kwargs']['person_uuid']
         self.room_group_name = 'board_%s' % self.room_name
-        # check_user = await database_sync_to_async(get_name)(self.room_name, person_uuid)
-        # if check_user:
+        check_user = await database_sync_to_async(get_name)(self.room_name, person_uuid)
+        if check_user:
             # Join room
-        await self.channel_layer.group_add(
-            # self.room_group_name,
-            "test_room_name",
-            self.channel_name
-        )
-        await self.accept()
-        # else:
-        #     await self.close()
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            await self.accept()
+        else:
+            await self.close()
 
     async def disconnect(self, close_code):
         # Leave room
