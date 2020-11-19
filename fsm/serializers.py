@@ -64,6 +64,12 @@ class FSMSerializer(serializers.ModelSerializer):
         exclusions = super(FSMSerializer, self).get_validation_exclusions()
         return exclusions + ['first_state', 'fsm_learning_type', 'fsm_p_type']
 
+
+class FSMRawSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FSM
+        fields = '__all__'
+
 #
 # class FSMCreatSerializer(serializers.ModelSerializer):
 #     class Meta:

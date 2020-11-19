@@ -57,7 +57,7 @@ urlpatterns = [
      path('goforward/', player_go_forward_on_edge, name="player_go_forward_on_edge"),
      path('gobackward/', player_go_backward_on_edge, name="player_go_backward_on_edge"),
      path('startWorkshop/', start_workshop, name="start_workshop"),
-     path('mentorgetstate/', mentor_get_state, name="mentor_get_state"),
+     path('mentorgetplayerfsm/', mentor_get_player_fsm, name="mentor_get_player_fsm"),
      path('mentorgetplayerstate/', mentor_get_workshop_player, name="mentor_get_workshop_player"),
 ]
 

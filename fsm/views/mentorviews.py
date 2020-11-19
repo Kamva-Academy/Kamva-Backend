@@ -146,10 +146,21 @@ def mentor_get_workshop_player(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
-def mentor_get_state(request):
-    state = get_object_or_404(FSMState, id=request.data['state'])
-    serializer = FSMStateGetSerializer(state)
-    return Response(serializer.data)
+def mentor_get_player_fsm(request):
+    states_result = []
+    # state = get_object_or_404(FSMState, id=request.data['state'])
+    fsm = get_object_or_404(FSM, id=request.data['fsm'])
+    fsm_data = FSMRawSerializer(fsm).data
+    team = get_object_or_404(Team, uuid=request.data['team_uuid'])
+    for state in fsm.states.all():
+
+        state_result = PlayerFSMStateGetSerializer(state).data
+        widgets = current_state_widgets_json(state, team)
+        state_result['widgets'] = widgets
+        states_result.append(state_result)
+    # serializer = FSMStateGetSerializer(state)
+    fsm_data['states'] = states_result
+    return Response(fsm_data)
 
 
 
