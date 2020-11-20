@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
@@ -109,6 +110,18 @@ def send_pdf_answer(request):
         answer_type='UploadFileAnswer',
         file_name=file_name
     )
+
+    former_answer = SubmittedAnswer.objects.filter(
+        problem=problem,
+        player=player
+    )
+    if len(former_answer)>0:
+        former_answer = former_answer[0]
+        old_file = former_answer.answer.uploadfileanswer.answer_file
+        former_answer.delete()
+        if os.path.isfile(old_file.path):
+            os.remove(old_file.path)
+
 
     instance = SubmittedAnswer.objects.create(
         problem=problem,
