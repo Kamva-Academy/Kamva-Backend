@@ -68,7 +68,7 @@ def live_unread_notification_list(request):
             struct['action_object'] = str(notification.action_object)
         if notification.data:
             struct['data'] = notification.data
-        unread_list.append(struct)
+        unread_list.append({'actor_object_id': struct['actor_object_id']})
         if request.GET.get('mark_as_read'):
             notification.mark_as_read()
     data = {
