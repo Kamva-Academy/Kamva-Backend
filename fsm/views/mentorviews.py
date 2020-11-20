@@ -148,8 +148,10 @@ def mentor_get_workshop_player(request):
 @permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def mentor_get_player_state(request):
     state = get_object_or_404(FSMState, id=request.data['state'])
-    player = get_object_or_404(Player, id=request.data['player'])
-    state_result = player_state(state, player)
+    if state.fsm.fsm_p_type != 'individual':
+        player = get_object_or_404(Team, uuid=request.data['player_uuid'])
+        state_result = player_state(state, player)
+    # TODO: for individual states should change.
     return Response(state_result)
 
 
