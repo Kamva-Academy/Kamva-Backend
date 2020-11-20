@@ -154,7 +154,7 @@ class IsAcceptedFilter(admin.SimpleListFilter):
 class CustomUserAdmin(admin.ModelAdmin,):
     model = Member
     # readonly_fields = [ 'first_name']
-    list_display = ['email', 'first_name', 'is_active']
+    list_display = ['username', 'email', 'first_name', 'is_active']
 
 
 # class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
