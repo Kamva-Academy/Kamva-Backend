@@ -452,7 +452,7 @@ def start_workshop(request):
 def participant_get_player_state(request):
     perticipant = request.user.participant
     state = get_object_or_404(FSMState, id=request.data['state'])
-    player = get_object_or_404(Player, id=request.data['player'])
+    player = get_object_or_404(Team, uuid=request.data['player_uuid'])
     if player.player_type == "TEAM":
         if not (perticipant in player.team.team_members.all()):
             return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
