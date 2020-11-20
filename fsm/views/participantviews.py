@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions, viewsets
 
 import accounts
+from fsm.views import permissions as customPermissions
 from accounts.models import Member, Player
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -95,6 +96,7 @@ def send_answer(request):
 
 
 @transaction.atomic
+@permission_classes([IsAuthenticated, ParticipantPermission, customPermissions.MentorPermission,])
 def send_pdf_answer(request):
     player = accounts.models.Player.objects.get(id=request.data['player'])
     problem = Problem.objects.get(id=request.data['problem'])
