@@ -261,7 +261,6 @@ def player_go_forward_on_edge(request):
     edge = request.data['edge']
     player = request.data['player']
     player1 = get_object_or_404(Player, id=player)
-    # fsm = request.data['fsm']
 
     edge = get_object_or_404(FSMEdge, id=edge)
     fsm = edge.tail.fsm
@@ -270,7 +269,7 @@ def player_go_forward_on_edge(request):
     else:
         player = player1
 
-    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)[0]
+    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
     logger.info(
         f'player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
@@ -311,16 +310,18 @@ def player_go_forward_on_edge(request):
 def player_go_backward_on_edge(request):
     edge = request.data['edge']
     player = request.data['player']
-    fsm = request.data['fsm']
 
-    fsm = get_object_or_404(FSM, id=fsm)
     edge = get_object_or_404(FSMEdge, id=edge)
+    fsm = edge.tail.fsm
     if fsm.fsm_p_type == 'hybrid':
         player = request.user.participant
     else:
         player = get_object_or_404(Player, id=player)
 
     playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
+    logger.info(
+        f'player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+
     if playerWorkshop.current_state == edge.head:
         playerWorkshop.current_state = edge.tail
         playerWorkshop.last_visit = timezone.now()
