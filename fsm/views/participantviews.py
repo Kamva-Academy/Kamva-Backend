@@ -261,17 +261,21 @@ def player_go_forward_on_edge(request):
     edge = request.data['edge']
     player = request.data['player']
     player1 = get_object_or_404(Player, id=player)
-    fsm = request.data['fsm']
+    # fsm = request.data['fsm']
 
-    fsm = get_object_or_404(FSM, id=fsm)
     edge = get_object_or_404(FSMEdge, id=edge)
+    fsm = edge.tail.fsm
     if fsm.fsm_p_type == 'hybrid':
         player = request.user.participant
     else:
         player = player1
 
     playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)[0]
+    logger.info(
+        f'player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+
     if playerWorkshop.current_state == edge.tail:
+
         playerWorkshop.current_state = edge.head
         playerWorkshop.last_visit = timezone.now()
         playerWorkshop.save()
@@ -316,7 +320,7 @@ def player_go_backward_on_edge(request):
     else:
         player = get_object_or_404(Player, id=player)
 
-    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)[0]
+    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
     if playerWorkshop.current_state == edge.head:
         playerWorkshop.current_state = edge.tail
         playerWorkshop.last_visit = timezone.now()
@@ -408,9 +412,11 @@ def get_player_current_state(request):
         team = accounts.models.Team.objects.get(id=team)
         PlayerWorkshop.objects.create(workshop=fsm, player=team,
                                       current_state=fsm.first_state, last_visit=timezone.now())
+        current_state = fsm.first_state
         for member in team.team_members.all():
-            PlayerWorkshop.objects.create(workshop=fsm, player=member,
-                                          current_state=fsm.first_state, last_visit=timezone.now())
+            if len(PlayerWorkshop.objects.filter(player=member, workshop=fsm)) == 0:
+                PlayerWorkshop.objects.create(workshop=fsm, player=member,
+                                          current_state=current_state, last_visit=timezone.now())
     result = PlayerFSMStateGetSerializer(fsm.first_state).data
     widgets = current_state_widgets_json(current_state, player1)
     result['widgets'] = widgets
