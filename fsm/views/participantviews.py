@@ -418,7 +418,7 @@ def get_player_current_state(request):
             if len(PlayerWorkshop.objects.filter(player=member, workshop=fsm)) == 0:
                 PlayerWorkshop.objects.create(workshop=fsm, player=member,
                                           current_state=current_state, last_visit=timezone.now())
-    result = PlayerFSMStateGetSerializer(fsm.first_state).data
+    result = PlayerFSMStateGetSerializer(current_state).data
     widgets = current_state_widgets_json(current_state, player1)
     result['widgets'] = widgets
 

@@ -23,7 +23,7 @@ def user_change_current_state(participant, state):
 
 def user_get_current_state(player, fsm):
     try:
-        player_workshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)[0]
+        player_workshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
         current_state = player_workshop.current_state
         if current_state is None:
             current_state = fsm.first_state
