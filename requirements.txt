@@ -45,7 +45,7 @@ jdcal==1.4.1
 jedi==0.17.2
 jsonfield==3.1.0
 lockfile==0.12.2
-# lxml==4.5.2
+
 MarkupPy==1.14
 msgpack==0.6.2
 odfpy==1.4.1
@@ -85,8 +85,7 @@ traitlets==4.3.3
 Twisted==20.3.0
 txaio==20.4.1
 urllib3==1.25.8
-# uvicorn==0.11.8
-# uvloop==0.14.0
+
 wcwidth==0.2.5
 webencodings==0.5.1
 websockets==8.1
