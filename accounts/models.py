@@ -105,7 +105,8 @@ class MentorManager(models.Manager):
 
 class Mentor(models.Model):
     objects = MentorManager()
-    member = models.OneToOneField(Member, related_name='Mentor', on_delete=models.CASCADE)
+    member = models.OneToOneField(Member, related_name='Mentor',
+                                  on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.member)
@@ -135,6 +136,13 @@ class Player(models.Model):
     # uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     workshops = models.ManyToManyField('fsm.FSM', through='fsm.PlayerWorkshop', related_name='players')
 
+    def __str__(self):
+        if self.player_type == self.PlayerType.TEAM:
+            return str(self.team)
+        elif self.player_type == self.PlayerType.PARTICIPANT:
+            return str(self.participant.id) + "-" + str(self.participant)
+        else:
+            return "not working"
 
 class Participant(Player):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)

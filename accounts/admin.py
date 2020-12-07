@@ -157,6 +157,8 @@ class CustomUserAdmin(admin.ModelAdmin,):
     list_display = ['username', 'email', 'first_name', 'is_active']
 
 
+
+
 # class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 #     resource_class = ParticipantResource
 #     readonly_fields = ['document', 'gender', 'grade']
