@@ -9,8 +9,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 
 from fsm.models import PlayerHistory
+from fsm.serializers import PlayerHistorySerializer
 from fsm.views import permissions as customPermissions
-from fsm.serializers import TeamHistorySerializer
 
 class TeamHistoryView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):
@@ -18,4 +18,4 @@ class TeamHistoryView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins
     #permission_classes = [permissions.AllowAny]
 
     queryset = PlayerHistory.objects.all()
-    serializer_class = TeamHistorySerializer
+    serializer_class = PlayerHistorySerializer

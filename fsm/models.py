@@ -3,6 +3,12 @@ from django.db import models
 from model_utils.managers import InheritanceManager
 from accounts.models import *
 
+class Event(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
+    active = models.BooleanField(default=False)
+
 
 class FSM(models.Model):
     class FSMLearningType(models.TextChoices):
@@ -15,33 +21,55 @@ class FSM(models.Model):
         hybrid = 'hybrid'
 
     name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     active = models.BooleanField(default=False)
-    first_state = models.OneToOneField('FSMState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
+    first_state = models.OneToOneField('mainState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
     fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.noMentor,
                                          choices=FSMLearningType.choices)
-    fsm_p_type = models.CharField(max_length=40, default=FSMPType.hybrid,
+    fsm_p_type = models.CharField(max_length=40, default=FSMPType.individual,
                                   choices=FSMPType.choices)
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, default=None,
+                              null=True, blank=True)
 
     def __str__(self):
         return self.name
 
 
 class FSMState(models.Model):
-    fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
     name = models.CharField(max_length=150)
 
     def __str__(self):
-        if self.fsm:
-            return '%s: %s' % (self.fsm.name, self.name)
-        return self.name
+        try:
+            state = self.mainstate
+            if state.fsm:
+                return '%s: %s' % (state.fsm.name, state.name)
+            return self.name
+        except:
+            try:
+                help = self.helpstate
+                if help.state:
+                    return '%s: %s' % (help.state.name, help.name)
+                return self.name
+            except:
+                return self.name
+
 
     def widgets(self):
         return Widget.objects.filter(state=self).select_subclasses()
 
 
+class MainState(FSMState):
+    fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
+
+
+class HelpState(FSMState):
+    state = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='help_states')
+
+
 class FSMEdge(models.Model):
-    tail = models.ForeignKey(FSMState, on_delete=models.CASCADE, related_name='outward_edges')
-    head = models.ForeignKey(FSMState, on_delete=models.CASCADE, related_name='inward_edges')
+    tail = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='outward_edges')
+    head = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='inward_edges')
     priority = models.IntegerField()
     text = models.TextField(null=True)
 
@@ -194,7 +222,7 @@ class SubmittedAnswer(models.Model):
 
 class PlayerHistory(models.Model):
     player = models.ForeignKey('accounts.Player', null=True, on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='player_histories')
+    state = models.ForeignKey(MainState, null=True, on_delete=models.CASCADE, related_name='player_histories')
     grade = models.IntegerField(default=0)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
@@ -207,5 +235,6 @@ class PlayerHistory(models.Model):
 class PlayerWorkshop (models.Model):
     player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
     workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
-    current_state = models.ForeignKey(FSMState, null=True, blank=True, on_delete=models.SET_NULL, related_name='player_workshop')
+    current_state = models.ForeignKey(MainState, null=True, blank=True, on_delete=models.SET_NULL, related_name='player_workshop')
     last_visit = models.DateTimeField(null=True, blank=True)
+

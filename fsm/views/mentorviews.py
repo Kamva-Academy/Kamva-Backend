@@ -7,6 +7,7 @@ from rest_framework import permissions
 from rest_framework import serializers
 
 from django.contrib.contenttypes.models import ContentType
+from accounts.models import *
 
 from fsm.models import *
 from fsm.serializers import *
@@ -147,11 +148,13 @@ def mentor_get_workshop_player(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def mentor_get_player_state(request):
-    state = get_object_or_404(FSMState, id=request.data['state'])
+    state = get_object_or_404(MainState, id=request.data['state'])
     if state.fsm.fsm_p_type != 'individual':
         player = get_object_or_404(Team, uuid=request.data['player_uuid'])
         state_result = player_state(state, player)
-    # TODO: for individual states should change.
+    else:
+        player = get_object_or_404(Member, uuid=request.data['player_uuid']).participant
+        state_result = player_state(state, player)
     return Response(state_result)
 
 

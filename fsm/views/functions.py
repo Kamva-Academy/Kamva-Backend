@@ -1,14 +1,13 @@
-
 from fsm.models import *
 from django.utils import timezone
 
-from fsm.serializers import FSMStateSerializer, FSMStateGetSerializer, WidgetSerializer, SubmitedAnswerSerializer, \
-    AnswerSerializer, PlayerFSMStateGetSerializer
+from fsm.serializers import MainStateSerializer, MainStateGetSerializer, WidgetSerializer, SubmitedAnswerSerializer, \
+    AnswerSerializer, PlayerStateGetSerializer, FSMEdgeSerializer
 
 
 def team_change_current_state(team, state):
-    #fsm change checked
-    #create history
+    # fsm change checked
+    # create history
     team.current_state = state
     if state and len(PlayerHistory.objects.filter(team=team.id, state=state.id)) == 0:
         history = PlayerHistory.objects.create(start_time=timezone.localtime(), team=team, state=state)
@@ -16,7 +15,7 @@ def team_change_current_state(team, state):
 
 
 def user_change_current_state(participant, state):
-    #TODO change_current_state body
+    # TODO change_current_state body
     # check if it is in history or next state
     pass
 
@@ -33,7 +32,6 @@ def user_get_current_state(player, fsm):
         PlayerWorkshop.objects.create(workshop=fsm, player=player,
                                       current_state=fsm.first_state, last_visit=timezone.now())
         current_state = fsm.first_state
-
     return current_state
 
 
@@ -44,7 +42,7 @@ def current_state_widgets_json(state, player):
         widgetJson.pop('answer', None)
         widgets.append(widgetJson)
 
-        last_answer = SubmittedAnswer.objects.filter(problem_id=widget.id, player=player)\
+        last_answer = SubmittedAnswer.objects.filter(problem_id=widget.id, player=player) \
             .order_by('-publish_date')
         if len(last_answer) > 0:
             submitted_answer = AnswerSerializer().to_representation(last_answer[0].xanswer())
@@ -52,8 +50,30 @@ def current_state_widgets_json(state, player):
     return widgets
 
 
+def current_state_incoming_edge(player, state):
+    player_history = PlayerHistory.objects.filter(player=player, state=state).last()
+    if player_history:
+        edge = player_history.edge
+    else:
+        return
+    return edge
+
+
 def player_state(state, player):
-    state_result = PlayerFSMStateGetSerializer(state).data
+    state_result = PlayerStateGetSerializer(state).data
     widgets = current_state_widgets_json(state, player)
     state_result['widgets'] = widgets
+    if state.fsm.fsm_learning_type == 'noMentor':
+        edge = current_state_incoming_edge(player, state)
+        if edge:
+            state_result['inward_edges'] = [FSMEdgeSerializer().to_representation(edge)]
+        else:
+            state_result['inward_edges'] = []
+
     return state_result
+
+
+def register_individual_workshop(workshop, participant):
+    player_workshop = PlayerWorkshop.objects.create(workshop=workshop, player=participant,
+                                                    current_state=workshop.first_state, last_visit=timezone.now())
+    return player_workshop

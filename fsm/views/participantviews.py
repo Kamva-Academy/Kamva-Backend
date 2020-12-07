@@ -60,10 +60,10 @@ logger = logging.getLogger(__name__)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, ParticipantPermission])
 def get_history(request):
-    #TODO get history for individual
-    participant = request.user.participant
-    histories = participant.team.histories.all()
-    serializer = TeamHistorySerializer(histories, many=True)
+    #TODO check this api
+    player = request.data['player']
+    histories = player.histories.all()
+    serializer = PlayerHistorySerializer(histories, many=True)
     data = serializer.data
     return Response(data, status=status.HTTP_200_OK)
 
@@ -146,7 +146,7 @@ def move_to_next_state(request):
         logger.info(
             f'team {request.user.participant.team.id} changed state team from {team.current_state.name} to {edges[0].head.name}')
         team_change_current_state(team, edges[0].head)
-        data = FSMStateGetSerializer().to_representation(edges[0].head)
+        data = MainStateGetSerializer().to_representation(edges[0].head)
         return Response(data, status=status.HTTP_200_OK)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -156,7 +156,7 @@ def get_last_state_in_fsm(team, fsm):
         return hist.state
     except IndexError:
         try:
-            return FSMState.objects.filter(fsm=fsm, name='start')[0]
+            return MainState.objects.filter(fsm=fsm, name='start')[0]
         except IndexError:
             logger.error(f'fsm {fsm.name} has no start state')
             return None
@@ -278,28 +278,16 @@ def player_go_forward_on_edge(request):
         playerWorkshop.current_state = edge.head
         playerWorkshop.last_visit = timezone.now()
         playerWorkshop.save()
-        # TODO set the currect player history based on your need
-        # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state= edge.head)
+
+        # player history management
+        last_state_history = PlayerHistory.objects.filter(player=player, state=edge.tail).last()
+        last_state_history.end_time = timezone.now()
+        last_state_history.save()
+        PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
     else:
         return Response({"error": "transmission is not accessable from this state"},
                           status=status.HTTP_400_BAD_REQUEST)
-    # serializer = TeamHistoryGoForwardSerializer(data=request.data)
-    # if not serializer.is_valid(raise_exception=True):
-    #     return Response(status=status.HTTP_400_BAD_REQUEST)
-    # validated_data = serializer.validated_data
-    # state = validated_data['state']
-    # # if state.type == str(StateType.withMentor):
-    # #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    # history = PlayerHistory.objects.filter(player=validated_data['player'], state=validated_data['state'])[0]
-    # validated_data['start_time'] = history.start_time
-    # validated_data['pk'] = history.pk
-    # history.delete()
-    # history = PlayerHistory.objects.create(**validated_data)
-    # logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
-    # team_change_current_state(history.team, history.edge.head)
-    # data = TeamHistorySerializer().to_representation(history)
-    # serializer = FSMStateGetSerializer(playerWorkshop.current_state)
+
     state_result = player_state(playerWorkshop.current_state, player)
     return Response(state_result, status=status.HTTP_200_OK)
 
@@ -331,23 +319,6 @@ def player_go_backward_on_edge(request):
     else:
         return Response({"error": "transmission is not accessable from this state"},
                           status=status.HTTP_400_BAD_REQUEST)
-    # serializer = TeamHistoryGoForwardSerializer(data=request.data)
-    # if not serializer.is_valid(raise_exception=True):
-    #     return Response(status=status.HTTP_400_BAD_REQUEST)
-    # validated_data = serializer.validated_data
-    # state = validated_data['state']
-    # # if state.type == str(StateType.withMentor):
-    # #     return Response({"error": "state type should be without menter"}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    # history = PlayerHistory.objects.filter(player=validated_data['player'], state=validated_data['state'])[0]
-    # validated_data['start_time'] = history.start_time
-    # validated_data['pk'] = history.pk
-    # history.delete()
-    # history = PlayerHistory.objects.create(**validated_data)
-    # logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
-    # team_change_current_state(history.team, history.edge.head)
-    # data = TeamHistorySerializer().to_representation(history)
-    # serializer = FSMStateGetSerializer(playerWorkshop.current_state)
 
     state_result = player_state(playerWorkshop.current_state, player)
     return Response(state_result, status=status.HTTP_200_OK)
@@ -358,7 +329,7 @@ def player_go_backward_on_edge(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ])
 def user_get_team_outward_edges(request):
-    state = FSMState.objects.get(id=request.data['state'])
+    state = MainState.objects.get(id=request.data['state'])
     serializer = TeamUUIDSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -418,7 +389,7 @@ def get_player_current_state(request):
             if len(PlayerWorkshop.objects.filter(player=member, workshop=fsm)) == 0:
                 PlayerWorkshop.objects.create(workshop=fsm, player=member,
                                           current_state=current_state, last_visit=timezone.now())
-    result = PlayerFSMStateGetSerializer(current_state).data
+    result = PlayerStateGetSerializer(current_state).data
     widgets = current_state_widgets_json(current_state, player1)
     result['widgets'] = widgets
 
@@ -474,7 +445,7 @@ def start_workshop(request):
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def participant_get_player_state(request):
     perticipant = request.user.participant
-    state = get_object_or_404(FSMState, id=request.data['state'])
+    state = get_object_or_404(MainState, id=request.data['state'])
     player = get_object_or_404(Team, uuid=request.data['player_uuid'])
     if player.player_type == "TEAM":
         if not (perticipant in player.team.team_members.all()):

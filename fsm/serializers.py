@@ -45,16 +45,6 @@ class FSMEdgeSerializer(serializers.ModelSerializer):
     '''
 
 
-class PlayerFSMStateGetSerializer(serializers.ModelSerializer):
-    outward_edges = FSMEdgeSerializer(many=True)
-    inward_edges = FSMEdgeSerializer(many=True)
-    class Meta:
-        model = FSMState
-        fields = '__all__'
-        queryset = FSM.objects.filter(active=True)
-        instance = FSM.objects.filter(active=True)
-
-
 class FSMSerializer(serializers.ModelSerializer):
     class Meta:
         model = FSM
@@ -415,16 +405,37 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
         return instance
 
 
-class FSMStateSerializer(serializers.ModelSerializer):
-    widgets = WidgetSerializer(many=True)
+class HelpStateSerializer(serializers.ModelSerializer):
+    widgets = WidgetSerializer(many=True, required=False)
 
     class Meta:
-        model = FSMState
+        model = HelpState
+        fields = '__all__'
+
+
+class PlayerStateGetSerializer(serializers.ModelSerializer):
+    outward_edges = FSMEdgeSerializer(many=True)
+    inward_edges = FSMEdgeSerializer(many=True)
+    help_states = HelpStateSerializer(many=True)
+
+    class Meta:
+        model = MainState
+        fields = '__all__'
+        # queryset = FSM.objects.filter(active=True)
+        # instance = FSM.objects.filter(active=True)
+
+
+class MainStateSerializer(serializers.ModelSerializer):
+    widgets = WidgetSerializer(many=True, required=False)
+
+    class Meta:
+        model = MainState
         fields = '__all__'
 
     def create(self, validated_data):
-        validated_data.pop('widgets')
-        instance = FSMState.objects.create(**validated_data)
+        if 'widgets' in validated_data:
+            validated_data.pop('widgets')
+        instance = MainState.objects.create(**validated_data)
         return instance
 
     def update(self, instance, validated_data):
@@ -436,26 +447,28 @@ class FSMStateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class FSMStateGetSerializer(serializers.ModelSerializer):
+class MainStateGetSerializer(serializers.ModelSerializer):
     outward_edges = FSMEdgeSerializer(many=True)
     inward_edges = FSMEdgeSerializer(many=True)
     widgets = WidgetSerializer(many=True)
+    help_states = HelpStateSerializer(many=True)
 
     class Meta:
-        model = FSMState
+        model = MainState
         fields = '__all__'
-        queryset = FSM.objects.filter(active=True)
-        instance = FSM.objects.filter(active=True)
+        # queryset = FSM.objects.filter(active=True)
+        # instance = FSM.objects.filter(active=True)
 
 
 class CurrentStateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FSMState
+        model = MainState
         fields = ['id', 'name']
 
 
 class FSMGetSerializer(serializers.ModelSerializer):
-    states = FSMStateGetSerializer(many=True)
+    states = MainStateGetSerializer(many=True)
+
     class Meta:
         model = FSM
         fields = '__all__'
@@ -467,7 +480,7 @@ class FSMGetSerializer(serializers.ModelSerializer):
 #         fields = ['init_whiteboard']
 
 
-class TeamHistorySerializer(serializers.ModelSerializer):
+class PlayerHistorySerializer(serializers.ModelSerializer):
     answers = SubmitedAnswerSerializer(many=True)
     class Meta:
         model = PlayerHistory
@@ -569,7 +582,7 @@ class PlayerWorkshopSerializer(serializers.ModelSerializer):
 
 class MentorPlayerWorkshopSerializer(serializers.ModelSerializer):
     player = PlayerSerializer()
-    current_state = FSMStateGetSerializer()
+    current_state = MainStateGetSerializer()
 
     class Meta:
         model = PlayerWorkshop

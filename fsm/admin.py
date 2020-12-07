@@ -43,10 +43,28 @@ class SubmittedAnswerAdmin(admin.ModelAdmin):
         return str(obj.player.team.group_name)
 
 
+class PlayerWorkshopAdmin(admin.ModelAdmin):
+    model = PlayerWorkshop
+    list_display = ['player', 'workshop', 'current_state', 'last_visit']
+
+    # def name(self, obj):
+    #     name = obj.problem.name
+    #     return name
+    #
+    # def answer_file(self, obj):
+    #     ans_file = obj.answer.uploadfileanswer.answer_file
+    #
+    #
+    # def team_name(self, obj):
+    #     return str(obj.player.team.group_name)
+
+
 admin.site.register(FSM)
 admin.site.register(FSMEdge, EdgeAdmin)
 admin.site.register(Ability)
 admin.site.register(FSMState)
+admin.site.register(MainState)
+admin.site.register(HelpState)
 admin.site.register(Widget)
 admin.site.register(Game)
 admin.site.register(ProblemSmallAnswer)
@@ -63,4 +81,4 @@ admin.site.register(SubmittedAnswer, SubmittedAnswerAdmin)
 
 
 admin.site.register(PlayerHistory)
-admin.site.register(PlayerWorkshop)
+admin.site.register(PlayerWorkshop, PlayerWorkshopAdmin)

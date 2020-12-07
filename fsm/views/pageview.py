@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from fsm.models import Widget, FSMState
 from rest_framework import permissions
 from fsm.views import permissions as customPermissions
-from fsm.serializers import WidgetSerializer, FSMStateSerializer
+from fsm.serializers import WidgetSerializer, MainStateSerializer
 
 
 # class FSMStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,

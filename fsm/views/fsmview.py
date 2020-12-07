@@ -8,7 +8,7 @@ from rest_framework import mixins
 from rest_framework.decorators import api_view
 from rest_framework import permissions
 
-from fsm.models import FSM, FSMState
+from fsm.models import FSM, MainState
 from fsm.views import permissions as customPermissions
 from fsm.serializers import FSMSerializer, FSMGetSerializer
 
@@ -53,7 +53,7 @@ class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateM
             return Response(status=status.HTTP_400_BAD_REQUEST)
         data = serializer.validated_data
         instance = serializer.create(data)
-        first_state = FSMState.objects.create(name='شروع', fsm=instance)
+        first_state = MainState.objects.create(name='شروع', fsm=instance)
         instance.first_state = first_state
         instance.save()
         # response

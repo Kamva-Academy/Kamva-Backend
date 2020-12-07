@@ -7,31 +7,30 @@ from rest_framework import viewsets
 from rest_framework import mixins
 
 
-from fsm.models import FSMState, Widget
-from fsm.serializers import FSMStateSerializer, FSMStateGetSerializer
+from fsm.models import MainState, HelpState
+from fsm.serializers import MainStateSerializer, MainStateGetSerializer, HelpStateSerializer
 
 from rest_framework import permissions
 from fsm.views import permissions as customPermissions
 
 
-class FSMStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
-                   mixins.UpdateModelMixin):
+class MainStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
+                    mixins.UpdateModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
 
-    queryset = FSMState.objects.all()
-    serializer_class = FSMStateSerializer
+    queryset = MainState.objects.all()
+    serializer_class = MainStateSerializer
 
     def get_serializer_class(self):
-        return FSMStateGetSerializer \
+        return MainStateGetSerializer \
             if self.request.method == 'GET' \
-            else FSMStateSerializer
+            else MainStateSerializer
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        widgets_data = request.data['widgets']
         data = request.data
         data['widgets'] = []
-        serializer = FSMStateSerializer(data=data)
+        serializer = MainStateSerializer(data=data)
         if not serializer.is_valid(raise_exception=True):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         data = serializer.validated_data
@@ -41,10 +40,49 @@ class FSMStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cr
             pass
         instance = serializer.create(data)
         instance.save()
-        for widget_data in widgets_data:
-            widget = Widget.objects.get(id=widget_data)
-            widget.state = instance
-            widget.save()
+        # if 'widgets' in request.data:
+        #     widgets_data = request.data['widgets']
+        #     for widget_data in widgets_data:
+        #         widget = Widget.objects.get(id=widget_data)
+        #         widget.state = instance
+        #         widget.save()
+
+        response = serializer.to_representation(instance)
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class HelpStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
+                    mixins.UpdateModelMixin):
+    permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
+
+    queryset = HelpState.objects.all()
+    serializer_class = HelpStateSerializer
+
+    def get_serializer_class(self):
+        return HelpStateSerializer \
+            if self.request.method == 'GET' \
+            else HelpStateSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        # data['widgets'] = []
+        serializer = HelpStateSerializer(data=data)
+        if not serializer.is_valid(raise_exception=True):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.validated_data
+        try:
+            data['pk'] = request.data['pk']
+        except:
+            pass
+        instance = serializer.create(data)
+        instance.save()
+        # if 'widgets' in request.data:
+        #     widgets_data = request.data['widgets']
+        #     for widget_data in widgets_data:
+        #         widget = Widget.objects.get(id=widget_data)
+        #         widget.state = instance
+        #         widget.save()
 
         response = serializer.to_representation(instance)
         return Response(response, status=status.HTTP_200_OK)
