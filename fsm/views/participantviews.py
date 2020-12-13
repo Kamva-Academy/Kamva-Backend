@@ -83,15 +83,15 @@ def send_answer(request):
     # instance.team_history = history
     # instance.participant = participant
     instance.save()
-    # correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(id = request.data['problem']).answer
-    # if correct_answer.text == request.data['answer']['text']:
-    #     result = True
-    # else:
-    #     result = False
+    correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(id=request.data['problem']).answer
+    if str(correct_answer.text)  == request.data['answer']['text']:
+        result = True
+    else:
+        result = False
     data = SubmitedAnswerSerializer(instance).data
-    # data['result'] = result
-    # correct_answer = AnswerSerializer().to_representation(correct_answer)
-    # data['correct_answer'] = correct_answer
+    data['answer_result'] = result
+    correct_answer = AnswerSerializer().to_representation(correct_answer)
+    data['correct_answer'] = correct_answer
     return Response(data, status=status.HTTP_200_OK)
 
 
