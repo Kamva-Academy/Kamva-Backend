@@ -39,7 +39,7 @@ def current_state_widgets_json(state, player):
     widgets = []
     for widget in state.widgets():
         widgetJson = WidgetSerializer().to_representation(widget)
-        widgetJson.pop('answer', None)
+        # widgetJson.pop('answer', None)
         widgets.append(widgetJson)
 
         last_answer = SubmittedAnswer.objects.filter(problem_id=widget.id, player=player) \

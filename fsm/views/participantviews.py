@@ -84,14 +84,14 @@ def send_answer(request):
     # instance.participant = participant
     instance.save()
     correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(id=request.data['problem']).answer
-    if str(correct_answer.text)  == request.data['answer']['text']:
+    if str(correct_answer.text) == request.data['answer']['text']:
         result = True
     else:
         result = False
     data = SubmitedAnswerSerializer(instance).data
     data['answer_result'] = result
     correct_answer = AnswerSerializer().to_representation(correct_answer)
-    data['correct_answer'] = correct_answer
+    data['answer'] = correct_answer
     return Response(data, status=status.HTTP_200_OK)
 
 
@@ -444,15 +444,17 @@ def start_workshop(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def participant_get_player_state(request):
-    perticipant = request.user.participant
+    participant = request.user.participant
     state = get_object_or_404(MainState, id=request.data['state'])
-    player = get_object_or_404(Team, uuid=request.data['player_uuid'])
-    if player.player_type == "TEAM":
-        if not (perticipant in player.team.team_members.all()):
-            return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
-
+    if state.fsm.fsm_p_type == "TEAM":
+        player = get_object_or_404(Team, uuid=request.data['player_uuid'])
     else:
-        if not (player == perticipant):
+        player = participant
+    if player.player_type == "TEAM":
+        if not (participant in player.team.team_members.all()):
+            return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
+    else:
+        if not (player == participant):
             return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
     state_result = player_state(state, player)
     return Response(state_result)
