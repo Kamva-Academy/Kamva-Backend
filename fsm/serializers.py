@@ -413,6 +413,14 @@ class HelpStateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ArticleSerializer(serializers.ModelSerializer):
+    widgets = WidgetSerializer(many=True, required=False)
+
+    class Meta:
+        model = Article
+        fields = '__all__'
+
+
 class PlayerStateGetSerializer(serializers.ModelSerializer):
     outward_edges = FSMEdgeSerializer(many=True)
     inward_edges = FSMEdgeSerializer(many=True)

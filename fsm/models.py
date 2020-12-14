@@ -54,7 +54,6 @@ class FSMState(models.Model):
             except:
                 return self.name
 
-
     def widgets(self):
         return Widget.objects.filter(state=self).select_subclasses()
 
@@ -65,6 +64,12 @@ class MainState(FSMState):
 
 class HelpState(FSMState):
     state = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='help_states')
+
+
+class Article(FSMState):
+    description = models.TextField(null=True, blank=True)
+    cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
+    active = models.BooleanField(default=False)
 
 
 class FSMEdge(models.Model):

@@ -7,8 +7,8 @@ from rest_framework import viewsets
 from rest_framework import mixins
 
 
-from fsm.models import MainState, HelpState
-from fsm.serializers import MainStateSerializer, MainStateGetSerializer, HelpStateSerializer
+from fsm.models import MainState, HelpState, Article
+from fsm.serializers import MainStateSerializer, MainStateGetSerializer, HelpStateSerializer, ArticleSerializer
 
 from rest_framework import permissions
 from fsm.views import permissions as customPermissions
@@ -68,6 +68,43 @@ class HelpStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         data = request.data
         # data['widgets'] = []
         serializer = HelpStateSerializer(data=data)
+        if not serializer.is_valid(raise_exception=True):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.validated_data
+        try:
+            data['pk'] = request.data['pk']
+        except:
+            pass
+        instance = serializer.create(data)
+        instance.save()
+        # if 'widgets' in request.data:
+        #     widgets_data = request.data['widgets']
+        #     for widget_data in widgets_data:
+        #         widget = Widget.objects.get(id=widget_data)
+        #         widget.state = instance
+        #         widget.save()
+
+        response = serializer.to_representation(instance)
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class ArticleView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
+                    mixins.UpdateModelMixin):
+    permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
+
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+
+    def get_serializer_class(self):
+        return ArticleSerializer \
+            if self.request.method == 'GET' \
+            else ArticleSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        # data['widgets'] = []
+        serializer = ArticleSerializer(data=data)
         if not serializer.is_valid(raise_exception=True):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         data = serializer.validated_data
