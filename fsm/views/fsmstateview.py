@@ -90,7 +90,8 @@ class HelpStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
 
 class ArticleView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                     mixins.UpdateModelMixin):
-    permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
+    permission_classes = [permissions.AllowAny]
+    mentor_permission = [permissions.IsAuthenticated, customPermissions.MentorPermission, ]
 
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
@@ -100,7 +101,14 @@ class ArticleView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Cre
             if self.request.method == 'GET' \
             else ArticleSerializer
 
+    def get_permissions(self, ):
+        if self.request.method == 'GET':
+            return [permission() for permission in self.permission_classes]
+        else:
+            return [permission() for permission in self.mentor_permission]
+
     @transaction.atomic
+    # @permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
     def create(self, request, *args, **kwargs):
         data = request.data
         # data['widgets'] = []
