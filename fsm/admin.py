@@ -57,6 +57,20 @@ class PlayerWorkshopAdmin(admin.ModelAdmin):
     #
     # def team_name(self, obj):
     #     return str(obj.player.team.group_name)
+    
+    
+class DescriptionAdmin(admin.ModelAdmin):
+    model = Description
+    list_display = ['state', 'text_part']
+    #
+    def state(self, obj):
+        name = str(obj.state.name)
+        return name
+
+    def text_part(self, obj):
+        name = str(obj.text)[0:100]
+        return name
+
 
 
 admin.site.register(FSM)
@@ -75,6 +89,7 @@ admin.site.register(ProblemMultiChoice)
 admin.site.register(MultiChoiceAnswer)
 admin.site.register(Choice)
 admin.site.register(Answer)
+admin.site.register(Description, DescriptionAdmin)
 admin.site.register(Article)
 admin.site.register(UploadFileAnswer, AnswerAdmin)
 admin.site.register(ProblemUploadFileAnswer)
