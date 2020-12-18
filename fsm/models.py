@@ -24,7 +24,7 @@ class FSM(models.Model):
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     active = models.BooleanField(default=False)
-    first_state = models.OneToOneField('mainState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
+    first_state = models.OneToOneField('MainState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
     fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.noMentor,
                                          choices=FSMLearningType.choices)
     fsm_p_type = models.CharField(max_length=40, default=FSMPType.individual,
