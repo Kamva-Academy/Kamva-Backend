@@ -163,34 +163,6 @@ def get_last_state_in_fsm(team, fsm):
             # return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @transaction.atomic
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated, ParticipantPermission])
-# def set_first_current_state(request):
-#     team = request.user.participant.team
-#     serializer = SetFirstStateSerializer(data=request.data)
-#     if not serializer.is_valid(raise_exception=True):
-#         return Response(status=status.HTTP_400_BAD_REQUEST)
-#     fsm = FSM.objects.filter(id=request.data['fsm'])[0]
-#     if team.current_state is None or team.current_state.name == 'end':
-#         state = get_last_state_in_fsm(team, fsm)
-#         try:
-#             logger.info(
-#                 f'changed state team {team.id} from {team.current_state.name} to {state.name}')
-#         except:
-#             if state:
-#                 logger.info(
-#                     f'changed state team {team.id} from None to {state.name}')
-#             elif not team.current_state:
-#                 logger.info(
-#                     f'changed state team {team.id} from {team.current_state.name} to None')
-#         team_change_current_state(team, state)
-#         data = FSMStateGetSerializer().to_representation(state)
-#     else:
-#          return Response("شما در کارگاه دیگری هستید!", status=status.HTTP_400_BAD_REQUEST)
-#     return Response(data, status=status.HTTP_200_OK)
-
-
 @transaction.atomic
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, ParticipantPermission])
@@ -414,7 +386,7 @@ def start_workshop(request):
                 player__team__team_members=player
             )[0]
         except:
-            return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."})
+            return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
         # current_state = user_get_current_state(player, fsm)
         player_data = PlayerSerializer().to_representation(player_workshop.player)
 
@@ -427,15 +399,33 @@ def start_workshop(request):
                 player__team__team_members=player
             )[0]
         except:
-            return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."})
+            return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
 
-    else:
+    elif fsm_type == 'individual':
         player = request.user.participant
+        try:
+            player_workshop = PlayerWorkshop.objects.get(player=player, workshop=fsm)
+        except PlayerWorkshop.DoesNotExist:
+            PlayerWorkshop.objects.create(
+                player=player, workshop=fsm,
+                current_state=fsm.first_state,
+                last_visit=timezone.now())
+        try:
+            history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
+        except PlayerHistory.DoesNotExist:
+            PlayerHistory.objects.create(
+                player=player,
+                state=fsm.first_state,
+                start_time=timezone.now(),
+                edge=None
+            )
         # current_state = user_get_current_state(player, fsm).data
         # current_state = FSMStateGetSerializer(current_state).data
         player_data = PlayerSerializer().to_representation(player)
+    else:
+        return Response({'error': 'fsm type is bad'}, status=status.HTTP_400_BAD_REQUEST)
 
     result = {'player': player_data}
     return Response(result, status=status.HTTP_200_OK)
