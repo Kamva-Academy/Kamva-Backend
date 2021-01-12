@@ -257,7 +257,12 @@ def player_go_forward_on_edge(request):
         last_state_history.save()
         PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
     else:
-        return Response({"error": "transmission is not accessable from this state"},
+        logger.warning(
+            f'illegal transmission - player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+
+        state_result = player_state(playerWorkshop.current_state, player)
+        state_result['error'] = "transmission is not accessable from this state"
+        return Response(state_result,
                           status=status.HTTP_400_BAD_REQUEST)
 
     state_result = player_state(playerWorkshop.current_state, player)
@@ -289,8 +294,14 @@ def player_go_backward_on_edge(request):
         # TODO set the currect player history based on your need
         # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state= edge.head)
     else:
-        return Response({"error": "transmission is not accessable from this state"},
-                          status=status.HTTP_400_BAD_REQUEST)
+        logger.warning(
+            f'illegal transmission - player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+
+        state_result = player_state(playerWorkshop.current_state, player)
+        state_result['error'] = "transmission is not accessable from this state"
+        return Response(state_result,
+                        status=status.HTTP_400_BAD_REQUEST)
+
 
     state_result = player_state(playerWorkshop.current_state, player)
     return Response(state_result, status=status.HTTP_200_OK)
