@@ -396,6 +396,15 @@ def start_workshop(request):
                 player__player_type='TEAM',
                 player__team__team_members=player
             )[0]
+            try:
+                history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
+            except PlayerHistory.DoesNotExist:
+                PlayerHistory.objects.create(
+                    player=player,
+                    state=fsm.first_state,
+                    start_time=timezone.now(),
+                    edge=None
+                )
         except:
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
         # current_state = user_get_current_state(player, fsm)
