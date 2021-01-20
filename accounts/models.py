@@ -176,13 +176,13 @@ class Participant(Player):
         # params = {'sender': '10008663', 'receptor': phone_number, 'message': message}
         params = {
             'receptor': phone_number,
-            'template': 'verify',
-            # 'token': str(username),
-            'token': str(password),
-            # 'token3' : str(name),
+            'template': 'userInfo',
+            'token': str(username),
+            'token2': str(password),
+            'token3': str(name),
             'type': 'sms'
         }
-        print(params)
+        # print(params)
         api.verify_lookup(params)
 
 
