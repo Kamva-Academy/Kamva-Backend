@@ -47,6 +47,8 @@ def current_state_widgets_json(state, player):
         if len(last_answer) > 0:
             submitted_answer = AnswerSerializer().to_representation(last_answer[0].xanswer())
             widgetJson['last_submit'] = submitted_answer
+        else:
+            widgetJson.pop('answer')
     return widgets
 
 
