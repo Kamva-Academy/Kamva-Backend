@@ -18,8 +18,7 @@ class Command(BaseCommand):
         for user_info in users:
             user_phone = user_info['phone']
             name = user_info['name']
-            name = name.replace(" ", u"\u200B")
-            user, password = Participant.objects.create_participant(
+            user, password = Participant.objects.create_participant_send_sms(
                 phone_number=user_phone,
                 username=user_phone,
                 name=name,

@@ -146,20 +146,32 @@ class Player(models.Model):
 class ParticipantManager(models.Manager):
 
     @transaction.atomic
-    def create_participant(self, phone_number, name, *args, **kwargs):
+    def create_participant_send_sms(self, phone_number, name, *args, **kwargs):
         password = Member.objects.make_random_password(length=8, allowed_chars='RAST1234567890')
         member = Member.objects.create_user(username=phone_number, first_name=name, password=password)
         member.is_mentor = False
         member.is_participant = True
         member.save()
-        participant = Participant.objects.create(member=member, active=True)
-
+        participant = Participant.objects.create(member=member, active=True,
+                                                 player_type='PARTICIPANT')
+        name = name.replace(" ", u"\u200B")
         participant.send_user_info_sms(
             name=name,
             username=phone_number,
             password=password,
             phone_number=phone_number
         )
+        return participant, password
+
+    @transaction.atomic
+    def create_participant(self,username, name, *args, **kwargs):
+        password = Member.objects.make_random_password(length=8, allowed_chars='RAST1234567890')
+        member = Member.objects.create_user(username=username, first_name=name, password=password)
+        member.is_mentor = False
+        member.is_participant = True
+        member.save()
+        participant = Participant.objects.create(member=member, active=True,
+                                                 player_type='PARTICIPANT')
         return participant, password
 
 
