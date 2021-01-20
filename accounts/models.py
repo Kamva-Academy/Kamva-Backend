@@ -16,6 +16,11 @@ import uuid
 
 
 
+from collections import defaultdict
+
+import logging
+import random
+import re
 
 from fsm.models import *
 from workshop_backend.settings.base import KAVENEGAR_TOKEN
@@ -147,7 +152,7 @@ class ParticipantManager(models.Manager):
 
     @transaction.atomic
     def create_participant_send_sms(self, phone_number, name, *args, **kwargs):
-        password = Member.objects.make_random_password(length=8, allowed_chars='RAST1234567890')
+        password = Member.objects.make_random_password(length=8, allowed_chars='RABMNT123456789')
         member = Member.objects.create_user(username=phone_number, first_name=name, password=password)
         member.is_mentor = False
         member.is_participant = True
