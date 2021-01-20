@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from kavenegar import *
 
 
 def get_environment_var(var_name, default, prefixed=True):
@@ -187,4 +188,6 @@ SWAGGER_SETTINGS = {
         }
     },
 }
+
+KAVENEGAR_TOKEN = KavenegarAPI('6A4F554D384477574A7162444F614B4A6C626A64495169306A43417566473655624644394833566C352F593D')
 

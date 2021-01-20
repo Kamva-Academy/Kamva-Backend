@@ -44,8 +44,8 @@ isodate==0.6.0
 jdcal==1.4.1
 jedi==0.17.2
 jsonfield==3.1.0
+kavenegar==1.1.2
 lockfile==0.12.2
-
 MarkupPy==1.14
 msgpack==0.6.2
 odfpy==1.4.1

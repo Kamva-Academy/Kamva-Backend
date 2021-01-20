@@ -1,3 +1,5 @@
+import logging
+
 from django.db import models
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser, Group, Permission
@@ -14,13 +16,9 @@ import uuid
 
 
 
-from collections import defaultdict
-
-import logging
-import random
-import re
 
 from fsm.models import *
+from workshop_backend.settings.base import KAVENEGAR_TOKEN
 
 logger = logging.getLogger(__file__)
 
@@ -144,11 +142,48 @@ class Player(models.Model):
         else:
             return "not working"
 
+
+class ParticipantManager(models.Manager):
+
+    @transaction.atomic
+    def create_participant(self, phone_number, name, *args, **kwargs):
+        password = Member.objects.make_random_password(length=8, allowed_chars='RAST1234567890')
+        member = Member.objects.create_user(username=phone_number, first_name=name, password=password)
+        member.is_mentor = False
+        member.is_participant = True
+        member.save()
+        participant = Participant.objects.create(member=member, active=True)
+
+        participant.send_user_info_sms(
+            name=name,
+            username=phone_number,
+            password=password,
+            phone_number=phone_number
+        )
+        return participant, password
+
+
 class Participant(Player):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
 
+    objects = ParticipantManager()
+
     def __str__(self):
         return str(self.member)
+
+    def send_user_info_sms(self, name, username, password, phone_number):
+        api = KAVENEGAR_TOKEN
+        # params = {'sender': '10008663', 'receptor': phone_number, 'message': message}
+        params = {
+            'receptor': phone_number,
+            'template': 'verify',
+            # 'token': str(username),
+            'token': str(password),
+            # 'token3' : str(name),
+            'type': 'sms'
+        }
+        print(params)
+        api.verify_lookup(params)
 
 
 class Team(Player):
