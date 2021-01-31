@@ -46,6 +46,7 @@ class SubmittedAnswerAdmin(admin.ModelAdmin):
 class PlayerWorkshopAdmin(admin.ModelAdmin):
     model = PlayerWorkshop
     list_display = ['player', 'workshop', 'current_state', 'last_visit']
+    list_filter = ['last_visit', 'workshop', 'current_state']
 
     # def name(self, obj):
     #     name = obj.problem.name
@@ -57,6 +58,13 @@ class PlayerWorkshopAdmin(admin.ModelAdmin):
     #
     # def team_name(self, obj):
     #     return str(obj.player.team.group_name)
+
+
+class PlayerHistoryAdmin(admin.ModelAdmin):
+    model = PlayerHistory
+    list_display = ['player', 'state', 'grade', 'start_time', 'end_time', 'edge']
+    list_filter = ['start_time', 'end_time', 'state', 'edge']
+
     
     
 class DescriptionAdmin(admin.ModelAdmin):
@@ -96,5 +104,5 @@ admin.site.register(ProblemUploadFileAnswer)
 admin.site.register(SubmittedAnswer, SubmittedAnswerAdmin)
 
 
-admin.site.register(PlayerHistory)
+admin.site.register(PlayerHistory, PlayerHistoryAdmin)
 admin.site.register(PlayerWorkshop, PlayerWorkshopAdmin)
