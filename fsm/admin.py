@@ -46,7 +46,7 @@ class SubmittedAnswerAdmin(admin.ModelAdmin):
 class PlayerWorkshopAdmin(admin.ModelAdmin):
     model = PlayerWorkshop
     list_display = ['player', 'workshop', 'current_state', 'last_visit']
-    list_filter = ['last_visit', 'workshop', 'current_state']
+    list_filter = ['last_visit', 'workshop', 'current_state', 'player__player_type']
 
     # def name(self, obj):
     #     name = obj.problem.name
