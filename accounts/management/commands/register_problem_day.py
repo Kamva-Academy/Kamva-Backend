@@ -48,7 +48,7 @@ class Command(BaseCommand):
 
 
 def find_workshop(team):
-    if team < 4:
+    if team < 6:
         workshop = FSM.objects.get(name='روز حل مسئله (گروه اول)')
     elif  3< team<8:
         workshop = FSM.objects.get(name='روز حل مسئله (گروه دوم)')
