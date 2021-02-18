@@ -50,13 +50,13 @@ class Command(BaseCommand):
 
 
 def find_workshop(team):
-    if team < 6:
+    if team < 4:
         workshop = FSM.objects.get(name='روز حل مسئله (گروه هفتم)')
     elif 3< team<8:
         workshop = FSM.objects.get(name='روز حل مسئله (گروه ششم)')
-    elif  7< team<12:
+    elif 7< team<12:
         workshop = FSM.objects.get(name='روز حل مسئله (گروه پنجم)')
-    elif  11< team<16:
+    elif 11< team<16:
         workshop = FSM.objects.get(name='روز حل مسئله (گروه چهارم)')
     elif  15<team<21:
         workshop = FSM.objects.get(name='روز حل مسئله (گروه سوم)')
