@@ -50,23 +50,23 @@ class Command(BaseCommand):
 
 
 def find_workshop(team):
-    # if team < 6:
-    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه هفتم)')
-    # elif 3< team<8:
-    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه ششم)')
-    # elif  7< team<12:
-    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه پنجم)')
-    # elif  11< team<16:
-    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه چهارم)')
-    # elif  15<team<21:
-    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه سوم)')
-    # elif  20< team<26:
-    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه دوم)')
-    # elif 25<team<31:
-    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه اول)')
-    # else:
-    #     # workshop = FSM.objects.get(name='روز حل مسئله (گروه هشتم)')
-    workshop = FSM.objects.all()[0]
+    if team < 6:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه هفتم)')
+    elif 3< team<8:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه ششم)')
+    elif  7< team<12:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه پنجم)')
+    elif  11< team<16:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه چهارم)')
+    elif  15<team<21:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه سوم)')
+    elif  20< team<26:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه دوم)')
+    elif 25<team<31:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه اول)')
+    else:
+        workshop = FSM.objects.get(name='روز حل مسئله (گروه هشتم)')
+    # workshop = FSM.objects.all()[0]
 
     return workshop
 
