@@ -253,11 +253,11 @@ def player_go_forward_on_edge(request):
 
         # player history management
         last_state_history = PlayerHistory.objects.filter(player=player, state=edge.tail).last()
-        if not last_state_history:
-            last_state_history = PlayerHistory.objects.create(player=player, state=edge.tail)
+        if last_state_history:
+            # last_state_history = PlayerHistory.objects.create(player=player, state=edge.tail)
 
-        last_state_history.end_time = timezone.now()
-        last_state_history.save()
+            last_state_history.end_time = timezone.now()
+            last_state_history.save()
         PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
     else:
         logger.warning(
