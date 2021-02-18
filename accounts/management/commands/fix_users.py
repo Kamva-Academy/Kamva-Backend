@@ -15,7 +15,7 @@ class Command(BaseCommand):
     #     parser.add_argument(nargs='+', type=str)
 
     def handle(self, *args, **options):
-        fsms = FSM.objects.filter(workshop__name__contains="روز حل")
+        fsms = FSM.objects.filter(name__contains="روز حل")
         for f in fsms:
             for i, team_info in enumerate(problem_day_users):
                 print("----------")
