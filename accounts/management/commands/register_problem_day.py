@@ -34,7 +34,7 @@ class Command(BaseCommand):
                                                          player_type='PARTICIPANT')
                 t.team_members.add(participant)
                 self.stdout.write(
-                    self.style.SUCCESS('Successfully created user %s with password %s' % (user_phone, password))
+                    self.style.SUCCESS('Successfully created user %s with password %s' % (member.username, password))
                 )
 
                 player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=workshop,
@@ -48,20 +48,22 @@ class Command(BaseCommand):
 
 
 def find_workshop(team):
-    if team < 6:
-        workshop = FSM.objects.get(name='روز حل مسئله (گروه اول)')
-    elif  3< team<8:
-        workshop = FSM.objects.get(name='روز حل مسئله (گروه دوم)')
-    elif  7< team<12:
-        workshop = FSM.objects.get(name='روز حل مسئله (گروه سوم)')
-    elif  11< team<16:
-        workshop = FSM.objects.get(name='روز حل مسئله (گروه چهارم)')
-    elif  15<team<21:
-        workshop = FSM.objects.get(name='روز حل مسئله (گروه پنجم)')
-    elif  20< team<26:
-        workshop = FSM.objects.get(name='روز حل مسئله (گروه ششم)')
-    else:
-        workshop = FSM.objects.get(name='روز حل مسئله (گروه هفتم)')
+    # if team < 6:
+    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه اول)')
+    # elif  3< team<8:
+    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه دوم)')
+    # elif  7< team<12:
+    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه سوم)')
+    # elif  11< team<16:
+    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه چهارم)')
+    # elif  15<team<21:
+    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه پنجم)')
+    # elif  20< team<26:
+    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه ششم)')
+    # else:
+    #     workshop = FSM.objects.get(name='روز حل مسئله (گروه هفتم)')
+    workshop = FSM.objects.get(name='روز حل مسئله (گروه هشتم)')
+
     return workshop
 
 
