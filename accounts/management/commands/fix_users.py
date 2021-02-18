@@ -19,6 +19,7 @@ class Command(BaseCommand):
         pw = PlayerWorkshop.objects.filter(workshop__name="آموزش کار درمحیط رویداد")
         for p in pw:
             p.current_state = test_workshop.first_state
+            p.save()
         # for i, team_info in enumerate(problem_day_users):
         #     workshop = find_workshop(i)
         #     team = team_info['team']
