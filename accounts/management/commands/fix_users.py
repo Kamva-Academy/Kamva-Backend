@@ -29,9 +29,11 @@ class Command(BaseCommand):
                     self.stdout.write(
                         self.style.SUCCESS('Successfully created user %s with password %s' % (member.username, password))
                     )
+                    if len(PlayerWorkshop.objects.filter(player=participant, workshop=f))==0:
 
-                    player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=f,
+                        player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=f,
                                                                     current_state=f.first_state)
-                team_workshop = PlayerWorkshop.objects.create(player=t, workshop=f,
+                if len(PlayerWorkshop.objects.filter(player=t, workshop=f))==0:
+                    team_workshop = PlayerWorkshop.objects.create(player=t, workshop=f,
                                                               current_state=f.first_state)
 
