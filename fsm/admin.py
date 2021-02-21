@@ -63,7 +63,7 @@ class PlayerWorkshopAdmin(admin.ModelAdmin):
 class PlayerHistoryAdmin(admin.ModelAdmin):
     model = PlayerHistory
     list_display = ['player', 'state', 'grade', 'start_time', 'end_time', 'edge']
-    list_filter = ['start_time', 'end_time', 'state', 'edge']
+    list_filter = ['start_time', 'end_time', 'player','state', 'edge']
 
     
     
