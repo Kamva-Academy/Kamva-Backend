@@ -1,4 +1,6 @@
 from django.contrib import admin
+from import_export.admin import ExportActionMixin
+
 from .models import *
 
 
@@ -14,8 +16,8 @@ class EdgeAdmin(admin.ModelAdmin):
         name = obj.tail.name
         return name
 
-    head_name.short_description = "سر یال"
-    tail_name.short_description = "ته یال "
+    head_name.short_description = "به "
+    tail_name.short_description = "از "
 
 
 class AnswerAdmin(admin.ModelAdmin):
@@ -60,11 +62,16 @@ class PlayerWorkshopAdmin(admin.ModelAdmin):
     #     return str(obj.player.team.group_name)
 
 
-class PlayerHistoryAdmin(admin.ModelAdmin):
+class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
     model = PlayerHistory
-    list_display = ['player', 'state', 'grade', 'start_time', 'end_time', 'edge']
-    list_filter = ['start_time', 'end_time', 'player','state', 'edge']
+    list_display = ['player', 'state', 'grade', 'start_time', 'end_time', 'edge', 'delta_time']
+    list_display = ['player', 'state', 'grade', 'start_time', 'end_time', 'edge', 'delta_time']
+    list_filter = ['start_time', 'end_time','state__fsm', 'player','state', 'edge']
 
+    def delta_time(self, obj):
+        if (obj.end_time and obj.start_time):
+            return obj.end_time - obj.start_time
+        return "-"
     
     
 class DescriptionAdmin(admin.ModelAdmin):
