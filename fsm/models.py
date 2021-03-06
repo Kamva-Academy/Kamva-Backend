@@ -72,6 +72,7 @@ class Article(FSMState):
     active = models.BooleanField(default=False)
 
 
+# from tail to head
 class FSMEdge(models.Model):
     tail = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='outward_edges')
     head = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='inward_edges')
