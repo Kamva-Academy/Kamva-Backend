@@ -236,3 +236,18 @@ class Payment(models.Model):
 
     def __str__(self):
         return self.uniq_code
+
+
+class VerifyCode(models.Model):
+    phone_number = models.CharField(blank=True, max_length=13, null=True)
+    code = models.CharField(blank=True, max_length=10, null=True)
+
+    def send_sms(self):
+        api = KAVENEGAR_TOKEN
+        params = {
+            'receptor': self.phone_number,
+            'template': 'verify',
+            'token': str(self.code),
+            'type': 'sms'
+        }
+        api.verify_lookup(params)

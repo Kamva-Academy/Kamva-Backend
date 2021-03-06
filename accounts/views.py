@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from fsm.models import PlayerHistory
-from .models import Team
+from .models import Team, VerifyCode
 import random
 from django.db import transaction
 from django.conf import settings
@@ -73,6 +73,7 @@ class ObtainTokenPair(TokenObtainPairView):
 
 
 class GroupSignup(APIView):
+    # We Are Not Using This Method
     permission_classes = (permissions.AllowAny,)
 
     @transaction.atomic
@@ -81,6 +82,7 @@ class GroupSignup(APIView):
         if type(members_info) is str:
             members_info = json.loads(members_info)
 
+        # TODO change email to phone number
         for member_info in members_info:
             if Member.objects.filter(email__exact=member_info['email']).count() > 0:
                 return Response(
@@ -116,17 +118,19 @@ class GroupSignup(APIView):
             username=members_info[0]['email'],
             email=members_info[0]['email'],
             is_active=False,
+            city=members_info[0]['city'],
+            school=members_info[0]['school'],
+            grade=members_info[0]['grade'],
+            phone_number=members_info[0]['phone'],
+            gender=members_info[0]['gender'],
+            document=doc0
+
         )
 
         member0.set_password(members_info[0]['password'])
         participant0 = Participant.objects.create(
             member=member0,
-            gender=members_info[0]['gender'],
-            city=members_info[0]['city'],
-            school=members_info[0]['school'],
-            grade=members_info[0]['grade'],
-            phone_number=members_info[0]['phone'],
-            document=doc0
+
         )
 
         member1 = Member.objects.create(
@@ -134,13 +138,6 @@ class GroupSignup(APIView):
             username=members_info[1]['email'],
             email=members_info[1]['email'],
             is_active=False,
-        )
-        password1 = get_random_alphanumeric_string(8)
-
-        member1.set_password(password1)
-
-        participant1 = Participant.objects.create(
-            member=member1,
             gender=members_info[1]['gender'],
             city=members_info[1]['city'],
             school=members_info[1]['school'],
@@ -148,16 +145,16 @@ class GroupSignup(APIView):
             phone_number=members_info[1]['phone'],
             document=doc1
         )
+        password1 = get_random_alphanumeric_string(8)
+
+        member1.set_password(password1)
+        participant1 = Participant.objects.create(member=member1)
+
         member2 = Member.objects.create(
             first_name=members_info[2]['name'],
             username=members_info[2]['email'],
             email=members_info[2]['email'],
             is_active=False,
-        )
-        password2 = get_random_alphanumeric_string(8)
-        member2.set_password(password2)
-        participant2 = Participant.objects.create(
-            member=member2,
             gender=members_info[2]['gender'],
             city=members_info[2]['city'],
             school=members_info[2]['school'],
@@ -165,6 +162,9 @@ class GroupSignup(APIView):
             phone_number=members_info[2]['phone'],
             document=doc2
         )
+        password2 = get_random_alphanumeric_string(8)
+        member2.set_password(password2)
+        participant2 = Participant.objects.create(member=member2)
 
         team = Team()
         participant0.team = team
@@ -187,13 +187,23 @@ class GroupSignup(APIView):
 
 
 class IndividualSignup(APIView):
+    # after verifying phone number
     parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
 
     @transaction.atomic
     def post(self, request):
-        if Member.objects.filter(email__exact=request.data['email']).count() > 0:
-            return Response({'success': False, "error": "فردی با ایمیل " + request.data['email'] + "قبلا ثبت‌نام کرده"},
+        verify_code = request.data['verify_code']
+        phone = request.data['phone']
+        v = VerifyCode.objects.filter(phone_number=phone, code=verify_code)
+        if len(v) < 0 :
+            return Response({'success':False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."})
+
+        if Member.objects.filter(username__exact=request.data['username']).count() > 0:
+            return Response({'success': False, "error": "فردی با نام کاربری " + request.data['username'] + "قبلا ثبت‌نام کرده"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if Member.objects.filter(phone_number__exact=request.data['phone']).count() > 0:
+            return Response({'success': False, "error": "فردی با شماره همراه " + request.data['phone'] + "قبلا ثبت‌نام کرده"},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if 'document' not in request.data:
@@ -204,28 +214,62 @@ class IndividualSignup(APIView):
 
         member = Member.objects.create(
             first_name=request.data['name'],
-            username=request.data['email'],
+            username=request.data['username'],
             email=request.data['email'],
-            is_active=False,
-
-        )
-        member.set_password(request.data['password'])
-        participant = Participant.objects.create(
-            member=member,
+            is_active=True,
             gender=request.data['gender'],
             city=request.data['city'],
             school=request.data['school'],
             grade=request.data['grade'],
             phone_number=request.data['phone'],
             document=doc
+
+        )
+        member.set_password(request.data['password'])
+        participant = Participant.objects.create(
+            member=member,
+
+
         )
         member.save()
         participant.save()
-
-        absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
-
-        member.send_signup_email(absolute_uri)
+        # TODO check email + send success sms
+        # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
+        # member.send_signup_email(absolute_uri)
         return Response({'success': True}, status=status.HTTP_200_OK)
+
+
+class SendVerifyCode(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    @transaction.atomic
+    def post(self, request):
+        code = Member.objects.make_random_password(length=5, allowed_chars='1234567890')
+        phone_number = request.data['phone']
+        verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number)
+        try:
+            verify_code.send_sms()
+        except:
+            return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'success': True}, status=status.HTTP_200_OK)
+
+
+def create_team(request):
+    pass
+
+def send_team_invitation(request):
+# TODO send sms to target
+# if team count in not more than limit
+    pass
+
+def accept_team_invitation(request):
+# TODO send sms to inviter
+    pass
+
+def reject_team_invitation(request):
+# TODO send sms to inviter
+    pass
 
 
 @login_required
