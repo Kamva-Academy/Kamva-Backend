@@ -7,7 +7,7 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
-from fsm.models import PlayerHistory
+from fsm.models import PlayerHistory, Event
 from .models import Team, VerifyCode
 import random
 from django.db import transaction
@@ -228,10 +228,11 @@ class IndividualSignup(APIView):
         member.set_password(request.data['password'])
         participant = Participant.objects.create(
             member=member,
-
-
         )
         member.save()
+
+        current_event = Event.objects.get(name='مسافر صفر')
+        participant.events.add(current_event)
         participant.save()
         # TODO check email + send success sms
         # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")

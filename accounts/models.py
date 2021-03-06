@@ -138,6 +138,7 @@ class Player(models.Model):
     active = models.BooleanField(default=False)
     # uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     workshops = models.ManyToManyField('fsm.FSM', through='fsm.PlayerWorkshop', related_name='players')
+    events = models.ManyToManyField('fsm.Event', related_name='event_players')
 
     def __str__(self):
         if self.player_type == self.PlayerType.TEAM:
