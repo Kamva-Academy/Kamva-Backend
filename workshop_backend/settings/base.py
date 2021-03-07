@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'notifications',
     'rest_framework',
     'rest_framework.authtoken',
-    'auction',
     'workshop',
     'channels',
     'accounts',

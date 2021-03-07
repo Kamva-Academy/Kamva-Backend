@@ -21,7 +21,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
 
-    path('api/auction/', include('auction.urls')),
+    # path('api/auction/', include('auction.urls')),
     path('chat/', include('workshop.api.urls', namespace='workshop')),
     # for auth
     # path('api-auth/', include('rest_framework.urls')),
