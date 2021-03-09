@@ -73,7 +73,7 @@ class ObtainTokenPair(TokenObtainPairView):
 
 
 class Signup(APIView):
-    # after verifying phone number
+    # after phone verification code sent
     parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
 
@@ -82,9 +82,10 @@ class Signup(APIView):
         verify_code = request.data['verify_code']
         phone = request.data['phone']
         v = VerifyCode.objects.filter(phone_number=phone, code=verify_code)
-        if len(v) < 0:
+        if len(v) <= 0:
             return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
                             status=status.HTTP_400_BAD_REQUEST)
+        # todo - see why this code is commented
         # if datetime.now() > v[0].expiration_date:
         #     return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
         #                     status=status.HTTP_400_BAD_REQUEST)
@@ -97,7 +98,7 @@ class Signup(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         if 'document' not in request.data:
-            raise ParseError("Empty Document content")
+            raise ParseError("اطلاعات تأیید هویت ضمیمه نشده است.")
 
         doc = request.data['document']
         doc.name = str(request.data['phone']) + "-" + doc.name
@@ -106,7 +107,7 @@ class Signup(APIView):
         current_event = Event.objects.get(name='مسافر صفر')
         if current_event.has_selection:
             if 'selection_doc' not in request.data:
-                raise ParseError("Empty Selection Document content")
+                raise ParseError("پاسخ سوالات ضمیمه نشده است.")
             selection_doc = request.data['selection_doc']
             selection_doc.name = str(request.data['phone']) + "-" + selection_doc.name
         else:
@@ -172,7 +173,6 @@ class Signup(APIView):
         # TODO check email + send success sms
         # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
         # member.send_signup_email(absolute_uri)
-        print(current_event.event_type)
         if current_event.event_type == 'team':
             return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head}, status=status.HTTP_200_OK)
         else:
@@ -186,6 +186,7 @@ class SendVerifyCode(APIView):
     def post(self, request):
         code = Member.objects.make_random_password(length=5, allowed_chars='1234567890')
         phone_number = request.data['phone']
+        # TODO - invalidate previous verify codes for this phone number
         verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number,
                                                 expiration_date=datetime.now() + timedelta(minutes=5))
         try:
@@ -195,6 +196,27 @@ class SendVerifyCode(APIView):
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'success': True}, status=status.HTTP_200_OK)
 
+
+# class GetTeamData(APIView):
+#     # after verifying phone number
+#     parser_class = (MultiPartParser,)
+#     permission_classes = (permissions.AllowAny,)
+#
+#     def post(self, request):
+#         # TODO Hard coded event name - get data
+#         current_event = Event.objects.get(name='مسافر صفر')
+#         if current_event.event_type != 'team':
+#             return Response({'success': False, "error": "این رویداد گروهی نیست."},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#         if 'team_code' not in request.data or request.data['team_code'] == '':
+#             return Response({'success': False, "error": "لطفا کد تیم را وارد کنید."},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#         try:
+#             team = Team.objects.get(team_code=team_code)
+#         except Team.DoesNotExist:
+#             return Response({'success': False, 'error': "کد تیم نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+#         return Response({'success': True, 'team_code': team_code, 'team_members': team.team_participants.all()},
+#                         status=status.HTTP_200_OK)
 
 def create_team(request):
     pass
