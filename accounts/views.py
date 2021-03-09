@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from fsm.models import PlayerHistory, Event
+from workshop_backend.settings.base import KAVENEGAR_TOKEN
 from .models import Team, VerifyCode
 import random
 from django.db import transaction
@@ -123,6 +124,25 @@ class Signup(APIView):
                         return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
                                         status=status.HTTP_400_BAD_REQUEST)
 
+        if current_event.event_type == 'team':
+            if 'team_code' in request.data and request.data['team_code'] != '':
+                team_code = request.data['team_code']
+                try:
+                    team = Team.objects.get(team_code=team_code)
+                except Team.DoesNotExist:
+                    return Response(
+                        {'success': False, 'error': "کد تیم نامعتبر است."},
+                        status=status.HTTP_400_BAD_REQUEST)
+                if len(team.team_participants.all()) >= current_event.team_size:
+                    return Response(
+                        {'success': False, 'error': "ظرفیت تیم تکمیل است"},
+                        status=status.HTTP_400_BAD_REQUEST)
+                is_team_head = False
+            else:
+                team_code = Member.objects.make_random_password(length=6)
+                is_team_head = True
+
+
         member = Member.objects.create(
             first_name=request.data['name'],
             username=request.data['username'],
@@ -145,39 +165,45 @@ class Signup(APIView):
         if current_event.has_selection:
             participant.selection_doc = selection_doc
 
-        # TODO - move these upper
         if current_event.event_type == 'team':
-            if 'team_code' in request.data and request.data['team_code'] != '':
-                team_code = request.data['team_code']
-                try:
-                    team = Team.objects.get(team_code=team_code)
-                except Team.DoesNotExist:
-                    return Response(
-                        {'success': False, 'error': "کد تیم نامعتبر است."},
-                        status=status.HTTP_400_BAD_REQUEST)
-                if len(team.team_participants.all()) >= current_event.team_size:
-                    return Response(
-                        {'success': False, 'error': "ظرفیت تیم تکمیل است"},
-                        status=status.HTTP_400_BAD_REQUEST)
-                is_team_head = False
-            else:
-                team_code = Member.objects.make_random_password(length=6)
+            if 'team_code' not in request.data or request.data['team_code'] == '':
                 team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM',)
-                team.save()
-                is_team_head = True
-
             participant.event_team = team
 
         member.save()
         participant.save()
 
-        # TODO check email + send success sms
+        # TODO check email - unit test سپس
         # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
         # member.send_signup_email(absolute_uri)
         if current_event.event_type == 'team':
+            try:
+                Signup.send_signup_sms(phone, request.data['username'], request.data['name'], team_code)
+            except:
+                return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head}, status=status.HTTP_200_OK)
         else:
+            try:
+                Signup.send_signup_sms(phone, request.data['username'], request.data['name'])
+            except:
+                return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return Response({'success': True}, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def send_signup_sms(phone_number, username, name, team_code=None):
+        api = KAVENEGAR_TOKEN
+        params = {
+            'receptor': phone_number,
+            'template': 'signupNew' if team_code else 'signupTeam',
+            'token': name,
+            'token2': username,
+            'type': 'sms'
+        }
+        if team_code:
+            params['token3'] = team_code
+        api.verify_lookup(params)
 
 
 class SendVerifyCode(APIView):
@@ -187,7 +213,10 @@ class SendVerifyCode(APIView):
     def post(self, request):
         code = Member.objects.make_random_password(length=5, allowed_chars='1234567890')
         phone_number = request.data['phone']
-        # TODO - invalidate previous verify codes for this phone number
+        other_codes = VerifyCode.objects.filter(phone_number=phone_number, is_valid=True)
+        for c in other_codes:
+            c.is_valid = False
+            c.save()
         verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number,
                                                 expiration_date=datetime.now() + timedelta(minutes=5))
         try:

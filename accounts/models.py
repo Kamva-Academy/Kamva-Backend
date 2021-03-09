@@ -277,6 +277,7 @@ class VerifyCode(models.Model):
     phone_number = models.CharField(blank=True, max_length=13, null=True)
     code = models.CharField(blank=True, max_length=10, null=True)
     expiration_date = models.DateTimeField(blank=False, null=False)
+    is_valid = models.BooleanField(default=True)
 
     def send_sms(self):
         api = KAVENEGAR_TOKEN
