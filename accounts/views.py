@@ -85,10 +85,10 @@ class Signup(APIView):
         if len(v) <= 0:
             return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
                             status=status.HTTP_400_BAD_REQUEST)
-        # todo - see why this code is commented
-        # if datetime.now() > v[0].expiration_date:
-        #     return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
-        #                     status=status.HTTP_400_BAD_REQUEST)
+
+        if datetime.now(v[0].expiration_date.tzinfo) > v[0].expiration_date:
+            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if Member.objects.filter(username__exact=request.data['username']).count() > 0:
             return Response({'success': False, "error": "فردی با نام کاربری " + request.data['username'] + "قبلا ثبت‌نام کرده"},
@@ -145,6 +145,7 @@ class Signup(APIView):
         if current_event.has_selection:
             participant.selection_doc = selection_doc
 
+        # TODO - move these upper
         if current_event.event_type == 'team':
             if 'team_code' in request.data and request.data['team_code'] != '':
                 team_code = request.data['team_code']
@@ -197,26 +198,28 @@ class SendVerifyCode(APIView):
         return Response({'success': True}, status=status.HTTP_200_OK)
 
 
-# class GetTeamData(APIView):
-#     # after verifying phone number
-#     parser_class = (MultiPartParser,)
-#     permission_classes = (permissions.AllowAny,)
-#
-#     def post(self, request):
-#         # TODO Hard coded event name - get data
-#         current_event = Event.objects.get(name='مسافر صفر')
-#         if current_event.event_type != 'team':
-#             return Response({'success': False, "error": "این رویداد گروهی نیست."},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#         if 'team_code' not in request.data or request.data['team_code'] == '':
-#             return Response({'success': False, "error": "لطفا کد تیم را وارد کنید."},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#         try:
-#             team = Team.objects.get(team_code=team_code)
-#         except Team.DoesNotExist:
-#             return Response({'success': False, 'error': "کد تیم نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
-#         return Response({'success': True, 'team_code': team_code, 'team_members': team.team_participants.all()},
-#                         status=status.HTTP_200_OK)
+class GetTeamData(APIView):
+    # after verifying phone number
+    parser_class = (MultiPartParser,)
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        # TODO Hard coded event name - get data
+        current_event = Event.objects.get(name='مسافر صفر')
+        if current_event.event_type != 'team':
+            return Response({'success': False, "error": "این رویداد گروهی نیست."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if 'team_code' not in request.data or request.data['team_code'] == '':
+            return Response({'success': False, "error": "لطفا کد تیم را وارد کنید."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        team_code = request.data['team_code']
+        try:
+            team = Team.objects.get(team_code=team_code)
+        except Team.DoesNotExist:
+            return Response({'success': False, 'error': "کد تیم نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success': True,
+                         'team_members': list(map(lambda p: p.member.first_name, list(team.team_participants.all())))},
+                        status=status.HTTP_200_OK)
 
 def create_team(request):
     pass
