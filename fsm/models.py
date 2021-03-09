@@ -1,13 +1,26 @@
-
 from django.db import models
 from model_utils.managers import InheritanceManager
 from accounts.models import *
 
+
 class Event(models.Model):
+    class EventType(models.TextChoices):
+        team = 'team'
+        individual = 'individual'
+
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     active = models.BooleanField(default=False)
+    event_cost = models.IntegerField(default=0)
+    event_type = models.CharField(max_length=40, default=EventType.individual,
+                                  choices=EventType.choices)
+    has_selection = models.BooleanField(default=False)
+    team_size = models.IntegerField(default=3)
+    maximum_participant = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class FSM(models.Model):
@@ -95,7 +108,8 @@ class Ability(models.Model):
     edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.CASCADE, related_name='abilities')
     name = models.CharField(max_length=150)
     value = models.BooleanField()
-    player_history = models.ForeignKey('fsm.PlayerHistory', null=True, on_delete=models.CASCADE, related_name='abilities')
+    player_history = models.ForeignKey('fsm.PlayerHistory', null=True, on_delete=models.CASCADE,
+                                       related_name='abilities')
 
     def __str__(self):
         return self.name
@@ -238,9 +252,9 @@ class PlayerHistory(models.Model):
         return f'{self.player.id}-{self.state.name}'
 
 
-class PlayerWorkshop (models.Model):
+class PlayerWorkshop(models.Model):
     player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
     workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
-    current_state = models.ForeignKey(MainState, null=True, blank=True, on_delete=models.SET_NULL, related_name='player_workshop')
+    current_state = models.ForeignKey(MainState, null=True, blank=True, on_delete=models.SET_NULL,
+                                      related_name='player_workshop')
     last_visit = models.DateTimeField(null=True, blank=True)
-

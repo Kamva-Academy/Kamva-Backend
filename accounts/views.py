@@ -2,7 +2,7 @@ import logging
 import json
 import os
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -72,121 +72,7 @@ class ObtainTokenPair(TokenObtainPairView):
         return Response(validated_data, status=status.HTTP_200_OK)
 
 
-class GroupSignup(APIView):
-    # We Are Not Using This Method
-    permission_classes = (permissions.AllowAny,)
-
-    @transaction.atomic
-    def post(self, request, format='json'):
-        members_info = request.data['data']
-        if type(members_info) is str:
-            members_info = json.loads(members_info)
-
-        # TODO change email to phone number
-        for member_info in members_info:
-            if Member.objects.filter(email__exact=member_info['email']).count() > 0:
-                return Response(
-                    {'success': False, "error": "فردی با ایمیل " + member_info['email'] + " قبلا ثبت‌نام کرده"},
-                    status=status.HTTP_400_BAD_REQUEST)
-
-        if (members_info[0]['email'] == members_info[1]['email']
-                or members_info[1]['email'] == members_info[2]['email']
-                or members_info[2]['email'] == members_info[0]['email']):
-            return Response({'success': False, "error": "ایمیلهای اعضای گروه باید متمایز باشد."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if not (members_info[0]['gender'] == members_info[1]['gender']
-                and members_info[2]['gender'] == members_info[1]['gender']):
-            return Response({'success': False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if 'document1' not in request.data:
-            raise ParseError("Empty content document1")
-        doc0 = request.data['document1']
-        doc0.name = str(members_info[0]['email']) + "-" + doc0.name
-        if 'document2' not in request.data:
-            raise ParseError("Empty content document2")
-        doc1 = request.data['document2']
-        doc1.name = str(members_info[1]['email']) + "-" + doc1.name
-        if 'document3' not in request.data:
-            raise ParseError("Empty content document3")
-        doc2 = request.data['document3']
-        doc2.name = str(members_info[2]['email']) + "-" + doc2.name
-
-        member0 = Member.objects.create(
-            first_name=members_info[0]['name'],
-            username=members_info[0]['email'],
-            email=members_info[0]['email'],
-            is_active=False,
-            city=members_info[0]['city'],
-            school=members_info[0]['school'],
-            grade=members_info[0]['grade'],
-            phone_number=members_info[0]['phone'],
-            gender=members_info[0]['gender'],
-            document=doc0
-
-        )
-
-        member0.set_password(members_info[0]['password'])
-        participant0 = Participant.objects.create(
-            member=member0,
-
-        )
-
-        member1 = Member.objects.create(
-            first_name=members_info[1]['name'],
-            username=members_info[1]['email'],
-            email=members_info[1]['email'],
-            is_active=False,
-            gender=members_info[1]['gender'],
-            city=members_info[1]['city'],
-            school=members_info[1]['school'],
-            grade=members_info[1]['grade'],
-            phone_number=members_info[1]['phone'],
-            document=doc1
-        )
-        password1 = get_random_alphanumeric_string(8)
-
-        member1.set_password(password1)
-        participant1 = Participant.objects.create(member=member1)
-
-        member2 = Member.objects.create(
-            first_name=members_info[2]['name'],
-            username=members_info[2]['email'],
-            email=members_info[2]['email'],
-            is_active=False,
-            gender=members_info[2]['gender'],
-            city=members_info[2]['city'],
-            school=members_info[2]['school'],
-            grade=members_info[2]['grade'],
-            phone_number=members_info[2]['phone'],
-            document=doc2
-        )
-        password2 = get_random_alphanumeric_string(8)
-        member2.set_password(password2)
-        participant2 = Participant.objects.create(member=member2)
-
-        team = Team()
-        participant0.team = team
-        participant1.team = team
-        participant2.team = team
-        team.save()
-        member0.save()
-        participant0.save()
-        member1.save()
-        participant1.save()
-        member2.save()
-        participant2.save()
-
-        absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
-        member0.send_signup_email(absolute_uri)
-        member1.send_signup_email(absolute_uri, password1)
-        member2.send_signup_email(absolute_uri, password2)
-
-        return Response({'success': True}, status=status.HTTP_200_OK)
-
-
-class IndividualSignup(APIView):
+class Signup(APIView):
     # after verifying phone number
     parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
@@ -196,8 +82,12 @@ class IndividualSignup(APIView):
         verify_code = request.data['verify_code']
         phone = request.data['phone']
         v = VerifyCode.objects.filter(phone_number=phone, code=verify_code)
-        if len(v) < 0 :
-            return Response({'success':False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."})
+        if len(v) < 0:
+            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        # if datetime.now() > v[0].expiration_date:
+        #     return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
+        #                     status=status.HTTP_400_BAD_REQUEST)
 
         if Member.objects.filter(username__exact=request.data['username']).count() > 0:
             return Response({'success': False, "error": "فردی با نام کاربری " + request.data['username'] + "قبلا ثبت‌نام کرده"},
@@ -210,7 +100,27 @@ class IndividualSignup(APIView):
             raise ParseError("Empty Document content")
 
         doc = request.data['document']
-        doc.name = str(request.data['email']) + "-" + doc.name
+        doc.name = str(request.data['phone']) + "-" + doc.name
+
+        # TODO Hard coded event name
+        current_event = Event.objects.get(name='مسافر صفر')
+        if current_event.has_selection:
+            if 'selection_doc' not in request.data:
+                raise ParseError("Empty Selection Document content")
+            selection_doc = request.data['selection_doc']
+            selection_doc.name = str(request.data['phone']) + "-" + selection_doc.name
+        else:
+            if current_event.maximum_participant:
+                if current_event.event_cost <= 0:
+                    participants = Participant.objects.filter(event=current_event)
+                    if len(participants) >= current_event.maximum_participant:
+                        return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    paid_participants = Participant.objects.filter(event=current_event, is_paid=True)
+                    if len(paid_participants) >= current_event.maximum_participant:
+                        return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
+                                        status=status.HTTP_400_BAD_REQUEST)
 
         member = Member.objects.create(
             first_name=request.data['name'],
@@ -222,22 +132,51 @@ class IndividualSignup(APIView):
             school=request.data['school'],
             grade=request.data['grade'],
             phone_number=request.data['phone'],
-            document=doc
-
+            document=doc,
         )
         member.set_password(request.data['password'])
+
         participant = Participant.objects.create(
             member=member,
+            event=current_event,
+            player_type='PARTICIPANT',
         )
-        member.save()
+        if current_event.has_selection:
+            participant.selection_doc = selection_doc
 
-        current_event = Event.objects.get(name='مسافر صفر')
-        participant.events.add(current_event)
+        if current_event.event_type == 'team':
+            if 'team_code' in request.data and request.data['team_code'] != '':
+                team_code = request.data['team_code']
+                try:
+                    team = Team.objects.get(team_code=team_code)
+                except Team.DoesNotExist:
+                    return Response(
+                        {'success': False, 'error': "کد تیم نامعتبر است."},
+                        status=status.HTTP_400_BAD_REQUEST)
+                if len(team.team_participants.all()) >= current_event.team_size:
+                    return Response(
+                        {'success': False, 'error': "ظرفیت تیم تکمیل است"},
+                        status=status.HTTP_400_BAD_REQUEST)
+                is_team_head = False
+            else:
+                team_code = Member.objects.make_random_password(length=6)
+                team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM',)
+                team.save()
+                is_team_head = True
+
+            participant.event_team = team
+
+        member.save()
         participant.save()
+
         # TODO check email + send success sms
         # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
         # member.send_signup_email(absolute_uri)
-        return Response({'success': True}, status=status.HTTP_200_OK)
+        print(current_event.event_type)
+        if current_event.event_type == 'team':
+            return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 class SendVerifyCode(APIView):
@@ -247,7 +186,8 @@ class SendVerifyCode(APIView):
     def post(self, request):
         code = Member.objects.make_random_password(length=5, allowed_chars='1234567890')
         phone_number = request.data['phone']
-        verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number)
+        verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number,
+                                                expiration_date=datetime.now() + timedelta(minutes=5))
         try:
             verify_code.send_sms()
         except:
@@ -514,3 +454,116 @@ class VerifyPayView(APIView):
             return Response(
                 {"message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است"},
                 status=403)
+
+# class GroupSignup(APIView):
+#     # We Are Not Using This Method
+#     permission_classes = (permissions.AllowAny,)
+#
+#     @transaction.atomic
+#     def post(self, request, format='json'):
+#         members_info = request.data['data']
+#         if type(members_info) is str:
+#             members_info = json.loads(members_info)
+#
+#         # TODO change email to phone number
+#         for member_info in members_info:
+#             if Member.objects.filter(email__exact=member_info['email']).count() > 0:
+#                 return Response(
+#                     {'success': False, "error": "فردی با ایمیل " + member_info['email'] + " قبلا ثبت‌نام کرده"},
+#                     status=status.HTTP_400_BAD_REQUEST)
+#
+#         if (members_info[0]['email'] == members_info[1]['email']
+#                 or members_info[1]['email'] == members_info[2]['email']
+#                 or members_info[2]['email'] == members_info[0]['email']):
+#             return Response({'success': False, "error": "ایمیلهای اعضای گروه باید متمایز باشد."},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         if not (members_info[0]['gender'] == members_info[1]['gender']
+#                 and members_info[2]['gender'] == members_info[1]['gender']):
+#             return Response({'success': False, "error": "اعضای گروه باید همه دختر یا همه پسر باشند."},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         if 'document1' not in request.data:
+#             raise ParseError("Empty content document1")
+#         doc0 = request.data['document1']
+#         doc0.name = str(members_info[0]['email']) + "-" + doc0.name
+#         if 'document2' not in request.data:
+#             raise ParseError("Empty content document2")
+#         doc1 = request.data['document2']
+#         doc1.name = str(members_info[1]['email']) + "-" + doc1.name
+#         if 'document3' not in request.data:
+#             raise ParseError("Empty content document3")
+#         doc2 = request.data['document3']
+#         doc2.name = str(members_info[2]['email']) + "-" + doc2.name
+#
+#         member0 = Member.objects.create(
+#             first_name=members_info[0]['name'],
+#             username=members_info[0]['email'],
+#             email=members_info[0]['email'],
+#             is_active=False,
+#             city=members_info[0]['city'],
+#             school=members_info[0]['school'],
+#             grade=members_info[0]['grade'],
+#             phone_number=members_info[0]['phone'],
+#             gender=members_info[0]['gender'],
+#             document=doc0
+#
+#         )
+#
+#         member0.set_password(members_info[0]['password'])
+#         participant0 = Participant.objects.create(
+#             member=member0,
+#
+#         )
+#
+#         member1 = Member.objects.create(
+#             first_name=members_info[1]['name'],
+#             username=members_info[1]['email'],
+#             email=members_info[1]['email'],
+#             is_active=False,
+#             gender=members_info[1]['gender'],
+#             city=members_info[1]['city'],
+#             school=members_info[1]['school'],
+#             grade=members_info[1]['grade'],
+#             phone_number=members_info[1]['phone'],
+#             document=doc1
+#         )
+#         password1 = get_random_alphanumeric_string(8)
+#
+#         member1.set_password(password1)
+#         participant1 = Participant.objects.create(member=member1)
+#
+#         member2 = Member.objects.create(
+#             first_name=members_info[2]['name'],
+#             username=members_info[2]['email'],
+#             email=members_info[2]['email'],
+#             is_active=False,
+#             gender=members_info[2]['gender'],
+#             city=members_info[2]['city'],
+#             school=members_info[2]['school'],
+#             grade=members_info[2]['grade'],
+#             phone_number=members_info[2]['phone'],
+#             document=doc2
+#         )
+#         password2 = get_random_alphanumeric_string(8)
+#         member2.set_password(password2)
+#         participant2 = Participant.objects.create(member=member2)
+#
+#         team = Team()
+#         participant0.team = team
+#         participant1.team = team
+#         participant2.team = team
+#         team.save()
+#         member0.save()
+#         participant0.save()
+#         member1.save()
+#         participant1.save()
+#         member2.save()
+#         participant2.save()
+#
+#         absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
+#         member0.send_signup_email(absolute_uri)
+#         member1.send_signup_email(absolute_uri, password1)
+#         member2.send_signup_email(absolute_uri, password2)
+#
+#         return Response({'success': True}, status=status.HTTP_200_OK)

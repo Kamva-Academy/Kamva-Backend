@@ -57,11 +57,12 @@ class Member(AbstractUser):
 
     is_participant = models.BooleanField(default=True)
     is_mentor = models.BooleanField(default=False)
+    is_event_owner = models.BooleanField(default=False)
 
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     school = models.CharField(max_length=50, null=True, blank=True)
     city = models.CharField(max_length=20, null=True, blank=True)
-    document = models.ImageField(upload_to='documents/', null=True, blank=True)
+    document = models.FileField(upload_to='documents/', null=True, blank=True)
     gender = models.CharField(max_length=10, null=True, blank=True,
                               choices=Gender.choices)
     grade = models.CharField(max_length=15, null=True, blank=True,
@@ -94,6 +95,29 @@ class Member(AbstractUser):
         return self.username
 
 
+class EventOwnerManager(models.Manager):
+    @transaction.atomic
+    def create_event_owner(self, email, password, *args, **kwargs):
+        member = Member.objects.create_user(username=email, email=email, password=password)
+        member.is_mentor = True
+        member.is_event_owner = True
+        member.is_participant = False
+        member.save()
+        mentor = Mentor.objects.create(member=member)
+        event_owner = EventOwner.objects.create(member=member)
+        return event_owner
+
+
+class EventOwner(models.Model):
+    objects = EventOwnerManager()
+    member = models.OneToOneField(Member, related_name='owner',
+                                  on_delete=models.CASCADE)
+    events = models.ManyToManyField('fsm.Event', related_name='event_owners')
+
+    def __str__(self):
+        return str(self.member)
+
+
 class MentorManager(models.Manager):
     @transaction.atomic
     def create_mentor(self, email, password, *args, **kwargs):
@@ -108,8 +132,9 @@ class MentorManager(models.Manager):
 
 class Mentor(models.Model):
     objects = MentorManager()
-    member = models.OneToOneField(Member, related_name='Mentor',
+    member = models.OneToOneField(Member, related_name='mentor',
                                   on_delete=models.CASCADE)
+    workshops = models.ManyToManyField('fsm.FSM', related_name='workshop_mentors')
 
     def __str__(self):
         return str(self.member)
@@ -137,8 +162,9 @@ class Player(models.Model):
     score = models.IntegerField(null=True, blank=True)
     active = models.BooleanField(default=False)
     # uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    workshops = models.ManyToManyField('fsm.FSM', through='fsm.PlayerWorkshop', related_name='players')
-    events = models.ManyToManyField('fsm.Event', related_name='event_players')
+    # workshops = models.ManyToManyField('fsm.FSM', through='fsm.PlayerWorkshop', related_name='workshop_players')
+    event = models.ForeignKey('fsm.Event', related_name='event_players',
+                              on_delete=models.CASCADE, null=True, blank=False)
 
     def __str__(self):
         if self.player_type == self.PlayerType.TEAM:
@@ -181,8 +207,17 @@ class ParticipantManager(models.Manager):
         return participant, password
 
 
+# member's participation in event
 class Participant(Player):
-    member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
+    member = models.ForeignKey(Member, related_name='event_participant', on_delete=models.CASCADE)
+    event_team = models.ForeignKey('Team', related_name='team_participants',
+                                   null=True, blank=True, on_delete=models.CASCADE)
+    # TODO change file directory to event name
+    selection_doc = models.FileField(upload_to='selection_answers/', null=True, blank=True)
+    is_paid = models.BooleanField(default=False)  # پرداخت
+    is_accepted = models.BooleanField(default=False)  # برای گزینش
+    is_participated = models.BooleanField(default=False)  # شرکت‌کنند‌های نهایی رویداد
+
 
     objects = ParticipantManager()
 
@@ -209,12 +244,11 @@ class Team(Player):
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     team_code = models.CharField(max_length=10)
     # current_state = models.ForeignKey('fsm.FSMState', null=True, blank=True, on_delete=models.SET_NULL, related_name='teams')
-    team_members = models.ManyToManyField(Participant, related_name='team_set')
 
     def __str__(self):
         s = str(self.id) + "-" +self.group_name + " ("
 
-        for p in self.team_members.all():
+        for p in self.team_participants.all():
             s += str(p) + ", "
         s += ")"
         return s
@@ -242,6 +276,7 @@ class Payment(models.Model):
 class VerifyCode(models.Model):
     phone_number = models.CharField(blank=True, max_length=13, null=True)
     code = models.CharField(blank=True, max_length=10, null=True)
+    expiration_date = models.DateTimeField(blank=False, null=False)
 
     def send_sms(self):
         api = KAVENEGAR_TOKEN

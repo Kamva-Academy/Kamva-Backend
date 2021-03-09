@@ -75,7 +75,7 @@ class ParticipantResource(resources.ModelResource):
             if participant.team:
                 team = participant.team
                 team_name = str(team.id) + " ("
-                for p in team.team_members.all():
+                for p in team.team_participants.all():
                     team_name += str(p.member.first_name) + ", "
                 team_name += ")"
                 return team_name
@@ -296,7 +296,7 @@ class TeamAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         if change:
             logger.debug(f'changed state team {obj.id}')
-            team_change_current_state(obj, obj.current_state)
+            # team_change_current_state(obj, obj.current_state)
         super().save_model(request, obj, form, change)
 
     def get_group_name(self, obj):
@@ -309,21 +309,21 @@ class TeamAdmin(admin.ModelAdmin):
                 reverse('admin:{}_{}_change'.format(Participant._meta.app_label, Participant._meta.model_name),
                         args=(member.pk,)),
                 member.member.email)
-            for member in obj.team_members.all()
+            for member in obj.team_participants.all()
         ])
         if display_text:
             return mark_safe(display_text)
         return "-"
 
     def team_members_count(self, obj):
-        return obj.team_members.all().count()
+        return obj.team_participants.all().count()
     
     def team_status(self, obj):
         accept_count = 0
-        for p in obj.team_members.all():
+        for p in obj.team_participants.all():
             accept_count += 1
         if accept_count == 0: return False
-        elif accept_count == obj.team_members.all().count(): return True
+        elif accept_count == obj.team_participants.all().count(): return True
         else: return None
 
     group_members_display.short_description = "اعضای تیم"
