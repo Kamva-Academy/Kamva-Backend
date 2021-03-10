@@ -82,7 +82,7 @@ class Signup(APIView):
     def post(self, request):
         verify_code = request.data['verify_code']
         phone = request.data['phone']
-        v = VerifyCode.objects.filter(phone_number=phone, code=verify_code)
+        v = VerifyCode.objects.filter(phone_number=phone, code=verify_code, is_valid=True)
         if len(v) <= 0:
             return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -142,7 +142,6 @@ class Signup(APIView):
                 team_code = Member.objects.make_random_password(length=6)
                 is_team_head = True
 
-
         member = Member.objects.create(
             first_name=request.data['name'],
             username=request.data['username'],
@@ -177,18 +176,21 @@ class Signup(APIView):
         # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
         # member.send_signup_email(absolute_uri)
         if current_event.event_type == 'team':
-            try:
-                Signup.send_signup_sms(phone, request.data['username'], request.data['name'], team_code)
-            except:
-                return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            if is_team_head:
+                try:
+                    Signup.send_signup_sms(phone, request.data['username'], request.data['name'], team_code)
+                except:
+                    return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                try:
+                    Signup.send_signup_sms(phone, request.data['username'], request.data['name'])
+                except:
+                    return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head}, status=status.HTTP_200_OK)
         else:
-            try:
-                Signup.send_signup_sms(phone, request.data['username'], request.data['name'])
-            except:
-                return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # TODO - add individual signup
             return Response({'success': True}, status=status.HTTP_200_OK)
 
     @staticmethod
