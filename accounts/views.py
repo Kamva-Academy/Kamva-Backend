@@ -179,13 +179,13 @@ class Signup(APIView):
         if current_event.event_type == 'team':
             if is_team_head:
                 try:
-                    Signup.send_signup_sms(phone, request.data['username'], request.data['name'], team_code)
+                    Signup.send_signup_sms(phone, request.data['username'], team_code)
                 except:
                     return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 try:
-                    Signup.send_signup_sms(phone, request.data['username'], request.data['name'])
+                    Signup.send_signup_sms(phone, request.data['username'])
                 except:
                     return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -195,17 +195,16 @@ class Signup(APIView):
             return Response({'success': True}, status=status.HTTP_200_OK)
 
     @staticmethod
-    def send_signup_sms(phone_number, username, name, team_code=None):
+    def send_signup_sms(phone_number, username, team_code=None):
         api = KAVENEGAR_TOKEN
         params = {
             'receptor': phone_number,
             'template': 'signupNew' if team_code else 'signupTeam',
-            'token': name,
-            'token2': username,
+            'token': username,
             'type': 'sms'
         }
         if team_code:
-            params['token3'] = team_code
+            params['token2'] = team_code
         api.verify_lookup(params)
 
 
