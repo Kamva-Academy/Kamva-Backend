@@ -30,6 +30,7 @@ from rest_framework import status, permissions
 from rest_framework.views import APIView
 from .utils import *
 from .serializers import MyTokenObtainPairSerializer, MemberSerializer
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -220,7 +221,7 @@ class SendVerifyCode(APIView):
             c.is_valid = False
             c.save()
         verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number,
-                                                expiration_date=datetime.now() + timedelta(minutes=5))
+                                                expiration_date=datetime.now(pytz.timezone('Asia/Tehran')) + timedelta(minutes=5))
         try:
             verify_code.send_sms()
         except:
