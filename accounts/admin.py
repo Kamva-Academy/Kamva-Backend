@@ -27,6 +27,7 @@ import csv
 from django.http import HttpResponse
 
 
+zero_media_root = "zero.rastaiha.ir/api/media/"
 
 class ParticipantResource(resources.ModelResource):
     name = Field()
@@ -112,7 +113,7 @@ class ParticipantResource(resources.ModelResource):
     def dehydrate_answer(self, participant):
         try:
             if participant.selection_doc:
-                return "workshop.rastaiha.ir/api/media/" + str(participant.selection_doc)
+                return zero_media_root + str(participant.selection_doc)
             else:
                 return ''
         except Exception:
@@ -121,7 +122,7 @@ class ParticipantResource(resources.ModelResource):
     def dehydrate_doc(self, participant):
         try:
             if participant.member.document:
-                return "workshop.rastaiha.ir/api/media/" + str(participant.member.document)
+                return zero_media_root + str(participant.member.document)
             else:
                 return ''
         except Exception:
@@ -238,7 +239,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     def get_doc(self, obj):
         # try:
         link = "<a href={}>{}</a>".format(
-                    '127.0.0.1:8000/api/media/' + str(obj.member.document),
+                    zero_media_root + str(obj.member.document),
         obj.member.first_name)
         return mark_safe(link)
         # except:
