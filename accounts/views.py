@@ -58,7 +58,24 @@ class ObtainTokenPair(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        data = request.data.copy()
+        if 'username' not in request.data:
+            if 'phone' in request.data:
+                try:
+                    member = Member.objects.get(phone_number=request.data['phone'])
+                    data['username'] = member.username
+                except Member.DoesNotExist:
+                    return Response(
+                        {'success': False, 'error': "کاربری با این شماره یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+            elif 'email' in request.data:
+                try:
+                    member = Member.objects.get(email=request.data['email'])
+                    data['username'] = member.username
+                except Member.DoesNotExist:
+                    return Response(
+                        {'success': False, 'error': "کاربری با این ایمیل یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=data)
 
         try:
             serializer.is_valid(raise_exception=True)
@@ -66,17 +83,13 @@ class ObtainTokenPair(TokenObtainPairView):
             raise InvalidToken(e.args[0])
 
         validated_data = serializer.validated_data
-        member = Member.objects.filter(username = request.data['username'])[0]
-        response = get_member_json_info(member)
-        # response = member.get_member_info()
-        validated_data['user_info'] = response
-
+        validated_data['user_info'] = get_member_json_info(member)
+        participants = member.event_participant
+        validated_data['events'] = [p.event.id for p in participants.all()]
         return Response(validated_data, status=status.HTTP_200_OK)
 
 
-
-
-class ChagnePassword(APIView):
+class ChangePassword(APIView):
     # parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
 
@@ -98,24 +111,26 @@ class ChagnePassword(APIView):
         return Response({'success': True, 'error': "عملیات با موفقیت انجام شد"}, status=status.HTTP_200_OK)
 
 
-class signIn(APIView):
+class SignIn(APIView):
     permission_classes = (permissions.AllowAny,)
-
 
     def post(self, request):
         password = request.data['password']
         if 'phone' in request.data:
             phone = request.data['phone']
-            member = authenticate(request, phone_number = phone, password = password)
+            print(phone)
+            member = authenticate(request, phone_number=phone, password=password)
+
         elif 'email' in request.data:
             email = request.data['email']
             member = authenticate(request, email=email, password=password)
         elif 'username' in request.data:
             username = request.data['username']
             member = authenticate(request, username=username, password=password)
+        print(member)
         if member is not None:
             auth_login(request, member)
-            return Response({'success': True, 'error': 'ورود با موفقیت'}, status=status.HTTP_200_OK)
+            Response({'success': True, 'member': member.id}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'error': 'اطلاعات اشتباه می باشد'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -139,11 +154,13 @@ class Signup(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         if Member.objects.filter(username__exact=request.data['username']).count() > 0:
-            return Response({'success': False, "error": "فردی با نام کاربری " + request.data['username'] + "قبلا ثبت‌نام کرده"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'success': False, "error": "فردی با نام کاربری " + request.data['username'] + "قبلا ثبت‌نام کرده"},
+                status=status.HTTP_400_BAD_REQUEST)
         if Member.objects.filter(phone_number__exact=request.data['phone']).count() > 0:
-            return Response({'success': False, "error": "فردی با شماره همراه " + request.data['phone'] + "قبلا ثبت‌نام کرده"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'success': False, "error": "فردی با شماره همراه " + request.data['phone'] + "قبلا ثبت‌نام کرده"},
+                status=status.HTTP_400_BAD_REQUEST)
 
         if 'document' not in request.data:
             raise ParseError("اطلاعات تأیید هویت ضمیمه نشده است.")
@@ -213,7 +230,7 @@ class Signup(APIView):
 
         if current_event.event_type == 'team':
             if 'team_code' not in request.data or request.data['team_code'] == '':
-                team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM',)
+                team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
             participant.event_team = team
 
         member.save()
@@ -235,7 +252,8 @@ class Signup(APIView):
                 except:
                     return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head},
+                            status=status.HTTP_200_OK)
         else:
             # TODO - add individual signup
             return Response({'success': True}, status=status.HTTP_200_OK)
@@ -266,7 +284,8 @@ class SendVerifyCode(APIView):
             c.is_valid = False
             c.save()
         verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number,
-                                                expiration_date=datetime.now(pytz.timezone('Asia/Tehran')) + timedelta(minutes=5))
+                                                expiration_date=datetime.now(pytz.timezone('Asia/Tehran')) + timedelta(
+                                                    minutes=5))
         try:
             verify_code.send_sms(request.data['code_type'])
         except:
@@ -298,20 +317,29 @@ class GetTeamData(APIView):
                          'team_members': list(map(lambda p: p.member.first_name, list(team.team_participants.all())))},
                         status=status.HTTP_200_OK)
 
+
 def create_team(request):
     pass
 
+
 def send_team_invitation(request):
-# TODO send sms to target
-# if team count in not more than limit
+    # TODO send sms to target
+    # if team count in not more than limit
     pass
+
 
 def accept_team_invitation(request):
-# TODO send sms to inviter
+    # TODO send sms to inviter
     pass
 
+
 def reject_team_invitation(request):
-# TODO send sms to inviter
+    # TODO send sms to inviter
+    pass
+
+
+@login_required
+def get_participant_profile(request):
     pass
 
 
@@ -385,8 +413,8 @@ class UserInfo(APIView):
         member = request.user
         if "uuid" in request.GET:
             member = Member.objects.filter(uuid=request.GET.get('uuid'))
-            if not member.count() >0:
-                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
+            if not member.count() > 0:
+                return Response({'success': False, "error": "user not found"}, status=status.HTTP_400_BAD_REQUEST)
             member = member[0]
         response = get_member_json_info(member)
         return Response(response)
@@ -399,15 +427,17 @@ class TeamInfo(APIView):
         if "teamId" in request.GET:
             team = Team.objects.filter(id=request.GET.get('teamId'))
             if not team.count() > 0:
-                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
-            else: team = team[0]
+                return Response({'success': False, "error": "user not found"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                team = team[0]
         elif "uuid" in request.GET:
             team = Team.objects.filter(uuid=request.GET.get('uuid'))
             if not team.count() > 0:
-                return Response({'success': False, "error" : "user not found"}, status=status.HTTP_400_BAD_REQUEST )
-            else: team = team[0]
+                return Response({'success': False, "error": "user not found"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                team = team[0]
         else:
-                team = request.user.participant.team
+            team = request.user.participant.team
 
         if not team:
             return Response({'success': False, "error": "team not found"}, status=status.HTTP_400_BAD_REQUEST)
@@ -424,7 +454,7 @@ class Teams(APIView):
         valid_teams = TeamsCache.get_data()
         end = datetime.now()
         print(datetime.now())
-        dureation = end-start
+        dureation = end - start
         print(dureation)
         print("--------------------------------------")
 

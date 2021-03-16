@@ -6,17 +6,19 @@ def get_member_json_info(member):
     response = {
         "email": member.email,
         "name": member.first_name,
-        "is_participant": member.is_participant,
         "is_mentor": member.is_mentor,
-        "uuid": member.uuid
+        "uuid": member.uuid,
+        "phone": member.phone_number,
+        "gender": member.gender,
     }
 
     if member.is_participant:
-        participant = member.participant
-        response['grade'] = participant.member.grade
-        response['gender'] = participant.member.gender
-        response['city'] = participant.member.city
-        response['school'] = participant.member.school
+        pass
+        # participant = member.participant
+        # response['grade'] = participant.member.grade
+        # response['gender'] = participant.member.gender
+        # response['city'] = participant.member.city
+        # response['school'] = participant.member.school
         # response['accepted'] = participant.accepted
         # response['is_activated'] = participant.is_activated
 
