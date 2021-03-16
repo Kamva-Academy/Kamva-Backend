@@ -16,8 +16,8 @@ from django.urls import path, re_path
 from django.urls import path
 from rest_framework_simplejwt import views as jwt_views
 from .views import ObtainTokenPair, Signup, activate, ChangePass, logout, UploadAnswerView, \
-    PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerifyCode, GetTeamData, ChangePassword, SignIn, \
-    get_participant_profile
+    PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerifyCode, GetTeamData, ChangePassword, \
+    RegistrationInfo, VerifyDiscount
 
 urlpatterns = [
     path('pay/', PayView.as_view(), name="pay"),
@@ -26,7 +26,6 @@ urlpatterns = [
     path('signup/', Signup.as_view(), name="signup"),
     path('sendVerify/', SendVerifyCode.as_view(), name="send_verify_code"),
     path('teamdata/', GetTeamData.as_view(), name="get_team_data"),
-    path('login/', SignIn.as_view(), name = "log_in"),
     # path('changePass/', ChangePass.as_view(), name="change_password"),
     path('logout/', logout, name="logout"),
     path('changepass/', ChangePassword.as_view(), name='change_password'),
@@ -38,5 +37,6 @@ urlpatterns = [
     path('userInfo/', UserInfo.as_view(), name="user_info"),
     path('teamInfo/', TeamInfo.as_view(), name="team_info"),
     path('teams/', Teams.as_view(), name="teams"),
-    path('profile/', get_participant_profile, name="participant_profile"),
+    path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),
+    path('verify-discount/', VerifyDiscount.as_view(), name="verify_discount"),
 ]

@@ -9,7 +9,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from fsm.models import PlayerHistory, Event
 from workshop_backend.settings.base import KAVENEGAR_TOKEN
-from .models import Team, VerifyCode
+from .models import Team, VerifyCode, DiscountCode
 import random
 from django.db import transaction
 from django.conf import settings
@@ -60,21 +60,20 @@ class ObtainTokenPair(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         data = request.data.copy()
         if 'username' not in request.data:
-            if 'phone' in request.data:
-                try:
+            try:
+                if 'phone' in request.data:
                     member = Member.objects.get(phone_number=request.data['phone'])
-                    data['username'] = member.username
-                except Member.DoesNotExist:
-                    return Response(
-                        {'success': False, 'error': "کاربری با این شماره یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
-            elif 'email' in request.data:
-                try:
+                elif 'email' in request.data:
                     member = Member.objects.get(email=request.data['email'])
-                    data['username'] = member.username
-                except Member.DoesNotExist:
+                else:
                     return Response(
-                        {'success': False, 'error': "کاربری با این ایمیل یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
-
+                        {'success': False, 'error': "اطلاعات ورود کامل نیست."}, status=status.HTTP_400_BAD_REQUEST)
+                data['username'] = member.username
+            except Member.DoesNotExist:
+                return Response(
+                    {'success': False, 'error': "کاربری با این شماره یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            member = Member.objects.get(username=request.data['username'])
         serializer = self.get_serializer(data=data)
 
         try:
@@ -109,30 +108,6 @@ class ChangePassword(APIView):
         member.set_password(request.data['password'])
         member.save()
         return Response({'success': True, 'error': "عملیات با موفقیت انجام شد"}, status=status.HTTP_200_OK)
-
-
-class SignIn(APIView):
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        password = request.data['password']
-        if 'phone' in request.data:
-            phone = request.data['phone']
-            print(phone)
-            member = authenticate(request, phone_number=phone, password=password)
-
-        elif 'email' in request.data:
-            email = request.data['email']
-            member = authenticate(request, email=email, password=password)
-        elif 'username' in request.data:
-            username = request.data['username']
-            member = authenticate(request, username=username, password=password)
-        print(member)
-        if member is not None:
-            auth_login(request, member)
-            Response({'success': True, 'member': member.id}, status=status.HTTP_200_OK)
-        else:
-            return Response({'success': False, 'error': 'اطلاعات اشتباه می باشد'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Signup(APIView):
@@ -338,9 +313,63 @@ def reject_team_invitation(request):
     pass
 
 
-@login_required
-def get_participant_profile(request):
-    pass
+class VerifyDiscount(APIView):
+
+    def post(self, request):
+        code = request.data['code']
+        try:
+            participant = Participant.objects.get(id=request.data['participant_id'])
+        except Event.DoesNotExist:
+            return Response(
+                {'success': False, 'error': "کاربر برای ثبت‌نام در این رویداد اقدام نکرده است."},
+                status=status.HTTP_400_BAD_REQUEST)
+        discount_codes = DiscountCode.objects.filter(participant=participant, code=code, is_valid=True)
+        if len(discount_codes) <= 0:
+            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        c = discount_codes[0]
+        if not c.is_valid:
+            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده غیرمعتبر است."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success': True, 'is_valid': c.is_valid, 'value': c.value}, status=status.HTTP_200_OK)
+
+
+class RegistrationInfo(APIView):
+
+    def post(self, request):
+        try:
+            member = Member.objects.get(uuid=request.data['member_uuid'])
+        except Member.DoesNotExist:
+            return Response(
+                {'success': False, 'error': "کاربر موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            event = Event.objects.get(id=request.data['event_id'])
+        except Event.DoesNotExist:
+            return Response(
+                {'success': False, 'error': "رویداد موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+        event_data = {
+            'name': event.name,
+            'is_team_based': event.event_type == Event.EventType.team,
+            'price': event.event_cost,
+            'team_discount': 5 / 7  # TODO - hard coded team discount
+        }
+        participants = member.event_participant.filter(event=event)
+        if len(participants) > 0:
+            participant = participants[0]
+            team = participant.event_team
+            team_participants = []
+            for p in team.team_participants.all():
+                team_participants.append({
+                    'name': p.member.first_name,
+                    'is_paid': p.is_paid,
+                    'is_accepted': p.is_accepted,
+                    'is_me': p.id == participant.id})
+            return Response({'success': True, 'event': event_data, 'team': team_participants, 'me': participant.id},
+                            status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {'success': False, 'error': "کاربر برای ثبت‌نام در این رویداد اقدام نکرده است."},
+                status=status.HTTP_400_BAD_REQUEST)
 
 
 @login_required

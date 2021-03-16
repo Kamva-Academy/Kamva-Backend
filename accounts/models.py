@@ -273,6 +273,16 @@ class Payment(models.Model):
         return self.uniq_code
 
 
+class DiscountCode(models.Model):
+    participant = models.ForeignKey(Participant, related_name='participant_discount_code', on_delete=models.CASCADE)
+    code = models.CharField(blank=True, max_length=10, null=False)
+    value = models.FloatField(null=False, blank=False)
+    expiration_date = models.DateTimeField(blank=True, null=True)
+    is_valid = models.BooleanField(default=True)
+
+    def __str__(self):
+        return str(self.participant) + " " + self.code + " " + str(self.value)
+
 class VerifyCode(models.Model):
     phone_number = models.CharField(blank=True, max_length=13, null=True)
     code = models.CharField(blank=True, max_length=10, null=True)
