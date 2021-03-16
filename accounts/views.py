@@ -73,7 +73,11 @@ class ObtainTokenPair(TokenObtainPairView):
                 return Response(
                     {'success': False, 'error': "کاربری با این اطلاعات یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            member = Member.objects.get(username=data['username'])
+            try:
+                member = Member.objects.get(username=data['username'])
+            except Member.DoesNotExist:
+                return Response(
+                    {'success': False, 'error': "کاربری با این اطلاعات یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(data=data)
 
         try:
