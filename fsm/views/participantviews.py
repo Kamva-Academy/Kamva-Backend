@@ -105,7 +105,7 @@ def send_pdf_answer(request):
     answer_file = request.data['answer_file']
     file_name = answer_file.name
     pasvand = file_name[file_name.rfind('.'):]
-    answer_file.name = str(player.id) + "-" + str(problem.id) + str(pasvand)
+    answer_file.name = str(problem.name) + "(" + str(problem.id) + ")" + "-" + str(player.id) + str(pasvand)
 
     upload_file_answer = UploadFileAnswer.objects.create(
         answer_file=answer_file,
@@ -117,7 +117,7 @@ def send_pdf_answer(request):
         problem=problem,
         player=player
     )
-    if len(former_answer)>0:
+    if len(former_answer) > 0:
         former_answer = former_answer[0]
         old_file = former_answer.answer.uploadfileanswer.answer_file
         former_answer.delete()
