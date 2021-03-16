@@ -279,11 +279,11 @@ class VerifyCode(models.Model):
     expiration_date = models.DateTimeField(blank=False, null=False)
     is_valid = models.BooleanField(default=True)
 
-    def send_sms(self):
+    def send_sms(self, type='verify'):
         api = KAVENEGAR_TOKEN
         params = {
             'receptor': self.phone_number,
-            'template': 'verify',
+            'template': type,  # 'verify' if type != 'changePass' else 'changePass',
             'token': str(self.code),
             'type': 'sms'
         }

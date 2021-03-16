@@ -74,6 +74,52 @@ class ObtainTokenPair(TokenObtainPairView):
         return Response(validated_data, status=status.HTTP_200_OK)
 
 
+
+
+class ChagnePassword(APIView):
+    # parser_class = (MultiPartParser,)
+    permission_classes = (permissions.AllowAny,)
+
+    @transaction.atomic
+    def post(self, request):
+        verify_code = request.data['verify_code']
+        phone = request.data['phone']
+        v = VerifyCode.objects.filter(phone_number=phone, code=verify_code, is_valid=True)
+        if len(v) <= 0:
+            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if datetime.now(v[0].expiration_date.tzinfo) > v[0].expiration_date:
+            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        member = Member.objects.get(phone_number=phone)
+        member.set_password(request.data['password'])
+        member.save()
+        return Response({'success': True, 'error': "عملیات با موفقیت انجام شد"}, status=status.HTTP_200_OK)
+
+
+class signIn(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+
+    def post(self, request):
+        password = request.data['password']
+        if 'phone' in request.data:
+            phone = request.data['phone']
+            member = authenticate(request, phone_number = phone, password = password)
+        elif 'email' in request.data:
+            email = request.data['email']
+            member = authenticate(request, email=email, password=password)
+        elif 'username' in request.data:
+            username = request.data['username']
+            member = authenticate(request, username=username, password=password)
+        if member is not None:
+            auth_login(request, member)
+            return Response({'success': True, 'error': 'ورود با موفقیت'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'error': 'اطلاعات اشتباه می باشد'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class Signup(APIView):
     # after phone verification code sent
     parser_class = (MultiPartParser,)
@@ -222,7 +268,7 @@ class SendVerifyCode(APIView):
         verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number,
                                                 expiration_date=datetime.now(pytz.timezone('Asia/Tehran')) + timedelta(minutes=5))
         try:
-            verify_code.send_sms()
+            verify_code.send_sms(request.data['code_type'])
         except:
             return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
