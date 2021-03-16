@@ -71,9 +71,9 @@ class ObtainTokenPair(TokenObtainPairView):
                 data['username'] = member.username
             except Member.DoesNotExist:
                 return Response(
-                    {'success': False, 'error': "کاربری با این شماره یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+                    {'success': False, 'error': "کاربری با این اطلاعات یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            member = Member.objects.get(username=request.data['username'])
+            member = Member.objects.get(username=data['username'])
         serializer = self.get_serializer(data=data)
 
         try:
