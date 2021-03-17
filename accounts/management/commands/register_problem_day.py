@@ -28,7 +28,7 @@ class Command(BaseCommand):
             print("----------")
 
             workshop = find_workshop(int(grade))
-            test_workshop = FSM.objects.get(name='تست مسابقه‌ی تورنمنت شهرها')
+            # test_workshop = FSM.objects.get(name='تست مسابقه‌ی تورنمنت شهرها')
             team = team_info['team']
             t = Team.objects.create(player_type='TEAM',active=True, group_name=team)
             members = team_info['members']
@@ -51,12 +51,12 @@ class Command(BaseCommand):
 
                 player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=workshop,
                                                             current_state=workshop.first_state)
-                player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=test_workshop,
-                                                            current_state=test_workshop.first_state)
+                # player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=test_workshop,
+                #                                             current_state=test_workshop.first_state)
             team_workshop = PlayerWorkshop.objects.create(player=t, workshop=workshop,
                                                         current_state=workshop.first_state)
-            team_workshop2 = PlayerWorkshop.objects.create(player=t, workshop=test_workshop,
-                                                        current_state=test_workshop.first_state)
+            # team_workshop2 = PlayerWorkshop.objects.create(player=t, workshop=test_workshop,
+            #                                             current_state=test_workshop.first_state)
 
 
 def find_workshop(group):
