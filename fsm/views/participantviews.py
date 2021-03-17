@@ -105,7 +105,7 @@ def send_pdf_answer(request):
     answer_file = request.data['answer_file']
     file_name = answer_file.name
     pasvand = file_name[file_name.rfind('.'):]
-    answer_file.name = str(problem.name) + "(" + str(problem.id) + ")" + "-" + str(player.id) + str(pasvand)
+    answer_file.name = str(problem.name) + "-" + "(" + str(problem.id) + ")" + "-" + str(player.id) + str(pasvand)
 
     upload_file_answer = UploadFileAnswer.objects.create(
         answer_file=answer_file,
@@ -253,6 +253,9 @@ def player_go_forward_on_edge(request):
 
         # player history management
         last_state_history = PlayerHistory.objects.filter(player=player, state=edge.tail).last()
+        # TODO dirty code
+        # if last_state_history is None:
+        #     last_state_history = PlayerHistory.objects.create(player=player, state=edge.tail, start_time=timezone.now())
         last_state_history.end_time = timezone.now()
         last_state_history.save()
         PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
