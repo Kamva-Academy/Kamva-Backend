@@ -96,9 +96,9 @@ ZARINPAL_CONFIG = {
     'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
     'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
     'MERCHANT': 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',  # Required
-    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا» به صورت آزمایشی'  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: مسافر صفر» به صورت آزمایشی'  # Required
 }
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://rastaiha.ir/payment/success/',
-    'FRONT_HOST_FAILURE': 'https://rastaiha.ir/payment/failure/'
+    'FRONT_HOST_SUCCESS': 'https://dev.rastaiha.ir/payment/success/',
+    'FRONT_HOST_FAILURE': 'https://dev.rastaiha.ir/payment/failure/',
 }

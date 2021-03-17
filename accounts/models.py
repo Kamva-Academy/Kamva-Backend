@@ -259,12 +259,14 @@ class Payment(models.Model):
         ("SUCCESS", "SUCCESS"),
         ("REPETITIOUS", "REPETITIOUS"),
         ("FAILED", "FAILED"),
+        ("STARTED", "STARTED"),
     )
 
-    user = models.ForeignKey(Participant, on_delete=models.CASCADE)
+    #TODO - add discount, discount from front is bS
+    participant = models.ForeignKey(Participant, related_name="participant_payment", on_delete=models.CASCADE)
     ref_id = models.CharField(blank=True, max_length=100, null=True)
     amount = models.IntegerField()
-    authority = models.CharField(blank=False, max_length=37, null=False)
+    authority = models.CharField(blank=True, max_length=37, null=True)
     status = models.CharField(blank=False, choices=STATUS_CHOICE, max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     uniq_code = models.CharField(blank=False, max_length=100, default="")
