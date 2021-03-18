@@ -104,8 +104,6 @@ class ChangePassword(APIView):
 
     @transaction.atomic
     def post(self, request):
-        logger.info("ajib")
-        logger.info(request.data)
         verify_code = request.data['verify_code']
         phone = request.data['phone']
         v = VerifyCode.objects.filter(phone_number=phone, code=verify_code, is_valid=True)
@@ -614,7 +612,7 @@ class VerifyPayView(APIView):
             res = zarinpal.verify(status=request.GET.get('Status'),
                                   authority=request.GET.get('Authority'),
                                   amount=payment.amount)
-            # print(res)
+            logger.info(f'response: {res}')
             if 200 <= int(res["status"]) <= 299:
                 # if user.team:
                 #     team = Participant.objects.filter(team=user.team)
