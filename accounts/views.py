@@ -341,8 +341,6 @@ class VerifyDiscount(APIView):
         # if not c.is_valid:
         #     return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده غیرمعتبر است."},
         #                     status=status.HTTP_400_BAD_REQUEST)
-        c.is_valid = False
-        c.save()
         # TODO - move discount code to payment
         return Response({'success': True, 'is_valid': True, 'value': c.value}, status=status.HTTP_200_OK)
 
@@ -360,12 +358,6 @@ class RegistrationInfo(APIView):
         except Event.DoesNotExist:
             return Response(
                 {'success': False, 'error': "رویداد موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
-        event_data = {
-            'name': event.name,
-            'is_team_based': event.event_type == Event.EventType.team,
-            'price': event.event_cost,
-            'team_discount': 5 / 7  # TODO - hard coded team discount
-        }
         participants = member.event_participant.filter(event=event)
         if len(participants) > 0:
             participant = participants[0]
@@ -377,6 +369,12 @@ class RegistrationInfo(APIView):
                     'is_paid': p.is_paid,
                     'is_accepted': p.is_accepted,
                     'is_me': p.id == participant.id})
+            event_data = {
+                'name': event.name,
+                'is_team_based': event.event_type == Event.EventType.team,
+                'price': event.event_cost if len(
+                    team_participants) < event.team_size else event.event_team_cost,
+            }
             return Response({'success': True, 'event': event_data, 'team': team_participants, 'me': participant.id},
                             status=status.HTTP_200_OK)
         else:
@@ -544,42 +542,62 @@ class PayView(APIView):
         letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
         return ''.join(random.choice(letters) for _ in range(length))
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
-        participant = Participant.objects.get(id=int(request.data['participant_id']))
-        amount = request.data['amount']
-
+        try:
+            participant = Participant.objects.get(id=int(request.data['participant_id']))
+        except Event.DoesNotExist:
+            return Response(
+                {'success': False, 'error': "کاربر برای ثبت‌نام در این رویداد اقدام نکرده است."},
+                status=status.HTTP_400_BAD_REQUEST)
+        event = participant.event
+        random_s = self.__random_string()
+        price = event.event_cost if len(
+            participant.event_team.team_participants.all()) < event.team_size else event.event_team_cost
+        amount = price
+        print(len(participant.event_team.team_participants.all()))
+        if request.data.get('code', None):
+            code = request.data['code']
+            discount_codes = DiscountCode.objects.filter(participant=participant, code=code, is_valid=True)
+            if len(discount_codes) <= 0:
+                return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            c = discount_codes[0]
+            amount = price * (1 - c.value)
+            c.is_valid = False
+            c.save()
+            print(amount, c.value)
+            Payment.objects.create(participant=participant,
+                                   amount=amount,
+                                   discount_code=c,
+                                   status="STARTED",
+                                   uniq_code=random_s)
+        else:
+            Payment.objects.create(participant=participant,
+                                   amount=amount,
+                                   status="STARTED",
+                                   uniq_code=random_s)
         response = dict()
         status_r = int()
-        if participant:
-            random_s = self.__random_string()
-            if participant.is_accepted and not participant.is_paid:
-                res = zarinpal.send_request(amount=amount,
-                                            call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={participant.member.uuid}')
-                status_r = res["status"]
-                if status_r == 201:
-                    response = {
-                        "message": res["message"],
-                        "amount": amount,
-                    }
-                    Payment.objects.create(participant=participant,
-                                           amount=amount,
-                                           status="STARTED",
-                                           uniq_code=random_s)
-                else:
-                    response = {"message": res["message"]}
-            elif not participant.is_accepted:
+        if participant.is_accepted and not participant.is_paid:
+            res = zarinpal.send_request(amount=amount,
+                                        call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={participant.member.uuid}')
+            status_r = res["status"]
+            if status_r == 201:
                 response = {
-                    "message": "رستایی عزیز، شما در این رویداد پذیرفته نشده‌اید.",
+                    "message": res["message"],
+                    "amount": amount,
                 }
-                status_r = 403
-            elif participant.is_paid:
-                response = {
-                    "message": "رستایی عزیز، هزینه ثبت نام قبلا پرداخت شده است.",
-                }
-                status_r = 403
-        else:
+            else:
+                response = {"message": res["message"]}
+        elif not participant.is_accepted:
             response = {
-                "message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است",
+                "message": "رستایی عزیز، شما در این رویداد پذیرفته نشده‌اید.",
+            }
+            status_r = 403
+        elif participant.is_paid:
+            response = {
+                "message": "رستایی عزیز، هزینه ثبت نام قبلا پرداخت شده است.",
             }
             status_r = 403
         return Response(response, status=status_r)

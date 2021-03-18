@@ -13,6 +13,7 @@ class Event(models.Model):
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     active = models.BooleanField(default=False)
     event_cost = models.IntegerField(default=0)
+    event_team_cost = models.IntegerField(default=0)
     event_type = models.CharField(max_length=40, default=EventType.individual,
                                   choices=EventType.choices)
     has_selection = models.BooleanField(default=False)

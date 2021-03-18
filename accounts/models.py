@@ -14,8 +14,6 @@ from django.utils.encoding import force_bytes
 from accounts.tokens import account_activation_token
 import uuid
 
-
-
 from collections import defaultdict
 
 import logging
@@ -121,7 +119,6 @@ class EventOwner(models.Model):
 class MentorManager(models.Manager):
     @transaction.atomic
     def create_mentor(self, email, password, *args, **kwargs):
-
         member = Member.objects.create_user(username=email, email=email, password=password)
         member.is_mentor = True
         member.is_participant = False
@@ -141,7 +138,7 @@ class Mentor(models.Model):
 
     def send_greeting_email(self, username, password):
         html_content = strip_spaces_between_tags(render_to_string('auth/mentor_greet_email.html', {
-            'login_url': 'rastaiha.ir/login' ,
+            'login_url': 'rastaiha.ir/login',
             'username': username,
             'password': password
         }))
@@ -196,7 +193,7 @@ class ParticipantManager(models.Manager):
         return participant, password
 
     @transaction.atomic
-    def create_participant(self,username, name, *args, **kwargs):
+    def create_participant(self, username, name, *args, **kwargs):
         password = Member.objects.make_random_password(length=8, allowed_chars='RAST1234567890')
         member = Member.objects.create_user(username=username, first_name=name, password=password)
         member.is_mentor = False
@@ -217,7 +214,6 @@ class Participant(Player):
     is_paid = models.BooleanField(default=False)  # پرداخت
     is_accepted = models.BooleanField(default=False)  # برای گزینش
     is_participated = models.BooleanField(default=False)  # شرکت‌کنند‌های نهایی رویداد
-
 
     objects = ParticipantManager()
 
@@ -243,10 +239,11 @@ class Team(Player):
     group_name = models.CharField(max_length=30, blank=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     team_code = models.CharField(max_length=10)
+
     # current_state = models.ForeignKey('fsm.FSMState', null=True, blank=True, on_delete=models.SET_NULL, related_name='teams')
 
     def __str__(self):
-        s = str(self.id) + "-" +self.group_name + " ("
+        s = str(self.id) + "-" + self.group_name + " ("
 
         for p in self.team_participants.all():
             s += str(p) + ", "
@@ -262,7 +259,7 @@ class Payment(models.Model):
         ("STARTED", "STARTED"),
     )
 
-    #TODO - add discount, discount from front is bS
+    # TODO - add discount, discount from front is bS
     participant = models.ForeignKey(Participant, related_name="participant_payment", on_delete=models.CASCADE)
     ref_id = models.CharField(blank=True, max_length=100, null=True)
     amount = models.IntegerField()
@@ -270,6 +267,7 @@ class Payment(models.Model):
     status = models.CharField(blank=False, choices=STATUS_CHOICE, max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     uniq_code = models.CharField(blank=False, max_length=100, default="")
+    discount_code = models.ForeignKey('accounts.DiscountCode', related_name="payments", on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return self.uniq_code
@@ -284,6 +282,7 @@ class DiscountCode(models.Model):
 
     def __str__(self):
         return str(self.participant) + " " + self.code + " " + str(self.value)
+
 
 class VerifyCode(models.Model):
     phone_number = models.CharField(blank=True, max_length=13, null=True)

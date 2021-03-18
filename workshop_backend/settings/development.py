@@ -93,8 +93,6 @@ SIMPLE_JWT = {
 ZARINPAL_CONFIG = {
     'ROUTE_START_PAY': 'https://sandbox.zarinpal.com/pg/StartPay/',
     'ROUTE_WEB_GATE': 'https://sandbox.zarinpal.com/pg/services/WebGate/wsdl',
-    'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
-    'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
     'MERCHANT': 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',  # Required
     'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: مسافر صفر» به صورت آزمایشی'  # Required
 }
