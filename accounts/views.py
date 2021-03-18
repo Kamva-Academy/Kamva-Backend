@@ -340,10 +340,13 @@ class VerifyDiscount(APIView):
             return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
                             status=status.HTTP_400_BAD_REQUEST)
         c = discount_codes[0]
-        if not c.is_valid:
-            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده غیرمعتبر است."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        return Response({'success': True, 'is_valid': c.is_valid, 'value': c.value}, status=status.HTTP_200_OK)
+        # if not c.is_valid:
+        #     return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده غیرمعتبر است."},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+        c.is_valid = False
+        c.save()
+        # TODO - move discount code to payment
+        return Response({'success': True, 'is_valid': True, 'value': c.value}, status=status.HTTP_200_OK)
 
 
 class RegistrationInfo(APIView):
