@@ -138,7 +138,7 @@ class Mentor(models.Model):
 
     def send_greeting_email(self, username, password):
         html_content = strip_spaces_between_tags(render_to_string('auth/mentor_greet_email.html', {
-            'login_url': 'rastaiha.ir/login',
+            'login_url': 'zero.rastaiha.ir',
             'username': username,
             'password': password
         }))
