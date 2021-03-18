@@ -98,12 +98,12 @@ ZARINPAL_CONFIG = {
     'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
     'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
     'MERCHANT': '8b469980-683d-11ea-806a-000c295eb8fc',  # Required
-    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا»'  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: روز صفر»'  # Required
 }
 
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://rastaiha.ir/payment/success/',
-    'FRONT_HOST_FAILURE': 'https://rastaiha.ir/payment/failure/'
+    'FRONT_HOST_SUCCESS': 'https://zero.rastaiha.ir/payment/success/',
+    'FRONT_HOST_FAILURE': 'https://zero.rastaiha.ir/payment/failure/'
 }
 
 REDIS_URL = get_environment_var('REDIS_URL', 'redis://localhost:6379')
