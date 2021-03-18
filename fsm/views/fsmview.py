@@ -8,7 +8,7 @@ from rest_framework import mixins
 from rest_framework.decorators import api_view
 from rest_framework import permissions
 
-from fsm.models import FSM, MainState
+from fsm.models import FSM, MainState, Event
 from fsm.views import permissions as customPermissions
 from fsm.serializers import FSMSerializer, FSMGetSerializer
 
@@ -26,10 +26,12 @@ class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateM
     serializer_class = FSMSerializer
 
     def get_queryset(self):
+        # TODO - member uuid, hard coded event
+        current_event = Event.objects.get(name='مسافر صفر')
         user = self.request.user
         if user.is_mentor:
             return FSM.objects.all()
-        return FSM.objects.filter(active=True)
+        return FSM.objects.filter(active=True, event=current_event)
 
     @transaction.atomic
     def get_serializer_class(self):

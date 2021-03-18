@@ -614,9 +614,10 @@ class VerifyPayView(APIView):
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         try:
-            # TODO - member uuid
-            participant = Participant.objects.get(member__uuid=request.GET.get('uuid'))
-        except Member.DoesNotExist or Participant.DoesNotExist:
+            # TODO - member uuid, hard coded event
+            current_event = Event.objects.get(name='مسافر صفر')
+            participant = Participant.objects.get(member__uuid=request.GET.get('uuid'), event=current_event)
+        except Member.DoesNotExist or Participant.DoesNotExist or Event.DoesNotExist:
             return Response(
                 {'success': False, 'error': "کاربر موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
         logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
