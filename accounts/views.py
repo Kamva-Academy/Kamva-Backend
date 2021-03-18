@@ -385,10 +385,12 @@ class RegistrationInfo(APIView):
                 status=status.HTTP_400_BAD_REQUEST)
 
 
-@login_required
-def logout(request):
-    auth_logout(request)
-    return Response({'success': True}, status=status.HTTP_200_OK)
+class LogOut(APIView):
+
+    # TODO - invalidate previous token
+    def post(self, request):
+        auth_logout(request)
+        return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 def get_random_alphanumeric_string(length):
@@ -612,7 +614,7 @@ class VerifyPayView(APIView):
             res = zarinpal.verify(status=request.GET.get('Status'),
                                   authority=request.GET.get('Authority'),
                                   amount=payment.amount)
-            logger.info(f'response: {res}')
+            logger.warning(f'response: {res}')
             if 200 <= int(res["status"]) <= 299:
                 # if user.team:
                 #     team = Participant.objects.filter(team=user.team)

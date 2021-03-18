@@ -15,7 +15,7 @@ from django.urls import path, re_path
 
 from django.urls import path
 from rest_framework_simplejwt import views as jwt_views
-from .views import ObtainTokenPair, Signup, activate, ChangePass, logout, UploadAnswerView, \
+from .views import ObtainTokenPair, Signup, activate, ChangePass, LogOut, UploadAnswerView, \
     PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerifyCode, GetTeamData, ChangePassword, \
     RegistrationInfo, VerifyDiscount
 
@@ -27,7 +27,7 @@ urlpatterns = [
     path('sendVerify/', SendVerifyCode.as_view(), name="send_verify_code"),
     path('teamdata/', GetTeamData.as_view(), name="get_team_data"),
     # path('changePass/', ChangePass.as_view(), name="change_password"),
-    path('logout/', logout, name="logout"),
+    path('logout/', LogOut.as_view(), name="logout"),
     path('changepass/', ChangePassword.as_view(), name='change_password'),
     path('token/obtain/', ObtainTokenPair.as_view(), name='token_create'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
