@@ -92,7 +92,7 @@ class ObtainTokenPair(TokenObtainPairView):
         validated_data['events'] = [{'id': p.event.id,
                                      'name': p.event.name,
                                      'description': p.event.description,
-                                     'cover_page': p.event.cover_page if p.event.cover_page else None,
+                                     'cover_page': p.event.cover_page.url if p.event.cover_page else None,
                                      'is_active': p.event.active, }
                                     for p in participants.all()]
         return Response(validated_data, status=status.HTTP_200_OK)
