@@ -492,13 +492,13 @@ class Teams(APIView):
 
     def get(self, request):
         start = datetime.now()
-        print(datetime.now())
+        logger.info(datetime.now())
         valid_teams = TeamsCache.get_data()
         end = datetime.now()
-        print(datetime.now())
-        dureation = end - start
-        print(dureation)
-        print("--------------------------------------")
+        logger.info(datetime.now())
+        duration = end - start
+        logger.info(duration)
+        logger.info("--------------------------------------")
 
         return Response(valid_teams)
 
@@ -555,7 +555,6 @@ class PayView(APIView):
         price = event.event_cost if len(
             participant.event_team.team_participants.all()) < event.team_size else event.event_team_cost
         amount = price
-        print(len(participant.event_team.team_participants.all()))
         if request.data.get('code', None):
             code = request.data['code']
             discount_codes = DiscountCode.objects.filter(participant=participant, code=code, is_valid=True)
@@ -566,22 +565,22 @@ class PayView(APIView):
             amount = price * (1 - c.value)
             c.is_valid = False
             c.save()
-            print(amount, c.value)
-            Payment.objects.create(participant=participant,
-                                   amount=amount,
-                                   discount_code=c,
-                                   status="STARTED",
-                                   uniq_code=random_s)
+            logger.info(f'new amount:{amount}, discount{c.value}')
+            payment = Payment.objects.create(participant=participant,
+                                             amount=amount,
+                                             discount_code=c,
+                                             status="STARTED",
+                                             uniq_code=random_s)
         else:
-            Payment.objects.create(participant=participant,
-                                   amount=amount,
-                                   status="STARTED",
-                                   uniq_code=random_s)
+            payment = Payment.objects.create(participant=participant,
+                                             amount=amount,
+                                             status="STARTED",
+                                             uniq_code=random_s)
         response = dict()
         status_r = int()
         if participant.is_accepted and not participant.is_paid:
             res = zarinpal.send_request(amount=amount,
-                                        call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={participant.member.uuid}')
+                                        call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={participant.member.uuid}&uniq_code={payment.uniq_code}')
             status_r = res["status"]
             if status_r == 201:
                 response = {
@@ -615,6 +614,7 @@ class VerifyPayView(APIView):
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         try:
+            # TODO - member uuid
             participant = Participant.objects.get(member__uuid=request.GET.get('uuid'))
         except Member.DoesNotExist or Participant.DoesNotExist:
             return Response(
@@ -622,12 +622,11 @@ class VerifyPayView(APIView):
         logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
         logger.warning(request.META.get('REMOTE_ADDR'))
         if participant:
-            payments = Payment.objects.filter(participant=participant, status="STARTED")
-            if len(payments) <= 0:
-                return Response({'success': False,
-                                 'error': "کاربر گرامی شما برای پرداخت اقدام نکرده‌اید."},
-                                status=status.HTTP_400_BAD_REQUEST)
-            payment = payments[0]
+            try:
+                payment = Payment.objects.get(uniq_code=request.GET.get('uniq_code'), status="STARTED")
+            except Payment.DoesNotExist:
+                return Response(
+                    {'success': False, 'error': "پرداخت موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
             logger.warning(f'Zarinpal callback: {request.GET}')
             res = zarinpal.verify(status=request.GET.get('Status'),
                                   authority=request.GET.get('Authority'),
