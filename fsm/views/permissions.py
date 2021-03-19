@@ -15,7 +15,7 @@ class ParticipantPermission(permissions.BasePermission):
 
         user = request.user
         try:
-            if user.is_participant and user.participant:
+            if user.is_participant:
                 return True
         except:
             return False
@@ -26,11 +26,12 @@ class ActiveTeamsPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
 
-        user = request.user
-        try:
-            if user.participant.team.is_team_active():
-                return True
-        except:
-            return False
-        return False
+        # user = request.user
+        # try:
+        #     if user.participant.team.is_team_active():
+        #         return True
+        # except:
+        #     return False
+        # return False
+        return True
 
