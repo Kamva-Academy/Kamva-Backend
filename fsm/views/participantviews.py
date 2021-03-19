@@ -258,10 +258,10 @@ def player_go_forward_on_edge(request):
         playerWorkshop.save()
 
         # player history management
-        last_state_history = PlayerHistory.objects.filter(player=player, state=edge.tail).last()
-        last_state_history.end_time = timezone.now()
-        last_state_history.save()
-        PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
+        # last_state_history = PlayerHistory.objects.filter(player=player, state=edge.tail).last()
+        # last_state_history.end_time = timezone.now()
+        # last_state_history.save()
+        # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
     else:
         logger.warning(
             f'illegal transmission - player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
@@ -402,15 +402,15 @@ def start_workshop(request):
                 player__player_type='TEAM',
                 player__team__team_participants=player
             )[0]
-            try:
-                history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
-            except PlayerHistory.DoesNotExist:
-                PlayerHistory.objects.create(
-                    player=player,
-                    state=fsm.first_state,
-                    start_time=timezone.now(),
-                    edge=None
-                )
+            # try:
+            #     history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
+            # except PlayerHistory.DoesNotExist:
+            #     PlayerHistory.objects.create(
+            #         player=player,
+            #         state=fsm.first_state,
+            #         start_time=timezone.now(),
+            #         edge=None
+            #     )
         except:
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
         # current_state = user_get_current_state(player, fsm)
@@ -424,14 +424,14 @@ def start_workshop(request):
                 player__player_type='TEAM',
                 player__team__team_participants=player
             )[0]
-            history = PlayerHistory.objects.filter(player=player.team).last()
-            if not history:
-                PlayerHistory.objects.create(
-                    player=player.team,
-                    state=fsm.first_state,
-                    start_time=timezone.now(),
-                    edge=None
-                )
+            # history = PlayerHistory.objects.filter(player=player.team).last()
+            # if not history:
+            #     PlayerHistory.objects.create(
+            #         player=player.team,
+            #         state=fsm.first_state,
+            #         start_time=timezone.now(),
+            #         edge=None
+            #     )
         except:
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
         # current_state = player_workshop.current_state
@@ -446,15 +446,15 @@ def start_workshop(request):
                 player=player, workshop=fsm,
                 current_state=fsm.first_state,
                 last_visit=timezone.now())
-        try:
-            history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
-        except PlayerHistory.DoesNotExist:
-            PlayerHistory.objects.create(
-                player=player,
-                state=fsm.first_state,
-                start_time=timezone.now(),
-                edge=None
-            )
+        # try:
+        #     history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
+        # except PlayerHistory.DoesNotExist:
+        #     PlayerHistory.objects.create(
+        #         player=player,
+        #         state=fsm.first_state,
+        #         start_time=timezone.now(),
+        #         edge=None
+        #     )
         # current_state = user_get_current_state(player, fsm).data
         # current_state = FSMStateGetSerializer(current_state).data
         player_data = PlayerSerializer().to_representation(player)
