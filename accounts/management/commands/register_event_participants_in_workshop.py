@@ -12,11 +12,11 @@ class Command(BaseCommand):
     help = 'Create user by phone_number list'
 
     def add_arguments(self, parser):
-        parser.add_argument('workshop_name', nargs='+', type=str)
+        parser.add_argument('workshop_id', nargs='+', type=str)
 
     def handle(self, *args, **options):
         print("----------")
-        workshop_name = options['workshop_name']
+        workshop_name = options['workshop_id']
         workshop = FSM.objects.get(name=workshop_name)
         # test_workshop = FSM.objects.get(name="آموزش کار در پلتفرم")
         teams = Team.objects.filter(event__name="مسافر صفر")
