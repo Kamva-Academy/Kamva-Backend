@@ -162,7 +162,7 @@ def mentor_get_player_state(request):
 
 # TODO - BIGGEST TOF EVER
 def get_participant(user, event="مسافر صفر"):
-    current_event = Event.objects.get(event)
+    current_event = Event.objects.get(name=event)
     return Participant.objects.get(member=user, event=current_event)
 
 

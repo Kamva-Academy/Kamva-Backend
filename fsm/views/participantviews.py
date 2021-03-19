@@ -7,7 +7,7 @@ from rest_framework import status, permissions, viewsets
 
 import accounts
 from fsm.views import permissions as customPermissions
-from accounts.models import Member, Player
+from accounts.models import Member, Player, Participant
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # TODO - BIGGEST TOF EVER
 def get_participant(user, event="مسافر صفر"):
-    current_event = Event.objects.get(event)
+    current_event = Event.objects.get(name=event)
     return Participant.objects.get(member=user, event=current_event)
 
 # @transaction.atomic
