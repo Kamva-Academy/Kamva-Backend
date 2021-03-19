@@ -374,7 +374,7 @@ def get_player_current_state(request):
         PlayerWorkshop.objects.create(workshop=fsm, player=team,
                                       current_state=fsm.first_state, last_visit=timezone.now())
         current_state = fsm.first_state
-        for member in team.team_members.all():
+        for member in team.team_participants.all():
             if len(PlayerWorkshop.objects.filter(player=member, workshop=fsm)) == 0:
                 PlayerWorkshop.objects.create(workshop=fsm, player=member,
                                           current_state=current_state, last_visit=timezone.now())
@@ -400,7 +400,7 @@ def start_workshop(request):
             player_workshop = PlayerWorkshop.objects.filter(
                 workshop=fsm,
                 player__player_type='TEAM',
-                player__team__team_members=player
+                player__team__team_participants=player
             )[0]
             try:
                 history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
@@ -422,7 +422,7 @@ def start_workshop(request):
             player_workshop = PlayerWorkshop.objects.filter(
                 workshop=fsm,
                 player__player_type='TEAM',
-                player__team__team_members=player
+                player__team__team_participants=player
             )[0]
         except:
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
@@ -467,7 +467,7 @@ def participant_get_player_state(request):
     else:
         player = participant
     if player.player_type == "TEAM":
-        if not (participant in player.team.team_members.all()):
+        if not (participant in player.team.team_participants.all()):
             return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
     else:
         if not (player == participant):
