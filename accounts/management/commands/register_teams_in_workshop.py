@@ -21,7 +21,7 @@ class Command(BaseCommand):
             # test_workshop = FSM.objects.get(name="آموزش کار در پلتفرم")
             teams = Team.objects.filter(event__name="مسافر صفر")
             for t in teams:
-                if PlayerWorkshop.objects.filter(player=t) <= 0:
+                if len(PlayerWorkshop.objects.filter(player=t)) <= 0:
                     PlayerWorkshop.objects.create(player=t, workshop=workshop, current_state=workshop.first_state)
                 # player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=test_workshop,
                 #                                             current_state=workshop.first_state)
