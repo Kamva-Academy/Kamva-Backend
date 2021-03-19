@@ -16,14 +16,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print("----------")
-        workshop_name = options['workshop_id']
-        workshop = FSM.objects.get(id=workshop_name)
-        # test_workshop = FSM.objects.get(name="آموزش کار در پلتفرم")
-        teams = Team.objects.filter(event__name="مسافر صفر")
-        for t in teams:
-            if PlayerWorkshop.objects.filter(player=t) <= 0:
-                PlayerWorkshop.objects.create(player=t, workshop=workshop,
-                                                            current_state=workshop.first_state)
+        for workshop_id in options['workshop_id']:
+            workshop = FSM.objects.get(id=int(workshop_id))
+            # test_workshop = FSM.objects.get(name="آموزش کار در پلتفرم")
+            teams = Team.objects.filter(event__name="مسافر صفر")
+            for t in teams:
+                if PlayerWorkshop.objects.filter(player=t) <= 0:
+                    PlayerWorkshop.objects.create(player=t, workshop=workshop, current_state=workshop.first_state)
                 # player_workshop = PlayerWorkshop.objects.create(player=participant, workshop=test_workshop,
                 #                                             current_state=workshop.first_state)
             # team_workshop = PlayerWorkshop.objects.create(player=t, workshop=workshop,
