@@ -17,7 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("----------")
         workshop_name = options['workshop_id']
-        workshop = FSM.objects.get(name=workshop_name)
+        workshop = FSM.objects.get(id=workshop_name)
         # test_workshop = FSM.objects.get(name="آموزش کار در پلتفرم")
         teams = Team.objects.filter(event__name="مسافر صفر")
         for t in teams:
