@@ -26,6 +26,12 @@ from notifications.models import Notification
 import logging
 logger = logging.getLogger(__name__)
 
+
+# TODO - BIGGEST TOF EVER
+def get_participant(user, event="مسافر صفر"):
+    current_event = Event.objects.get(event)
+    return Participant.objects.get(member=user, event=current_event)
+
 # @transaction.atomic
 # @api_view(['GET'])
 # @permission_classes([IsAuthenticated, ParticipantPermission])
@@ -140,11 +146,11 @@ def send_pdf_answer(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, ParticipantPermission])
 def move_to_next_state(request):
-    team = request.user.participant.team
+    team = get_participant(request.user).team
     edges = FSMEdge.objects.filter(tail=team.current_state.id)
     if team.current_state.name == 'start' and edges.count() == 1:
         logger.info(
-            f'team {request.user.participant.team.id} changed state team from {team.current_state.name} to {edges[0].head.name}')
+            f'team {get_participant(request.user).team.id} changed state team from {team.current_state.name} to {edges[0].head.name}')
         team_change_current_state(team, edges[0].head)
         data = MainStateGetSerializer().to_representation(edges[0].head)
         return Response(data, status=status.HTTP_200_OK)
@@ -167,7 +173,7 @@ def get_last_state_in_fsm(team, fsm):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, ParticipantPermission])
 def request_mentor(request):
-    participant = request.user.participant
+    participant = get_participant(request.user)
 
     fsm = get_object_or_404(FSM, id=request.data['fsm'])
     player = get_object_or_404(accounts.models.Player, id=request.data['player'])
@@ -237,7 +243,7 @@ def player_go_forward_on_edge(request):
     edge = get_object_or_404(FSMEdge, id=edge)
     fsm = edge.tail.fsm
     if fsm.fsm_p_type == 'hybrid':
-        player = request.user.participant
+        player = get_participant(request.user)
     else:
         player = player1
 
@@ -279,7 +285,7 @@ def player_go_backward_on_edge(request):
     edge = get_object_or_404(FSMEdge, id=edge)
     fsm = edge.tail.fsm
     if fsm.fsm_p_type == 'hybrid':
-        player = request.user.participant
+        player = get_participant(request.user)
     else:
         player = get_object_or_404(Player, id=player)
 
@@ -333,7 +339,7 @@ def user_get_team_outward_edges(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def user_workshops(request):
-    participant = request.user.participant
+    participant = get_participant(request.user)
     if request.method == 'GET':
         individual_workshops = FSM.objects.filter(players=participant)
         if participant.team_set.count() > 0:
@@ -354,7 +360,7 @@ def get_player_current_state(request):
     fsm = FSM.objects.get(id=fsm)
     player1 = request.data['player']
     if fsm.fsm_p_type == 'hybrid':
-        player = request.user.participant
+        player = get_participant(request.user)
     else:
         player = player1
         player = accounts.models.Player.objects.get(id=player)
@@ -389,7 +395,7 @@ def start_workshop(request):
     fsm_type = fsm.fsm_p_type
 
     if fsm_type == 'hybrid':
-        player = request.user.participant
+        player = get_participant(request.user)
         try:
             player_workshop = PlayerWorkshop.objects.filter(
                 workshop=fsm,
@@ -411,7 +417,7 @@ def start_workshop(request):
         player_data = PlayerSerializer().to_representation(player_workshop.player)
 
     elif fsm_type == 'team':
-        player = request.user.participant
+        player = get_participant(request.user)
         try:
             player_workshop = PlayerWorkshop.objects.filter(
                 workshop=fsm,
@@ -424,7 +430,7 @@ def start_workshop(request):
         player_data = PlayerSerializer().to_representation(player_workshop.player)
 
     elif fsm_type == 'individual':
-        player = request.user.participant
+        player = get_participant(request.user)
         try:
             player_workshop = PlayerWorkshop.objects.get(player=player, workshop=fsm)
         except PlayerWorkshop.DoesNotExist:
@@ -454,7 +460,7 @@ def start_workshop(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def participant_get_player_state(request):
-    participant = request.user.participant
+    participant = get_participant(request.user)
     state = get_object_or_404(MainState, id=request.data['state'])
     if state.fsm.fsm_p_type == "TEAM":
         player = get_object_or_404(Team, uuid=request.data['player_uuid'])
