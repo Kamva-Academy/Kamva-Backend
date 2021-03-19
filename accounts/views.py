@@ -114,7 +114,10 @@ class ChangePassword(APIView):
         if datetime.now(v[0].expiration_date.tzinfo) > v[0].expiration_date:
             return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
                             status=status.HTTP_400_BAD_REQUEST)
-        member = Member.objects.get(phone_number=phone)
+        try:
+            member = Member.objects.get(phone_number=phone)
+        except Member.DoesNotExist:
+            return Response({'success': False, 'error': "کاربری با این شماره تلفن یافت نشد."})
         member.set_password(request.data['password'])
         member.save()
         return Response({'success': True, 'error': "عملیات با موفقیت انجام شد"}, status=status.HTTP_200_OK)
