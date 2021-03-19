@@ -45,7 +45,7 @@ class MemberSerializer(serializers.ModelSerializer):
         return instance
 
 
-class TeamMembetListField(serializers.RelatedField):
+class ParticipantsListField(serializers.RelatedField):
     def to_representation(self, value):
         return value.member.first_name
 
@@ -53,11 +53,11 @@ class TeamMembetListField(serializers.RelatedField):
 class TeamSerializer(serializers.ModelSerializer):
     # histories = TeamHistorySerializer(many=True)
     # p_type = serializers.Field(source="team")
-    team_members = TeamMembetListField(many=True, read_only=True)
+    team_participants = ParticipantsListField(many=True, read_only=True)
 
     class Meta:
         model = Team
-        fields = ['player_type', 'id', 'uuid', 'group_name', 'score', 'team_members']
+        fields = ['player_type', 'id', 'uuid', 'group_name', 'score', 'team_participants']
 
 
 class PlayerSerializer(serializers.Serializer):
