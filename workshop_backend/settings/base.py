@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'fsm',
     'drf_yasg',
-    'notice'
+    'notice',
+    'scoring'
 ]
 
 # SITE_ID=1
