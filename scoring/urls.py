@@ -1,12 +1,10 @@
 from django.urls import path, include
-from .views import ScoringAPIView, ScoreboardAPIView, TeamScoreAPIVIEW
+from .views import ScoringAPIView, PlayerScoreHistoryAPIView, PlayerCurrentScoreAPIView
 
 
 urlpatterns = [
     path('', ScoringAPIView.as_view(), name="scoring"),
     path('<int:transaction_id>', ScoringAPIView.as_view(), name="scoring"),
-    path('scoreboard/', include([
-        path('', ScoreboardAPIView.as_view(), name="scoreboard"),
-        path('<int:player_workshop_id>', TeamScoreAPIVIEW.as_view(), name="player_score"),
-    ])),
+    path('get_history/', PlayerScoreHistoryAPIView.as_view(), name="score_history"),
+    path('get_current/', PlayerCurrentScoreAPIView.as_view(), name="current_score")
 ]

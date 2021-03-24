@@ -9,3 +9,6 @@ class ScoreTransaction(models.Model):
     player_workshop = models.ForeignKey(PlayerWorkshop, on_delete=models.CASCADE)
 
     objects = ScoringManager()
+
+    def __str__(self):
+        return f'{str(self.player_workshop)}:{self.score}'

@@ -43,6 +43,7 @@ class FSM(models.Model):
                                          choices=FSMLearningType.choices)
     fsm_p_type = models.CharField(max_length=40, default=FSMPType.individual,
                                   choices=FSMPType.choices)
+    lock = models.CharField(max_length=10, null=True, blank=True)
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, default=None,
                               null=True, blank=True)
 
@@ -90,6 +91,9 @@ class Article(FSMState):
 class FSMEdge(models.Model):
     tail = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='outward_edges')
     head = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='inward_edges')
+    is_back_enabled = models.BooleanField(default=True)
+    min_score = models.FloatField(default=0.0)
+    cost = models.FloatField(default=0.0)
     priority = models.IntegerField()
     text = models.TextField(null=True)
 
@@ -259,3 +263,6 @@ class PlayerWorkshop(models.Model):
     current_state = models.ForeignKey(MainState, null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='player_workshop')
     last_visit = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.id}:{str(self.player)}-{self.workshop.name}'

@@ -293,21 +293,26 @@ def player_go_backward_on_edge(request):
     logger.info(
         f'player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
+    if not edge.is_back_enabled:
+        state_result = player_state(playerWorkshop.current_state, player)
+        state_result['error'] = "امکان برگشت به عقب در این گام وجود ندارد."
+        return Response(state_result,
+                        status=status.HTTP_400_BAD_REQUEST)
+
     if playerWorkshop.current_state == edge.head:
         playerWorkshop.current_state = edge.tail
         playerWorkshop.last_visit = timezone.now()
         playerWorkshop.save()
-        # TODO set the currect player history based on your need
+        # TODO set the current player history based on your need
         # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state= edge.head)
     else:
         logger.warning(
             f'illegal transmission - player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
         state_result = player_state(playerWorkshop.current_state, player)
-        state_result['error'] = "transmission is not accessable from this state"
+        state_result['error'] = "transmission is not accessible from this state"
         return Response(state_result,
                         status=status.HTTP_400_BAD_REQUEST)
-
 
     state_result = player_state(playerWorkshop.current_state, player)
     return Response(state_result, status=status.HTTP_200_OK)

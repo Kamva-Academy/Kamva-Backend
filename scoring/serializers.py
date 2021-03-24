@@ -43,7 +43,7 @@ class ScoreboardSerializer(serializers.ModelSerializer):
     player_workshop = PlayerWorkshopSerializer()
 
     class Meta:
-        model: PlayerWorkshop
+        model = ScoreTransaction
         fields = ['score', 'player_workshop']
 
     @staticmethod
@@ -54,5 +54,5 @@ class ScoreboardSerializer(serializers.ModelSerializer):
 class ScoreTransactionsSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model: ScoreTransaction
+        model = ScoreTransaction
         fields = '__all__'
