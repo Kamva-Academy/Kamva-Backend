@@ -386,6 +386,8 @@ def get_player_current_state(request):
     result = PlayerStateGetSerializer(current_state).data
     widgets = current_state_widgets_json(current_state, player)
     result['widgets'] = widgets
+    result['score_transactions'] = get_score_histories(player_workshop)
+    result['scores_sum'] = get_scores_sum(player_workshop)
 
     return Response(result, status=status.HTTP_200_OK)
 

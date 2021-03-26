@@ -1,9 +1,13 @@
+from django.db.models import Sum
+
 from accounts.models import Participant
 from fsm.models import *
 from django.utils import timezone
 
 from fsm.serializers import MainStateSerializer, MainStateGetSerializer, WidgetSerializer, SubmitedAnswerSerializer, \
     AnswerSerializer, PlayerStateGetSerializer, FSMEdgeSerializer
+from scoring.models import ScoreTransaction
+from scoring.serializers import ScoreTransactionsSerializer
 
 
 def team_change_current_state(team, state):
@@ -91,3 +95,14 @@ def get_player_workshop(player, fsm):
 def get_participant(user, event="مسافر صفر"):
     current_event = Event.objects.get(name=event)
     return Participant.objects.filter(member=user, event=current_event).last()
+
+
+def get_score_histories(player_workshop):
+    score_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop)
+    serialized = ScoreTransactionsSerializer(score_transactions, many=True)
+    return serialized.data
+
+
+def get_scores_sum(player_workshop):
+    sum_scores = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
+    return sum_scores.get('sum', None)
