@@ -9,6 +9,8 @@ from fsm.serializers import MainStateSerializer, MainStateGetSerializer, WidgetS
 from scoring.models import ScoreTransaction
 from scoring.serializers import ScoreTransactionsSerializer
 
+logger = logging.getLogger(__name__)
+
 
 def team_change_current_state(team, state):
     # fsm change checked
