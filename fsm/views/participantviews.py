@@ -235,44 +235,42 @@ def request_mentor(request):
 
 @transaction.atomic
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated, ])
 def player_go_forward_on_edge(request):
-    edge = request.data['edge']
-    player = request.data['player']
-    player1 = get_object_or_404(Player, id=player)
-
-    edge = get_object_or_404(FSMEdge, id=edge)
+    edge_id = request.data.get('edge',None)
+    player_id = request.data.get('player', None)
+    player = get_object_or_404(Player, id=player_id)
+    edge = get_object_or_404(FSMEdge, id=edge_id)
     fsm = edge.tail.fsm
+    player_workshop = get_player_workshop(player, fsm)
     if fsm.fsm_p_type == 'hybrid':
         player = get_participant(request.user)
-    else:
-        player = player1
 
-    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
+    player_workshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
     logger.info(
-        f'player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+        f'player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
-    if playerWorkshop.current_state == edge.tail:
+    if player_workshop.current_state == edge.tail:
 
-        playerWorkshop.current_state = edge.head
-        playerWorkshop.last_visit = timezone.now()
-        playerWorkshop.save()
+        player_workshop.current_state = edge.head
+        player_workshop.last_visit = timezone.now()
+        player_workshop.save()
 
         # player history management
-        # last_state_history = PlayerHistory.objects.filter(player=player, state=edge.tail).last()
-        # last_state_history.end_time = timezone.now()
-        # last_state_history.save()
-        # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
+        last_state_history = PlayerHistory.objects.filter(player_workshop=player, state=edge.tail).last()
+        last_state_history.end_time = timezone.now()
+        last_state_history.save()
+        PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(), state=edge.head)
     else:
         logger.warning(
-            f'illegal transmission - player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+            f'illegal transmission - player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
-        state_result = player_state(playerWorkshop.current_state, player)
-        state_result['error'] = "transmission is not accessable from this state"
+        state_result = player_state(player_workshop.current_state, player_workshop)
+        state_result['error'] = "transmission is not accessible from this state"
         return Response(state_result,
                         status=status.HTTP_400_BAD_REQUEST)
 
-    state_result = player_state(playerWorkshop.current_state, player)
+    state_result = player_state(player_workshop.current_state, player_workshop)
     return Response(state_result, status=status.HTTP_200_OK)
 
 

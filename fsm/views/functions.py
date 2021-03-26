@@ -60,21 +60,20 @@ def current_state_widgets_json(state, player):
     return widgets
 
 
-def current_state_incoming_edge(state):
-    player_history = PlayerHistory.objects.filter(player=player, state=state).last()
+def current_state_incoming_edge(state, player_workshop):
+    player_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=state).last()
     if player_history:
-        edge = player_history.edge
+        edge = player_history.inward_edge
     else:
         return
     return edge
 
 
-def player_state(state, player):
+def player_state(state, player_workshop):
     state_result = PlayerStateGetSerializer(state).data
-    widgets = current_state_widgets_json(state, player)
+    widgets = current_state_widgets_json(state, player_workshop.player)
     state_result['widgets'] = widgets
-    # todo - check history
-    edge = current_state_incoming_edge(state)
+    edge = current_state_incoming_edge(state, player_workshop)
     if edge:
         state_result['inward_edges'] = [FSMEdgeSerializer().to_representation(edge)]
     else:
