@@ -293,8 +293,8 @@ def player_go_backward_on_edge(request):
         f'player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
     if not edge.is_back_enabled:
-        state_result = player_state(player_workshop.current_state, player)
-        state_result['error'] = "امکان برگشت به عقب در این گام وجود ندارد."
+        state_result = player_state(player_workshop.current_state, player_workshop)
+        state_result['error'] = "دیگه کاریه که شده؛ امکان برگشت به عقب در این گام وجود ندارد."
         return Response(state_result,
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -526,5 +526,5 @@ def participant_get_player_state(request):
         if not (player == participant):
             return Response({"error": "شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."},
                             status=status.HTTP_403_FORBIDDEN)
-    state_result = player_state(state, player)
+    state_result = player_state(state, get_player_workshop(player, state.fsm))
     return Response(state_result)

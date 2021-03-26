@@ -6,7 +6,7 @@ from .models import *
 
 class EdgeAdmin(admin.ModelAdmin):
     model = FSMEdge
-    list_display = ['text', 'priority', 'head_name', 'tail_name']
+    list_display = ['text', 'priority', 'head_name', 'tail_name', 'is_back_enabled']
 
     def head_name(self, obj):
         name = obj.head.name
