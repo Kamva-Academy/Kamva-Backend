@@ -243,10 +243,10 @@ def player_go_forward_on_edge(request):
     edge = get_object_or_404(FSMEdge, id=edge_id)
     fsm = edge.tail.fsm
     player_workshop = get_player_workshop(player, fsm)
-    if fsm.fsm_p_type == 'hybrid':
-        player = get_participant(request.user)
 
-    player_workshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
+    # if fsm.fsm_p_type == 'hybrid':
+    #     player = get_participant(request.user)
+
     logger.info(
         f'player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
@@ -257,7 +257,7 @@ def player_go_forward_on_edge(request):
         player_workshop.save()
 
         # player history management
-        last_state_history = PlayerHistory.objects.filter(player_workshop=player, state=edge.tail).last()
+        last_state_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.tail).last()
         last_state_history.end_time = timezone.now()
         last_state_history.save()
         PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(), state=edge.head)
