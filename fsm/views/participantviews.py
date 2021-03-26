@@ -440,7 +440,6 @@ def start_workshop(request):
             player__player_type='TEAM',
             player__team__team_participants=player
         ).last()
-        logger.info(f'salam, {player_workshop}')
         history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
         if not history:
             PlayerHistory.objects.create(
@@ -452,6 +451,7 @@ def start_workshop(request):
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
         score = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
+        logger.info(f'{score.sum}')
         player_workshop_id = player_workshop.id
 
     elif fsm_type == 'individual':
@@ -478,7 +478,7 @@ def start_workshop(request):
     else:
         return Response({'error': 'fsm type is bad'}, status=status.HTTP_400_BAD_REQUEST)
 
-    result = {'player': player_data, 'player_workshop_id': player_workshop_id, 'score': score}
+    result = {'player': player_data, 'player_workshop_id': player_workshop_id, 'score': score.sum}
     return Response(result, status=status.HTTP_200_OK)
 
 
