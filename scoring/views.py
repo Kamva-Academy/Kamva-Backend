@@ -60,6 +60,25 @@ class ScoringAPIView(APIView):
 #         return Response({''}, status=HTTP_200_OK)
 
 
+class ReviewScore(APIView):
+
+    def post(self, request):
+        answer_id = request.data['answer_id']
+        player_workshop = request.data['palyer_workshop']
+        score = request.data['score']
+        description = request.data['description']
+        query = ScoreTransaction.objects.filter(
+            player_workshop=player_workshop,
+            score=score,
+            description=description,
+        )
+        if len(query) == 0:
+            res = ScoreTransaction.objects.create(score=score, description=description, player_workshop=player_workshop, answer_id=answer_id)
+            res.save()
+            return Response(status=HTTP_200_OK)
+
+
+
 class PlayerScoreHistoryAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

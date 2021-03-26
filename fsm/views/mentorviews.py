@@ -166,4 +166,13 @@ def get_participant(user, event="مسافر صفر"):
     return Participant.objects.get(member=user, event=current_event)
 
 
+@api_view(['GET'])
+@permission_classes([]) # permissions.IsAuthenticated,
+def mentor_get_fsm_and_states(request):
+    result = []
+    fsms = list(FSM.objects.all())
+    for fsm in fsms:
+        states = MainState.objects.filter(fsm=fsm).values_list('id', 'name')
+        result.append({'id': fsm.id, 'name': fsm.name, 'states': states})
 
+    return Response(result, status=status.HTTP_200_OK)
