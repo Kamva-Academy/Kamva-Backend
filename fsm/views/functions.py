@@ -1,3 +1,4 @@
+from accounts.models import Participant
 from fsm.models import *
 from django.utils import timezone
 
@@ -80,3 +81,13 @@ def register_individual_workshop(workshop, participant):
     player_workshop = PlayerWorkshop.objects.create(workshop=workshop, player=participant,
                                                     current_state=workshop.first_state, last_visit=timezone.now())
     return player_workshop
+
+
+def get_player_workshop(player, fsm):
+    return PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
+
+
+# TODO - BIGGEST TOF EVER
+def get_participant(user, event="مسافر صفر"):
+    current_event = Event.objects.get(name=event)
+    return Participant.objects.filter(member=user, event=current_event).last()

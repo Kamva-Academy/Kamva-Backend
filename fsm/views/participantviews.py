@@ -19,7 +19,6 @@ from .permissions import ParticipantPermission
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.exceptions import ParseError
 
-
 from fsm.models import *
 from fsm.serializers import *
 from fsm.views.functions import *
@@ -27,13 +26,9 @@ from notifications.signals import notify
 from notifications.models import Notification
 
 import logging
+
 logger = logging.getLogger(__name__)
 
-
-# TODO - BIGGEST TOF EVER
-def get_participant(user, event="مسافر صفر"):
-    current_event = Event.objects.get(name=event)
-    return Participant.objects.get(member=user, event=current_event)
 
 # @transaction.atomic
 # @api_view(['GET'])
@@ -52,24 +47,24 @@ def get_participant(user, event="مسافر صفر"):
 #     else:
 #         logger.error(f'participant d cd {request.user} : current_state is not set')
 #         return Response({},status=status.HTTP_400_BAD_REQUEST)
-    # try:
-    #     fsm = FSM.objects.get(id=fsm_id)
-    #     state = get_last_state_in_fsm(participant.team, fsm)
-    #     page = state.page
-    #     serializer = FSMPageSerializer()
-    #     participant.team.current_state = state
-    #     participant.team.save()
-    #     data = serializer.to_representation(page)
-    #     return Response(data, status=status.HTTP_200_OK)
-    # except:
-    #     return Response({}, status=status.HTTP_400_BAD_REQUEST)
+# try:
+#     fsm = FSM.objects.get(id=fsm_id)
+#     state = get_last_state_in_fsm(participant.team, fsm)
+#     page = state.page
+#     serializer = FSMPageSerializer()
+#     participant.team.current_state = state
+#     participant.team.save()
+#     data = serializer.to_representation(page)
+#     return Response(data, status=status.HTTP_200_OK)
+# except:
+#     return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @transaction.atomic
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, ParticipantPermission])
 def get_history(request):
-    #TODO check this api
+    # TODO check this api
     player = request.data['player']
     histories = player.histories.all()
     serializer = PlayerHistorySerializer(histories, many=True)
@@ -93,7 +88,8 @@ def send_answer(request):
     # instance.team_history = history
     # instance.participant = participant
     instance.save()
-    correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(id=request.data['problem']).answer
+    correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(
+        id=request.data['problem']).answer
     if str(correct_answer.text) == request.data['answer']['text']:
         result = True
     else:
@@ -106,7 +102,7 @@ def send_answer(request):
 
 
 @transaction.atomic
-@permission_classes([IsAuthenticated, ParticipantPermission, customPermissions.MentorPermission,])
+@permission_classes([IsAuthenticated, ParticipantPermission, customPermissions.MentorPermission, ])
 def send_pdf_answer(request):
     player = accounts.models.Player.objects.get(id=request.data['player'])
     problem = Problem.objects.get(id=request.data['problem'])
@@ -127,13 +123,12 @@ def send_pdf_answer(request):
         problem=problem,
         player=player
     )
-    if len(former_answer)>0:
+    if len(former_answer) > 0:
         former_answer = former_answer[0]
         old_file = former_answer.answer.uploadfileanswer.answer_file
         former_answer.delete()
         if os.path.isfile(old_file.path):
             os.remove(old_file.path)
-
 
     instance = SubmittedAnswer.objects.create(
         problem=problem,
@@ -185,7 +180,7 @@ def request_mentor(request):
     player_workshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm)[0]
 
     qs = Notification.objects.filter(
-            actor_content_type=ContentType.objects.get_for_model(player_workshop).id,
+        actor_content_type=ContentType.objects.get_for_model(player_workshop).id,
         actor_object_id=player_workshop.pk,
         recipient__is_mentor=True,
         unread=True
@@ -194,6 +189,7 @@ def request_mentor(request):
         return Response({"text": "قبلا درخواست دادی. یکم بیشتر صبر کن."}, status=status.HTTP_200_OK)
     notify.send(player_workshop, recipient=Member.objects.filter(is_mentor=True), verb="request_mentor")
     return Response({"text": "درخواست ارسال شد. به زودی یکی از منتورا میاد اینجا."}, status=status.HTTP_200_OK)
+
 
 # @api_view(['POST'])
 # @permission_classes([permissions.IsAuthenticated,])
@@ -274,7 +270,7 @@ def player_go_forward_on_edge(request):
         state_result = player_state(playerWorkshop.current_state, player)
         state_result['error'] = "transmission is not accessable from this state"
         return Response(state_result,
-                          status=status.HTTP_400_BAD_REQUEST)
+                        status=status.HTTP_400_BAD_REQUEST)
 
     state_result = player_state(playerWorkshop.current_state, player)
     return Response(state_result, status=status.HTTP_200_OK)
@@ -355,7 +351,7 @@ def user_workshops(request):
         if participant.team_set.count() > 0:
             for team in participant.team_set.all():
                 team_workshops = FSM.objects.filter(players=team)
-        workshops = (team_workshops|individual_workshops).distinct()
+        workshops = (team_workshops | individual_workshops).distinct()
         serializer = FSMSerializer(workshops, many=True)
         return Response(serializer.data)
     else:
@@ -366,32 +362,30 @@ def user_workshops(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def get_player_current_state(request):
-    fsm = request.data['fsm']
-    fsm = FSM.objects.get(id=fsm)
-    player1 = request.data['player']
+    fsm_id = request.data.get('fsm', None)
+    fsm = get_object_or_404(FSM, id=fsm_id)
+    player_id = request.data.get('player', None)
+    player = get_object_or_404(Player, id=player_id)
+
     if fsm.fsm_p_type == 'hybrid':
         player = get_participant(request.user)
-    else:
-        player = player1
-        player = accounts.models.Player.objects.get(id=player)
 
-    current_state = user_get_current_state(player, fsm)
-    # result = current_state_json(current_state)
-    # serializer = FSMStateGetSerializer(current_state)
-    if fsm.fsm_p_type == 'hybrid' and current_state is None:
-        team = request.data['player']
-        team = accounts.models.Team.objects.get(id=team)
-        PlayerWorkshop.objects.create(workshop=fsm, player=team,
-                                      current_state=fsm.first_state, last_visit=timezone.now())
-        current_state = fsm.first_state
-        for member in team.team_participants.all():
-            if len(PlayerWorkshop.objects.filter(player=member, workshop=fsm)) == 0:
-                PlayerWorkshop.objects.create(workshop=fsm, player=member,
-                                          current_state=current_state, last_visit=timezone.now())
+    player_workshop = get_player_workshop(player, fsm)
+    current_state = player_workshop.current_state
+
+    # if fsm.fsm_p_type == 'hybrid' and current_state is None:
+    #     team = request.data['player']
+    #     team = accounts.models.Team.objects.get(id=team)
+    #     PlayerWorkshop.objects.create(workshop=fsm, player=team,
+    #                                   current_state=fsm.first_state, last_visit=timezone.now())
+    #     current_state = fsm.first_state
+    #     for member in team.team_participants.all():
+    #         if len(PlayerWorkshop.objects.filter(player=member, workshop=fsm)) == 0:
+    #             PlayerWorkshop.objects.create(workshop=fsm, player=member,
+    #                                       current_state=current_state, last_visit=timezone.now())
     result = PlayerStateGetSerializer(current_state).data
-    widgets = current_state_widgets_json(current_state, player1)
+    widgets = current_state_widgets_json(current_state, player)
     result['widgets'] = widgets
-
 
     return Response(result, status=status.HTTP_200_OK)
 
@@ -399,19 +393,11 @@ def get_player_current_state(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def start_workshop(request):
-
-    fsm = request.data['fsm']
-    fsm = get_object_or_404(FSM, id=fsm)
-    if fsm.lock and len(fsm.lock) > 0:
-        key = request.data.get('key', None)
-        if key:
-            if key != fsm.lock:
-                return Response({"error": "کلیدتون به این قفل نمی‌خوره! لطفا کلید معتبری وارد کنید."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"error": "این کارگاه قفل دارد؛ لطفا کلیدی وارد کنید."},
-                            status=status.HTTP_400_BAD_REQUEST)
+    fsm_id = request.data.get('fsm', None)
+    fsm = get_object_or_404(FSM, id=fsm_id)
 
     fsm_type = fsm.fsm_p_type
+
     # if fsm_type == 'hybrid':
     #     player = get_participant(request.user)
     #     try:
@@ -434,24 +420,45 @@ def start_workshop(request):
     #     # current_state = user_get_current_state(player, fsm)
     #     player_data = PlayerSerializer().to_representation(player_workshop.player)
     if fsm_type == 'team':
-        player = get_participant(request.user)
-        player_workshop = PlayerWorkshop.objects.filter(
-            workshop=fsm,
-            player__player_type='TEAM',
-            player__team__team_participants=player
-        ).last()
-        history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
-        if not history:
-            PlayerHistory.objects.create(
+        try:
+            participant = get_participant(request.user)
+        except Player.DoesNotExist:
+            return Response({"error": "این کاربر در این رویداد ثبت‌نام نکرده است."}, status=status.HTTP_400_BAD_REQUEST)
+        team = participant.event_team
+        if team is None:
+            return Response({"error": "کاربر تیمی ندارد."}, status=status.HTTP_400_BAD_REQUEST)
+        player_workshop = get_player_workshop(team, fsm)
+        if player_workshop is None:
+
+            if fsm.lock and len(fsm.lock) > 0:
+                key = request.data.get('key', None)
+                if key:
+                    if key != fsm.lock:
+                        return Response({"error": "کلیدتون به این قفل نمی‌خوره! لطفا کلید معتبری وارد کنید."},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({"error": "این کارگاه قفل دارد؛ لطفا کلیدی وارد کنید."},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+            player_workshop = PlayerWorkshop.objects.create(
+                workshop=fsm,
+                player=team,
+                current_state=fsm.first_state,
+                last_visit=timezone.now())
+
+            history = PlayerHistory.objects.create(
                 player_workshop=player_workshop,
                 state=fsm.first_state,
                 start_time=timezone.now(),
                 inward_edge=None
             )
+        else:
+            history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
+        if history is None:
+            return Response({"error": "تاریخچه‌ی شرکت کاربر در کارگاه یافت نشد. به ما اطلاع دهید."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
-        score = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
-        logger.info(f'{score.get("sum", None)}')
         player_workshop_id = player_workshop.id
 
     # elif fsm_type == 'individual':
@@ -463,22 +470,22 @@ def start_workshop(request):
     #             player=player, workshop=fsm,
     #             current_state=fsm.first_state,
     #             last_visit=timezone.now())
-        # try:
-        #     history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
-        # except PlayerHistory.DoesNotExist:
-        #     PlayerHistory.objects.create(
-        #         player=player,
-        #         state=fsm.first_state,
-        #         start_time=timezone.now(),
-        #         edge=None
-        #     )
-        # current_state = user_get_current_state(player, fsm).data
-        # current_state = FSMStateGetSerializer(current_state).data
-        # player_data = PlayerSerializer().to_representation(player)
+    # try:
+    #     history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
+    # except PlayerHistory.DoesNotExist:
+    #     PlayerHistory.objects.create(
+    #         player=player,
+    #         state=fsm.first_state,
+    #         start_time=timezone.now(),
+    #         edge=None
+    #     )
+    # current_state = user_get_current_state(player, fsm).data
+    # current_state = FSMStateGetSerializer(current_state).data
+    # player_data = PlayerSerializer().to_representation(player)
     else:
         return Response({'error': 'fsm type is bad'}, status=status.HTTP_400_BAD_REQUEST)
 
-    result = {'player': player_data, 'player_workshop_id': player_workshop_id, 'score': score.sum}
+    result = {'player': player_data, 'player_workshop_id': player_workshop_id}
     return Response(result, status=status.HTTP_200_OK)
 
 
@@ -493,11 +500,11 @@ def participant_get_player_state(request):
         player = participant
     if player.player_type == "TEAM":
         if not (participant in player.team.team_participants.all()):
-            return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."},
+                            status=status.HTTP_403_FORBIDDEN)
     else:
         if not (player == participant):
-            return Response({"error":"شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "شرکت‌کننده‌ها نمی‌توانند استیت یک شرکت‌کننده‌ی دیگر را بگیرند."},
+                            status=status.HTTP_403_FORBIDDEN)
     state_result = player_state(state, player)
     return Response(state_result)
-
-

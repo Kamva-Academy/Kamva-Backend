@@ -98,6 +98,3 @@ class PlayerCurrentScoreAPIView(APIView):
 def submit_score(player_workshop, score, description):
     if len(ScoreTransaction.objects.filter(description=description, player_workshop=player_workshop, score=score)) <= 0:
         ScoreTransaction.objects.create(player_workshop=player_workshop, score=score, description=description)
-
-def get_player_workshop(player, fsm):
-    PlayerWorkshop.objects.get(player=player, workshop=fsm)
