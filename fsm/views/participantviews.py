@@ -412,28 +412,28 @@ def start_workshop(request):
                             status=status.HTTP_400_BAD_REQUEST)
 
     fsm_type = fsm.fsm_p_type
-    if fsm_type == 'hybrid':
-        player = get_participant(request.user)
-        try:
-            player_workshop = PlayerWorkshop.objects.filter(
-                workshop=fsm,
-                player__player_type='TEAM',
-                player__team__team_participants=player
-            )[0]
-            # try:
-            #     history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
-            # except PlayerHistory.DoesNotExist:
-            #     PlayerHistory.objects.create(
-            #         player=player,
-            #         state=fsm.first_state,
-            #         start_time=timezone.now(),
-            #         edge=None
-            #     )
-        except:
-            return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
-        # current_state = user_get_current_state(player, fsm)
-        player_data = PlayerSerializer().to_representation(player_workshop.player)
-    elif fsm_type == 'team':
+    # if fsm_type == 'hybrid':
+    #     player = get_participant(request.user)
+    #     try:
+    #         player_workshop = PlayerWorkshop.objects.filter(
+    #             workshop=fsm,
+    #             player__player_type='TEAM',
+    #             player__team__team_participants=player
+    #         )[0]
+    #         # try:
+    #         #     history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
+    #         # except PlayerHistory.DoesNotExist:
+    #         #     PlayerHistory.objects.create(
+    #         #         player=player,
+    #         #         state=fsm.first_state,
+    #         #         start_time=timezone.now(),
+    #         #         edge=None
+    #         #     )
+    #     except:
+    #         return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
+    #     # current_state = user_get_current_state(player, fsm)
+    #     player_data = PlayerSerializer().to_representation(player_workshop.player)
+    if fsm_type == 'team':
         player = get_participant(request.user)
         player_workshop = PlayerWorkshop.objects.filter(
             workshop=fsm,
@@ -451,18 +451,18 @@ def start_workshop(request):
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
         score = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
-        logger.info(f'{score.sum}')
+        logger.info(f'{score.get("sum", None)}')
         player_workshop_id = player_workshop.id
 
-    elif fsm_type == 'individual':
-        player = get_participant(request.user)
-        try:
-            player_workshop = PlayerWorkshop.objects.get(player=player, workshop=fsm)
-        except PlayerWorkshop.DoesNotExist:
-            PlayerWorkshop.objects.create(
-                player=player, workshop=fsm,
-                current_state=fsm.first_state,
-                last_visit=timezone.now())
+    # elif fsm_type == 'individual':
+    #     player = get_participant(request.user)
+    #     try:
+    #         player_workshop = PlayerWorkshop.objects.get(player=player, workshop=fsm)
+    #     except PlayerWorkshop.DoesNotExist:
+    #         PlayerWorkshop.objects.create(
+    #             player=player, workshop=fsm,
+    #             current_state=fsm.first_state,
+    #             last_visit=timezone.now())
         # try:
         #     history = PlayerHistory.objects.get(player=player, state=fsm.first_state)
         # except PlayerHistory.DoesNotExist:
@@ -474,7 +474,7 @@ def start_workshop(request):
         #     )
         # current_state = user_get_current_state(player, fsm).data
         # current_state = FSMStateGetSerializer(current_state).data
-        player_data = PlayerSerializer().to_representation(player)
+        # player_data = PlayerSerializer().to_representation(player)
     else:
         return Response({'error': 'fsm type is bad'}, status=status.HTTP_400_BAD_REQUEST)
 
