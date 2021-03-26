@@ -392,6 +392,23 @@ def get_player_current_state(request):
     return Response(result, status=status.HTTP_200_OK)
 
 
+@transaction.atomic
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, ParticipantPermission])
+def get_scores(request):
+    fsm_id = request.data.get('fsm', None)
+    fsm = get_object_or_404(FSM, id=fsm_id)
+    player_id = request.data.get('player', None)
+    player = get_object_or_404(Player, id=player_id)
+    player_workshop = get_player_workshop(player, fsm)
+    result = dict()
+    result['score_transactions'] = get_score_histories(player_workshop)
+    result['scores_sum'] = get_scores_sum(player_workshop)
+
+    return Response(result, status=status.HTTP_200_OK)
+
+
+
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def start_workshop(request):

@@ -63,6 +63,7 @@ urlpatterns = [
      path('startWorkshop/', start_workshop, name="start_workshop"),
      path('mentorgetplayerstate/', mentor_get_player_state, name="mentor_get_player_state"),
      path('pargetplayerstate/', participant_get_player_state, name="participant_get_player_state"),
+     path('getscores/', get_scores, name="get_scores")
      # path('mentorgetplayerstate/', mentor_get_workshop_player, name="mentor_get_workshop_player"),
 ]
 
