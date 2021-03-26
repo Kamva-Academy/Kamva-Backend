@@ -237,10 +237,10 @@ def request_mentor(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ])
 def player_go_forward_on_edge(request):
-    edge_id = request.data.get('edge',None)
+    edge_id = request.data.get('edge', None)
     player_id = request.data.get('player', None)
-    player = get_object_or_404(Player, id=player_id)
     edge = get_object_or_404(FSMEdge, id=edge_id)
+    player = get_object_or_404(Player, id=player_id)
     fsm = edge.tail.fsm
     player_workshop = get_player_workshop(player, fsm)
 
@@ -260,7 +260,8 @@ def player_go_forward_on_edge(request):
         last_state_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.tail).last()
         last_state_history.end_time = timezone.now()
         last_state_history.save()
-        PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(), state=edge.head)
+        PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(),
+                                     state=edge.head)
     else:
         logger.warning(
             f'illegal transmission - player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
@@ -278,42 +279,45 @@ def player_go_forward_on_edge(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def player_go_backward_on_edge(request):
-    edge = request.data['edge']
-    player = request.data['player']
-
-    edge = get_object_or_404(FSMEdge, id=edge)
+    edge_id = request.data.get('edge', None)
+    player_id = request.data.get('player', None)
+    edge = get_object_or_404(FSMEdge, id=edge_id)
+    player = get_object_or_404(Player, id=player_id)
     fsm = edge.tail.fsm
-    if fsm.fsm_p_type == 'hybrid':
-        player = get_participant(request.user)
-    else:
-        player = get_object_or_404(Player, id=player)
+    player_workshop = get_player_workshop(player, fsm)
 
-    playerWorkshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
+    # if fsm.fsm_p_type == 'hybrid':
+    #     player = get_participant(request.user)
+
     logger.info(
-        f'player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+        f'player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
     if not edge.is_back_enabled:
-        state_result = player_state(playerWorkshop.current_state, player)
+        state_result = player_state(player_workshop.current_state, player)
         state_result['error'] = "امکان برگشت به عقب در این گام وجود ندارد."
         return Response(state_result,
                         status=status.HTTP_400_BAD_REQUEST)
 
-    if playerWorkshop.current_state == edge.head:
-        playerWorkshop.current_state = edge.tail
-        playerWorkshop.last_visit = timezone.now()
-        playerWorkshop.save()
-        # TODO set the current player history based on your need
-        # PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state= edge.head)
+    if player_workshop.current_state == edge.head:
+        player_workshop.current_state = edge.tail
+        player_workshop.last_visit = timezone.now()
+        player_workshop.save()
+
+        last_state_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.head).last()
+        last_state_history.end_time = timezone.now()
+        last_state_history.save()
+        PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(),
+                                     state=edge.tail)
     else:
         logger.warning(
-            f'illegal transmission - player in {playerWorkshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+            f'illegal transmission - player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
-        state_result = player_state(playerWorkshop.current_state, player)
+        state_result = player_state(player_workshop.current_state, player_workshop)
         state_result['error'] = "transmission is not accessible from this state"
         return Response(state_result,
                         status=status.HTTP_400_BAD_REQUEST)
 
-    state_result = player_state(playerWorkshop.current_state, player)
+    state_result = player_state(player_workshop.current_state, player_workshop)
     return Response(state_result, status=status.HTTP_200_OK)
 
 
@@ -404,7 +408,6 @@ def get_scores(request):
     result['scores_sum'] = get_scores_sum(player_workshop)
 
     return Response(result, status=status.HTTP_200_OK)
-
 
 
 @api_view(['POST'])
