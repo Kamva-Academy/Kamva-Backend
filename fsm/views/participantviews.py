@@ -447,7 +447,7 @@ def start_workshop(request):
                 player_workshop=player_workshop,
                 state=fsm.first_state,
                 start_time=timezone.now(),
-                edge=None
+                inward_edge=None
             )
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
