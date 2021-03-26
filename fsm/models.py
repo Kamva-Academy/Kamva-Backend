@@ -245,18 +245,6 @@ class SubmittedAnswer(models.Model):
             return None
 
 
-class PlayerHistory(models.Model):
-    player = models.ForeignKey('accounts.Player', null=True, on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(MainState, null=True, on_delete=models.CASCADE, related_name='player_histories')
-    grade = models.IntegerField(default=0)
-    start_time = models.DateTimeField(null=True, blank=True)
-    end_time = models.DateTimeField(null=True, blank=True)
-    edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.SET_NULL)
-
-    def __str__(self):
-        return f'{self.player.id}-{self.state.name}'
-
-
 class PlayerWorkshop(models.Model):
     player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
     workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
@@ -266,3 +254,14 @@ class PlayerWorkshop(models.Model):
 
     def __str__(self):
         return f'{self.id}:{str(self.player)}-{self.workshop.name}'
+
+
+class PlayerHistory(models.Model):
+    player_workshop = models.ForeignKey(PlayerWorkshop, on_delete=models.CASCADE, related_name='histories')
+    state = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='player_histories')
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    inward_edge = models.ForeignKey(FSMEdge, default=None, null=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return f'{self.player_workshop.id}-{self.state.name}'

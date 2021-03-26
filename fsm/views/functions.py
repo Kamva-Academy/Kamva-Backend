@@ -53,7 +53,7 @@ def current_state_widgets_json(state, player):
     return widgets
 
 
-def current_state_incoming_edge(player, state):
+def current_state_incoming_edge(state):
     player_history = PlayerHistory.objects.filter(player=player, state=state).last()
     if player_history:
         edge = player_history.edge
@@ -66,12 +66,12 @@ def player_state(state, player):
     state_result = PlayerStateGetSerializer(state).data
     widgets = current_state_widgets_json(state, player)
     state_result['widgets'] = widgets
-    if state.fsm.fsm_learning_type == 'noMentor':
-        edge = current_state_incoming_edge(player, state)
-        if edge:
-            state_result['inward_edges'] = [FSMEdgeSerializer().to_representation(edge)]
-        else:
-            state_result['inward_edges'] = []
+    # todo - check history
+    edge = current_state_incoming_edge(state)
+    if edge:
+        state_result['inward_edges'] = [FSMEdgeSerializer().to_representation(edge)]
+    else:
+        state_result['inward_edges'] = []
 
     return state_result
 

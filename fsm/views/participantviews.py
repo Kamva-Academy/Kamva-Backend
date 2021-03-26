@@ -73,6 +73,7 @@ def get_history(request):
     data = serializer.data
     return Response(data, status=status.HTTP_200_OK)
 
+
 @transaction.atomic
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, ParticipantPermission])

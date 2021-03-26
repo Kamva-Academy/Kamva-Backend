@@ -40,7 +40,6 @@ class SubmittedAnswerAdmin(admin.ModelAdmin):
     def answer_file(self, obj):
         ans_file = obj.answer.uploadfileanswer.answer_file
 
-
     def team_name(self, obj):
         return str(obj.player.team.group_name)
 
@@ -64,19 +63,19 @@ class PlayerWorkshopAdmin(admin.ModelAdmin):
 
 class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
     model = PlayerHistory
-    list_display = ['player', 'state', 'grade', 'start_time', 'end_time', 'edge', 'delta_time']
-    list_display = ['player', 'state', 'grade', 'start_time', 'end_time', 'edge', 'delta_time']
-    list_filter = ['start_time', 'end_time','state__fsm', 'player','state', 'edge']
+    list_display = ['player_workshop', 'state', 'start_time', 'end_time', 'inward_edge', 'delta_time']
+    list_filter = ['start_time', 'end_time', 'state__fsm', 'player_workshop__player', 'state', 'inward_edge']
 
     def delta_time(self, obj):
         if (obj.end_time and obj.start_time):
             return obj.end_time - obj.start_time
         return "-"
-    
-    
+
+
 class DescriptionAdmin(admin.ModelAdmin):
     model = Description
     list_display = ['state', 'text_part']
+
     #
     def state(self, obj):
         name = str(obj.state.name)
@@ -85,7 +84,6 @@ class DescriptionAdmin(admin.ModelAdmin):
     def text_part(self, obj):
         name = str(obj.text)[0:100]
         return name
-
 
 
 admin.site.register(FSM)
@@ -110,7 +108,6 @@ admin.site.register(Event)
 admin.site.register(UploadFileAnswer, AnswerAdmin)
 admin.site.register(ProblemUploadFileAnswer)
 admin.site.register(SubmittedAnswer, SubmittedAnswerAdmin)
-
 
 admin.site.register(PlayerHistory, PlayerHistoryAdmin)
 admin.site.register(PlayerWorkshop, PlayerWorkshopAdmin)
