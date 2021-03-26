@@ -64,12 +64,13 @@ class PlayerScoreHistoryAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        if 'player_workshop_id' not in request.data.keys():
+        player_workshop_id = request.data.get('player_workshop_id', None)
+        if player_workshop_id:
             return Response({'success': False, 'error': "اطلاعات مربوط به عضویت در کارگاه موجود نیست."},
                             status=status.HTTP_400_BAD_REQUEST)
         else:
             try:
-                player_workshop = PlayerWorkshop.objects.get(id=request.data['player_workshop_id'])
+                player_workshop = PlayerWorkshop.objects.get(id=player_workshop_id)
             except PlayerWorkshop.DoesNotExist:
                 raise PlayerWorkshopNotFound
         score_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop)
@@ -89,19 +90,14 @@ class PlayerCurrentScoreAPIView(APIView):
                 player_workshop = PlayerWorkshop.objects.get(id=request.data['player_workshop_id'])
             except PlayerWorkshop.DoesNotExist:
                 raise PlayerWorkshopNotFound
-        score_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
-        return Response({'success': True, 'score': score_transactions})
+        sum_score = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
+        return Response({'success': True, 'score': sum_score})
 
 
 @transaction.atomic
 def submit_score(player_workshop, score, description):
     if len(ScoreTransaction.objects.filter(description=description, player_workshop=player_workshop, score=score)) <= 0:
         ScoreTransaction.objects.create(player_workshop=player_workshop, score=score, description=description)
-
-
-def get_score(player_workshop, ):
-    pass
-
 
 def get_player_workshop(player, fsm):
     PlayerWorkshop.objects.get(player=player, workshop=fsm)

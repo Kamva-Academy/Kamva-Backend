@@ -2,6 +2,7 @@ import json
 import os
 
 from django.core.paginator import Paginator
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions, viewsets
 
@@ -11,6 +12,8 @@ from accounts.models import Member, Player, Participant
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
+from scoring.models import ScoreTransaction
 from .permissions import ParticipantPermission
 
 from django.contrib.contenttypes.models import ContentType
@@ -156,6 +159,7 @@ def move_to_next_state(request):
         data = MainStateGetSerializer().to_representation(edges[0].head)
         return Response(data, status=status.HTTP_200_OK)
     return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 def get_last_state_in_fsm(team, fsm):
     try:
@@ -319,7 +323,6 @@ def player_go_backward_on_edge(request):
     return Response(state_result, status=status.HTTP_200_OK)
 
 
-
 @transaction.atomic
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ])
@@ -341,6 +344,7 @@ def user_get_team_outward_edges(request):
         return Response(data, status=status.HTTP_200_OK)
     except Team.DoesNotExist:
         return Response("team not found", status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
@@ -398,8 +402,16 @@ def start_workshop(request):
 
     fsm = request.data['fsm']
     fsm = get_object_or_404(FSM, id=fsm)
-    fsm_type = fsm.fsm_p_type
+    if not fsm.lock and len(fsm.lock) > 0:
+        key = request.data.get('key', None)
+        if key:
+            if key != fsm.lock:
+                return Response({"error": "کلیدتون به این قفل نمی‌خوره! لطفا کلید معتبری وارد کنید."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "این کارگاه قفل دارد؛ لطفا کلیدی وارد کنید."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
+    fsm_type = fsm.fsm_p_type
     if fsm_type == 'hybrid':
         player = get_participant(request.user)
         try:
@@ -421,7 +433,6 @@ def start_workshop(request):
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
         # current_state = user_get_current_state(player, fsm)
         player_data = PlayerSerializer().to_representation(player_workshop.player)
-
     elif fsm_type == 'team':
         player = get_participant(request.user)
         try:
@@ -429,19 +440,22 @@ def start_workshop(request):
                 workshop=fsm,
                 player__player_type='TEAM',
                 player__team__team_participants=player
-            )[0]
-            # history = PlayerHistory.objects.filter(player=player.team).last()
-            # if not history:
-            #     PlayerHistory.objects.create(
-            #         player=player.team,
-            #         state=fsm.first_state,
-            #         start_time=timezone.now(),
-            #         edge=None
-            #     )
+            ).last()
+            logger.info(f'salam, {player_workshop}')
+            history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
+            if not history:
+                PlayerHistory.objects.create(
+                    player_workshop=player_workshop,
+                    state=fsm.first_state,
+                    start_time=timezone.now(),
+                    edge=None
+                )
         except:
             return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
+        score = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
+        player_workshop_id = player_workshop.id
 
     elif fsm_type == 'individual':
         player = get_participant(request.user)
@@ -467,7 +481,7 @@ def start_workshop(request):
     else:
         return Response({'error': 'fsm type is bad'}, status=status.HTTP_400_BAD_REQUEST)
 
-    result = {'player': player_data}
+    result = {'player': player_data, 'player_workshop_id': player_workshop_id, 'score': score}
     return Response(result, status=status.HTTP_200_OK)
 
 
