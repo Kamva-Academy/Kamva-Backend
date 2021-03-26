@@ -151,23 +151,15 @@ def mentor_get_player_state(request):
     state = get_object_or_404(MainState, id=request.data['state'])
     if state.fsm.fsm_p_type != 'individual':
         player = get_object_or_404(Team, uuid=request.data['player_uuid'])
-        state_result = player_state(state, player)
     else:
         player = get_participant(get_object_or_404(Member, uuid=request.data['player_uuid']))
-        state_result = player_state(state, player)
+    player_workshop = get_player_workshop(player, state.fsm)
+    state_result = player_state(state, player_workshop)
     return Response(state_result)
 
 
-
-
-# TODO - BIGGEST TOF EVER
-def get_participant(user, event="مسافر صفر"):
-    current_event = Event.objects.get(name=event)
-    return Participant.objects.get(member=user, event=current_event)
-
-
 @api_view(['GET'])
-@permission_classes([]) # permissions.IsAuthenticated,
+@permission_classes([permissions.IsAuthenticated,])
 def mentor_get_fsm_and_states(request):
     result = []
     fsms = list(FSM.objects.all())
