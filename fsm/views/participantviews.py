@@ -435,23 +435,20 @@ def start_workshop(request):
         player_data = PlayerSerializer().to_representation(player_workshop.player)
     elif fsm_type == 'team':
         player = get_participant(request.user)
-        try:
-            player_workshop = PlayerWorkshop.objects.filter(
-                workshop=fsm,
-                player__player_type='TEAM',
-                player__team__team_participants=player
-            ).last()
-            logger.info(f'salam, {player_workshop}')
-            history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
-            if not history:
-                PlayerHistory.objects.create(
-                    player_workshop=player_workshop,
-                    state=fsm.first_state,
-                    start_time=timezone.now(),
-                    edge=None
-                )
-        except:
-            return Response({"error": "این کاربر در این کارگاه ثبت‌نام نکرده."}, status=status.HTTP_400_BAD_REQUEST)
+        player_workshop = PlayerWorkshop.objects.filter(
+            workshop=fsm,
+            player__player_type='TEAM',
+            player__team__team_participants=player
+        ).last()
+        logger.info(f'salam, {player_workshop}')
+        history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
+        if not history:
+            PlayerHistory.objects.create(
+                player_workshop=player_workshop,
+                state=fsm.first_state,
+                start_time=timezone.now(),
+                edge=None
+            )
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
         score = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
