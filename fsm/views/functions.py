@@ -108,4 +108,4 @@ def get_score_histories(player_workshop):
 def get_scores_sum(player_workshop):
     sum_scores = ScoreTransaction.objects.filter(player_workshop=player_workshop).aggregate(Sum('score'))
     logger.info(sum_scores)
-    return sum_scores.get('sum', None)
+    return sum_scores.get('score__sum', None)
