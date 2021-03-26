@@ -402,7 +402,7 @@ def start_workshop(request):
 
     fsm = request.data['fsm']
     fsm = get_object_or_404(FSM, id=fsm)
-    if not fsm.lock and len(fsm.lock) > 0:
+    if fsm.lock and len(fsm.lock) > 0:
         key = request.data.get('key', None)
         if key:
             if key != fsm.lock:
