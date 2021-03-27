@@ -214,7 +214,7 @@ def mentor_get_submissions(request):
             for p in problems:
                 submitted_answers = p.submitted_answers
                 submissions_result = []
-                for s_a in submitted_answers:
+                for s_a in submitted_answers.all():
                     if s_a.answer is None:
                         continue
                     ans = s_a.answer
