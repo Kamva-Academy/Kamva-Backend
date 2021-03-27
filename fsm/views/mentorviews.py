@@ -304,14 +304,15 @@ def mentor_mark_submission(request):
     if player_workshop is None:
         return Response({'error': 'Player_workshop not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    new_tr = ScoreTransaction.objects.create(score=score,
-                                             player_workshop=player_workshop,
-                                             description=description,
-                                             is_valid=True,
-                                             submitted_answer=submission)
     invalid_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop,
                                                            submitted_answer__problem=submission.problem)
     for tr in invalid_transactions:
         if tr.is_valid:
             tr.is_valid = False
+    logger.info(list(invalid_transactions))
+    new_tr = ScoreTransaction.objects.create(score=score,
+                                             player_workshop=player_workshop,
+                                             description=description,
+                                             is_valid=True,
+                                             submitted_answer=submission)
     return Response(status=status.HTTP_201_CREATED)
