@@ -389,11 +389,11 @@ def user_workshops_description(request):
     participant = get_participant(request.user)
     workshops = []
     for pw in PlayerWorkshop.objects.filter(player=participant):
-        workshops.append(pw)
+        workshops.append(pw.workshop)
     team = participant.event_team
     if team:
         for pw in PlayerWorkshop.objects.filter(player=team):
-            workshops.append(pw)
+            workshops.append(pw.workshop)
 
     result = []
     for w in workshops:
