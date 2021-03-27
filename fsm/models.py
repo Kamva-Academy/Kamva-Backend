@@ -95,6 +95,7 @@ class FSMEdge(models.Model):
     min_score = models.FloatField(default=0.0)
     cost = models.FloatField(default=0.0)
     priority = models.IntegerField()
+    lock = models.CharField(max_length=10, null=True, blank=True)
     text = models.TextField(null=True)
 
     def get_next_state(self, abilities):
@@ -107,6 +108,9 @@ class FSMEdge(models.Model):
                 return
             output = output and ability.is_valid(value)
         return self.head if output else None
+    
+    def __str__(self):
+        return f'از {self.tail.name} به {self.head.name}'
 
 
 class Ability(models.Model):

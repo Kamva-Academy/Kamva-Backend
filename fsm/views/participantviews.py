@@ -239,6 +239,7 @@ def request_mentor(request):
 def player_go_forward_on_edge(request):
     edge_id = request.data.get('edge', None)
     player_id = request.data.get('player', None)
+    key = request.data.get('key', None)
     edge = get_object_or_404(FSMEdge, id=edge_id)
     player = get_object_or_404(Player, id=player_id)
     fsm = edge.tail.fsm
@@ -251,6 +252,28 @@ def player_go_forward_on_edge(request):
         f'player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
     if player_workshop.current_state == edge.tail:
+
+        if len(PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.head, inward_edge=edge)) < 0:
+            player_workshop_score = get_scores_sum(player_workshop)
+            if player_workshop_score - edge.cost < edge.min_score:
+                result = {'error': 'امتیاز شما برای ورود به این گام کافی نیست'}
+                return Response(result, status=status.HTTP_403_FORBIDDEN)
+
+            if edge.lock and len(edge.lock) > 0:
+                if not key:
+                    result = {'error': 'ورود به این گام قفل شده است؛ لطفا کلیدی وارد کنید.'}
+                    return Response(result, status=status.HTTP_403_FORBIDDEN)
+                else:
+                    if key != edge.lock:
+                        result = {'error': 'کلید واردشده معتبر نیست؛ لطفا کلید معتبری وارد کنید.'}
+                        return Response(result, status.HTTP_403_FORBIDDEN)
+
+            if edge.cost > 0:
+                cost_tr = ScoreTransaction.objects.create(score=-edge.cost,
+                                                          description=f'به دلیل حرکت {str(edge)}',
+                                                          player_workshop=player_workshop,
+                                                          is_valid=True,
+                                                          submitted_answer=None)
 
         player_workshop.current_state = edge.head
         player_workshop.last_visit = timezone.now()
@@ -360,6 +383,33 @@ def user_workshops(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated, ParticipantPermission])
+def user_workshops_description(request):
+    participant = get_participant(request.user)
+    if request.method == 'GET':
+        individual_workshops = FSM.objects.filter(players=participant)
+        if participant.team_set.count() > 0:
+            for team in participant.team_set.all():
+                team_workshops = FSM.objects.filter(players=team)
+        workshops = (team_workshops | individual_workshops).distinct()
+        result = []
+        team = participant.event_team
+        for w in workshops:
+            result.append({'name': w.name,
+                           'description': w.description,
+                           'cover_page': w.cover_page.url if w.cover_page else None,
+                           'active': w.active,
+                           'fsm_p_type': w.fsm_p_type,
+                           'fsm_learning_type': w.fsm_learning_type,
+                           'has_lock': w.lock and len(w.lock) > 0,
+                           'has_started': get_player_workshop(participant, w) or get_player_workshop(team, w)})
+
+        return Response(result, status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
 @transaction.atomic
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
@@ -413,8 +463,9 @@ def get_scores(request):
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def start_workshop(request):
     fsm_id = request.data.get('fsm', None)
-    fsm = get_object_or_404(FSM, id=fsm_id)
+    key = request.data.get('key', None)
 
+    fsm = get_object_or_404(FSM, id=fsm_id)
     fsm_type = fsm.fsm_p_type
 
     # if fsm_type == 'hybrid':
@@ -450,7 +501,6 @@ def start_workshop(request):
         if player_workshop is None:
 
             if fsm.lock and len(fsm.lock) > 0:
-                key = request.data.get('key', None)
                 if key:
                     if key != fsm.lock:
                         return Response({"error": "کلیدتون به این قفل نمی‌خوره! لطفا کلید معتبری وارد کنید."},

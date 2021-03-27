@@ -57,6 +57,7 @@ urlpatterns = [
 
      # new ones
      path('userworkshops/', user_workshops, name="user_workshops"),
+     path('getworkshopsdescription/', user_workshops_description, name="user_workshops_description"),
      path('workshopplayers/', workshop_players, name="workshop_players"),
      path('goforward/', player_go_forward_on_edge, name="player_go_forward_on_edge"),
      path('gobackward/', player_go_backward_on_edge, name="player_go_backward_on_edge"),
