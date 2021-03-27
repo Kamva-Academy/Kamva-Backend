@@ -185,8 +185,8 @@ def mentor_get_submissions(request):
     state_id = request.data.get('state_id', None)
     problem_id = request.data.get('problem_id', None)
     fsm = FSM.objects.filter(id=fsm_id).last()
-    state = FSM.objects.filter(id=state_id).last()
-    problem = FSM.objects.filter(id=problem_id).last()
+    state = FSMState.objects.filter(id=state_id).last()
+    problem = Problem.objects.filter(id=problem_id).last()
 
     result = []
 
