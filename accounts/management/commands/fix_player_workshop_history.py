@@ -17,9 +17,10 @@ class Command(BaseCommand):
         for pw in PlayerWorkshop.objects.all():
             history = PlayerHistory.objects.create(
                 player_workshop=pw,
-                state=pw.fsm.first_state,
+                state=pw.workshop.first_state,
                 start_time=timezone.now(),
                 inward_edge=None
             )
-            pw.current_state = pw.fsm.first_state
+            print(f'added history for {str(pw)}')
+            pw.current_state = pw.workshop.first_state
 
