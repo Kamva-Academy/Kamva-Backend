@@ -397,7 +397,8 @@ def user_workshops_description(request):
 
     result = []
     for w in workshops:
-        result.append({'name': w.name,
+        result.append({'id': w.id,
+                       'name': w.name,
                        'description': w.description,
                        'cover_page': w.cover_page.url if w.cover_page else None,
                        'active': w.active,
@@ -405,7 +406,7 @@ def user_workshops_description(request):
                        'fsm_learning_type': w.fsm_learning_type,
                        'has_lock': w.lock and len(w.lock) > 0,
                        'has_started': not ((get_player_workshop(participant, w) is None) and (
-                                            get_player_workshop(team, w) is None))})
+                               get_player_workshop(team, w) is None))})
 
         return Response(result, status=status.HTTP_200_OK)
 
