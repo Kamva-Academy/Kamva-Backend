@@ -462,13 +462,10 @@ def get_scores(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def start_workshop(request):
-    logger.warning('startworkshop1')
     fsm_id = request.data.get('fsm', None)
     key = request.data.get('key', None)
-    logger.warning('startworkshop2')
     fsm = get_object_or_404(FSM, id=fsm_id)
     fsm_type = fsm.fsm_p_type
-    logger.warning('startworkshop3')
     # if fsm_type == 'hybrid':
     #     player = get_participant(request.user)
     #     try:
@@ -495,15 +492,13 @@ def start_workshop(request):
             participant = get_participant(request.user)
         except Player.DoesNotExist:
             return Response({"error": "این کاربر در این رویداد ثبت‌نام نکرده است."}, status=status.HTTP_400_BAD_REQUEST)
-        logger.warning('startworkshop3')
         team = participant.event_team
-        logger.warning('startworkshop4')
         if team is None:
             return Response({"error": "کاربر تیمی ندارد."}, status=status.HTTP_400_BAD_REQUEST)
         player_workshop = get_player_workshop(team, fsm)
-        logger.warning('startworkshop5')
         if player_workshop is None:
 
+            logger.warning('player workshop is causing bug')
             if fsm.lock and len(fsm.lock) > 0:
                 if key:
                     if key != fsm.lock:
@@ -512,7 +507,7 @@ def start_workshop(request):
                 else:
                     return Response({"error": "این کارگاه قفل دارد؛ لطفا کلیدی وارد کنید."},
                                     status=status.HTTP_400_BAD_REQUEST)
-            logger.warning('startworkshop6')
+            logger.warning('lock is causing bug')
             player_workshop = PlayerWorkshop.objects.create(
                 workshop=fsm,
                 player=team,
@@ -528,7 +523,9 @@ def start_workshop(request):
             logger.warning('startworkshop8')
         else:
             history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
+            logger.warning('player history is causing bug1')
         if history is None:
+            logger.warning('player history is causing bug1')
             return Response({"error": "تاریخچه‌ی شرکت کاربر در کارگاه یافت نشد. به ما اطلاع دهید."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # current_state = player_workshop.current_state
