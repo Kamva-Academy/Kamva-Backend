@@ -462,12 +462,13 @@ def get_scores(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def start_workshop(request):
+    logger.warning('startworkshop1')
     fsm_id = request.data.get('fsm', None)
     key = request.data.get('key', None)
-
+    logger.warning('startworkshop2')
     fsm = get_object_or_404(FSM, id=fsm_id)
     fsm_type = fsm.fsm_p_type
-
+    logger.warning('startworkshop3')
     # if fsm_type == 'hybrid':
     #     player = get_participant(request.user)
     #     try:
@@ -494,10 +495,13 @@ def start_workshop(request):
             participant = get_participant(request.user)
         except Player.DoesNotExist:
             return Response({"error": "این کاربر در این رویداد ثبت‌نام نکرده است."}, status=status.HTTP_400_BAD_REQUEST)
+        logger.warning('startworkshop3')
         team = participant.event_team
+        logger.warning('startworkshop4')
         if team is None:
             return Response({"error": "کاربر تیمی ندارد."}, status=status.HTTP_400_BAD_REQUEST)
         player_workshop = get_player_workshop(team, fsm)
+        logger.warning('startworkshop5')
         if player_workshop is None:
 
             if fsm.lock and len(fsm.lock) > 0:
@@ -508,19 +512,20 @@ def start_workshop(request):
                 else:
                     return Response({"error": "این کارگاه قفل دارد؛ لطفا کلیدی وارد کنید."},
                                     status=status.HTTP_400_BAD_REQUEST)
-
+            logger.warning('startworkshop6')
             player_workshop = PlayerWorkshop.objects.create(
                 workshop=fsm,
                 player=team,
                 current_state=fsm.first_state,
                 last_visit=timezone.now())
-
+            logger.warning('startworkshop7')
             history = PlayerHistory.objects.create(
                 player_workshop=player_workshop,
                 state=fsm.first_state,
                 start_time=timezone.now(),
                 inward_edge=None
             )
+            logger.warning('startworkshop8')
         else:
             history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
         if history is None:
