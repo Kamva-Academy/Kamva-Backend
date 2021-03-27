@@ -391,7 +391,7 @@ def user_workshops_description(request):
         return Response({'participant not Found'}, status=status.HTTP_404_NOT_FOUND)
     team = participant.event_team
     current_event = Event.objects.get(name="مسافر صفر")
-    workshops = FSM.objects.filter(event=current_event)
+    workshops = FSM.objects.filter(event=current_event, active=True)
     logger.info(list(workshops))
     result = []
     for w in workshops:
