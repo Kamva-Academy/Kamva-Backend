@@ -404,7 +404,8 @@ def user_workshops_description(request):
                        'fsm_p_type': w.fsm_p_type,
                        'fsm_learning_type': w.fsm_learning_type,
                        'has_lock': w.lock and len(w.lock) > 0,
-                       'has_started': get_player_workshop(participant, w) or get_player_workshop(team, w)})
+                       'has_started': not ((get_player_workshop(participant, w) is None) and (
+                                            get_player_workshop(team, w) is None))})
 
         return Response(result, status=status.HTTP_200_OK)
 
