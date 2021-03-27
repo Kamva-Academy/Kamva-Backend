@@ -222,11 +222,29 @@ def mentor_get_submissions(request):
                                      'player_id': s_a.player.id,
                                      'submission_date': s_a.publish_date,
                                      'answer_id': ans.id}
-                    if ans is UploadFileAnswer:
+                    if p.widget_type == 'ProblemUploadFileAnswer':
                         submit_result['answer_file_url'] = ans.answer_file.url
                         submit_result['answer_file_name'] = ans.file_name
+                    elif p.widget_type == 'ProblemMultiChoice':
+                        try:
+                            submit_result['answer_text'] = ans.MultiChoiceAnswer.text
+                        except:
+                            logger.warning('answer was not MultiChoice')
+                            continue
+                    elif p.widget_type == 'ProblemSmallAnswer':
+                        try:
+                            submit_result['answer_text'] = ans.SmallAnswer.text
+                        except:
+                            logger.warning('answer was not SmallAnswer')
+                            continue
+                    elif p.widget_type == 'ProblemBigAnswer':
+                        try:
+                            submit_result['answer_text'] = ans.BigAnswer.text
+                        except:
+                            logger.warning('answer was not BigAnswer')
+                            continue
                     else:
-                        submit_result['answer_text'] = ans.text
+                        continue
                     if s_a.review:
                         review = {'score': s_a.review.score,
                                   'description': s_a.description,
@@ -257,10 +275,14 @@ def mentor_mark_submission(request):
         return Response({'error': 'score is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     state = submission.problem.state
-    if state is MainState:
-        fsm = state.fsm
-    else:
-        fsm = state.state.fsm
+    state = MainState.objects.filter(id=state.id).last()
+    if not state:
+        return Response({'error': 'submissions related state not found'}, status=status.HTTP_404_NOT_FOUND)
+    fsm = state.fsm
+    # if state is MainState:
+    #     fsm = state.fsm
+    # else:
+    #     fsm = state.state.fsm
     player_workshop = get_player_workshop(submission.player, fsm)
 
     if player_workshop is None:
