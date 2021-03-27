@@ -223,25 +223,37 @@ def mentor_get_submissions(request):
                                      'submission_date': s_a.publish_date,
                                      'answer_id': ans.id}
                     if p.widget_type == 'ProblemUploadFileAnswer':
-                        submit_result['answer_file_url'] = ans.uploadFileAnswer.answer_file.url
-                        submit_result['answer_file_name'] = ans.uploadFileAnswer.file_name
+                        try:
+                            upload_file_answer = UploadFileAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                            submit_result['answer_file_url'] = upload_file_answer.answer_file.url
+                            submit_result['answer_file_name'] = upload_file_answer.file_name
+                        except Exception as e:
+                            logger.warning('answer was not UploadFile')
+                            logger.warning(str(e))
+                            continue
                     elif p.widget_type == 'ProblemMultiChoice':
                         try:
-                            submit_result['answer_text'] = ans.multiChoiceAnswer.text
-                        except:
+                            multi_choice_answer = MultiChoiceAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                            submit_result['answer_text'] = multi_choice_answer.text
+                        except Exception as e:
                             logger.warning('answer was not MultiChoice')
+                            logger.warning(str(e))
                             continue
                     elif p.widget_type == 'ProblemSmallAnswer':
                         try:
-                            submit_result['answer_text'] = ans.smallAnswer.text
-                        except:
+                            small_answer = SmallAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                            submit_result['answer_text'] = small_answer.text
+                        except Exception as e:
                             logger.warning('answer was not SmallAnswer')
+                            logger.warning(str(e))
                             continue
                     elif p.widget_type == 'ProblemBigAnswer':
                         try:
-                            submit_result['answer_text'] = ans.bigAnswer.text
-                        except:
+                            big_answer = BigAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                            submit_result['answer_text'] = big_answer.text
+                        except Exception as e:
                             logger.warning('answer was not BigAnswer')
+                            logger.warning(str(e))
                             continue
                     else:
                         continue
