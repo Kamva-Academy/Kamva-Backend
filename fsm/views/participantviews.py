@@ -498,7 +498,6 @@ def start_workshop(request):
         player_workshop = get_player_workshop(team, fsm)
         if player_workshop is None:
 
-            logger.warning('player workshop is causing bug')
             if fsm.lock and len(fsm.lock) > 0:
                 if key:
                     if key != fsm.lock:
@@ -507,27 +506,22 @@ def start_workshop(request):
                 else:
                     return Response({"error": "این کارگاه قفل دارد؛ لطفا کلیدی وارد کنید."},
                                     status=status.HTTP_400_BAD_REQUEST)
-            logger.warning('lock is causing bug')
             player_workshop = PlayerWorkshop.objects.create(
                 workshop=fsm,
                 player=team,
                 current_state=fsm.first_state,
                 last_visit=timezone.now())
-            logger.warning('startworkshop7')
             history = PlayerHistory.objects.create(
                 player_workshop=player_workshop,
                 state=fsm.first_state,
                 start_time=timezone.now(),
                 inward_edge=None
             )
-            logger.warning('startworkshop8')
         else:
             history = PlayerHistory.objects.filter(player_workshop=player_workshop).last()
-            logger.warning('player history is causing bug1')
         if history is None:
-            logger.warning('player history is causing bug1')
             return Response({"error": "تاریخچه‌ی شرکت کاربر در کارگاه یافت نشد. به ما اطلاع دهید."},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                            status=status.HTTP_404_NOT_FOUND)
         # current_state = player_workshop.current_state
         player_data = PlayerSerializer().to_representation(player_workshop.player)
         player_workshop_id = player_workshop.id
