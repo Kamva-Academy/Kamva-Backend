@@ -87,6 +87,8 @@ def send_answer(request):
     # history = participant.team.histories.filter(state=participant.team.current_state.id)[0]
     # instance.team_history = history
     # instance.participant = participant
+    if instance is None:
+        return Response({'error': 'یه بار ثبت کردی همین جواب رو دیگه!'}, status=status.HTTP_400_BAD_REQUEST)
     instance.save()
     correct_answer = getattr(sys.modules[__name__], request.data['problem_type']).objects.get(
         id=request.data['problem']).answer

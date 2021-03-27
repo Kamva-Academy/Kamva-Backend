@@ -390,6 +390,8 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         validated_data.pop('answer')
+        if len(SubmittedAnswer.objects.filter(**validated_data)) <= 0:
+            return None
         instance = SubmittedAnswer.objects.create(**validated_data)
 
         serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
