@@ -310,7 +310,7 @@ def mentor_mark_submission(request):
         if tr.is_valid:
             tr.is_valid = False
             tr.save()
-    logger.info(list(invalid_transactions))
+    # logger.info(list(invalid_transactions))
     new_tr = ScoreTransaction.objects.create(score=score,
                                              player_workshop=player_workshop,
                                              description=description,
