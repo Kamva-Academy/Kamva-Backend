@@ -172,8 +172,8 @@ def mentor_get_all_problems(request):
         states_result = []
         for state in states:
             problems = Problem.objects.filter(state=state).values('id', 'name')
-            states_result.append({'id': state.id, 'name': state.name, 'problems': problems})
-        result.append({'id': fsm.id, 'name': fsm.name, 'states': states_result})
+            states_result.append({'state_id': state.id, 'state_name': state.name, 'problems': problems})
+        result.append({'fsm_id': fsm.id, 'fsm_name': fsm.name, 'states': states_result})
 
     return Response(result, status=status.HTTP_200_OK)
 
@@ -233,10 +233,10 @@ def mentor_get_submissions(request):
                                   'is_valid': s_a.is_valid}
                         submit_result['review'] = review
                     submissions_result.append(submit_result)
-                problems_result.append(
-                    {'id': p.id, 'name': p.name, 'max_score': p.max_score, 'submissions': submissions_result})
-            states_result.append({'id': s.id, 'name': s.name, 'problems': problems_result})
-        result.append({'id': f.id, 'name': f.name, 'states': states_result})
+                problems_result.append({'problem_id': p.id, 'problem_name': p.name, 'max_score': p.max_score,
+                                        'submissions': submissions_result})
+            states_result.append({'state_id': s.id, 'state_name': s.name, 'problems': problems_result})
+        result.append({'fsm_id': f.id, 'fsm_name': f.name, 'states': states_result})
 
     return Response(result, status=status.HTTP_200_OK)
 
