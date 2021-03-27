@@ -387,14 +387,12 @@ def user_workshops(request):
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def user_workshops_description(request):
     participant = get_participant(request.user)
-    workshops = []
-    for pw in PlayerWorkshop.objects.filter(player=participant):
-        workshops.append(pw.workshop)
+    if not participant:
+        return Response({'participant not Found'}, status=status.HTTP_404_NOT_FOUND)
     team = participant.event_team
-    if team:
-        for pw in PlayerWorkshop.objects.filter(player=team):
-            workshops.append(pw.workshop)
-
+    current_event = Event.objects.get(name="مسافر صفر")
+    workshops = FSM.objects.filter(event=current_event)
+    logger.info(list(workshops))
     result = []
     for w in workshops:
         result.append({'id': w.id,
