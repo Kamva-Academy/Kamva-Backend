@@ -387,27 +387,26 @@ def user_workshops(request):
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def user_workshops_description(request):
     participant = get_participant(request.user)
-    if request.method == 'GET':
-        individual_workshops = FSM.objects.filter(players=participant)
-        if participant.team_set.count() > 0:
-            for team in participant.team_set.all():
-                team_workshops = FSM.objects.filter(players=team)
-        workshops = (team_workshops | individual_workshops).distinct()
-        result = []
-        team = participant.event_team
-        for w in workshops:
-            result.append({'name': w.name,
-                           'description': w.description,
-                           'cover_page': w.cover_page.url if w.cover_page else None,
-                           'active': w.active,
-                           'fsm_p_type': w.fsm_p_type,
-                           'fsm_learning_type': w.fsm_learning_type,
-                           'has_lock': w.lock and len(w.lock) > 0,
-                           'has_started': get_player_workshop(participant, w) or get_player_workshop(team, w)})
+    workshops = []
+    for pw in PlayerWorkshop.objects.filter(player=participant):
+        workshops.append(pw)
+    team = participant.event_team
+    if team:
+        for pw in PlayerWorkshop.objects.filter(player=team):
+            workshops.append(pw)
+
+    result = []
+    for w in workshops:
+        result.append({'name': w.name,
+                       'description': w.description,
+                       'cover_page': w.cover_page.url if w.cover_page else None,
+                       'active': w.active,
+                       'fsm_p_type': w.fsm_p_type,
+                       'fsm_learning_type': w.fsm_learning_type,
+                       'has_lock': w.lock and len(w.lock) > 0,
+                       'has_started': get_player_workshop(participant, w) or get_player_workshop(team, w)})
 
         return Response(result, status=status.HTTP_200_OK)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @transaction.atomic

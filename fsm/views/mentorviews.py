@@ -260,8 +260,8 @@ def mentor_get_submissions(request):
                     try:
                         if s_a.review:
                             review = {'score': s_a.review.score,
-                                      'description': s_a.description,
-                                      'is_valid': s_a.is_valid}
+                                      'description': s_a.review.description,
+                                      'is_valid': s_a.review.is_valid}
                             submit_result['review'] = review
                     except ScoreTransaction.DoesNotExist:
                         logger.info(f'not found any score transaction for submission{s_a.id}')
@@ -314,4 +314,4 @@ def mentor_mark_submission(request):
     for tr in invalid_transactions:
         if tr.is_valid:
             tr.is_valid = False
-    return Response({'new_score': new_tr}, status=status.HTTP_201_CREATED)
+    return Response(status=status.HTTP_201_CREATED)
