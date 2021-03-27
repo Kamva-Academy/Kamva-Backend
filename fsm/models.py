@@ -177,8 +177,8 @@ class Image(Widget):
 
 class Problem(Widget):
     name = models.CharField(max_length=100, null=True)
-    text = models.TextField()
-    max_score = models.FloatField()
+    text = models.TextField(null=True, blank=True)
+    max_score = models.FloatField(null=True, blank=True)
     objects = InheritanceManager()
 
 
