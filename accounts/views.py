@@ -97,6 +97,7 @@ class ObtainTokenPair(TokenObtainPairView):
         return Response(validated_data, status=status.HTTP_200_OK)
 
 
+
 class ChangePassword(APIView):
     # parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
