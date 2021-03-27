@@ -406,7 +406,7 @@ def user_workshops_description(request):
                        'has_started': not ((get_player_workshop(participant, w) is None) and (
                                get_player_workshop(team, w) is None))})
 
-        return Response(result, status=status.HTTP_200_OK)
+    return Response(result, status=status.HTTP_200_OK)
 
 
 @transaction.atomic
