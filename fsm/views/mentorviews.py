@@ -223,23 +223,23 @@ def mentor_get_submissions(request):
                                      'submission_date': s_a.publish_date,
                                      'answer_id': ans.id}
                     if p.widget_type == 'ProblemUploadFileAnswer':
-                        submit_result['answer_file_url'] = ans.answer_file.url
-                        submit_result['answer_file_name'] = ans.file_name
+                        submit_result['answer_file_url'] = ans.uploadFileAnswer.answer_file.url
+                        submit_result['answer_file_name'] = ans.uploadFileAnswer.file_name
                     elif p.widget_type == 'ProblemMultiChoice':
                         try:
-                            submit_result['answer_text'] = ans.MultiChoiceAnswer.text
+                            submit_result['answer_text'] = ans.multiChoiceAnswer.text
                         except:
                             logger.warning('answer was not MultiChoice')
                             continue
                     elif p.widget_type == 'ProblemSmallAnswer':
                         try:
-                            submit_result['answer_text'] = ans.SmallAnswer.text
+                            submit_result['answer_text'] = ans.smallAnswer.text
                         except:
                             logger.warning('answer was not SmallAnswer')
                             continue
                     elif p.widget_type == 'ProblemBigAnswer':
                         try:
-                            submit_result['answer_text'] = ans.BigAnswer.text
+                            submit_result['answer_text'] = ans.bigAnswer.text
                         except:
                             logger.warning('answer was not BigAnswer')
                             continue
