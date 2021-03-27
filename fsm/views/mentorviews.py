@@ -16,12 +16,13 @@ from fsm.views.functions import *
 from notifications.models import Notification
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 @transaction.atomic
 @api_view(['POST'])
-@permission_classes( [permissions.IsAuthenticated, customPermissions.MentorPermission, ])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def edit_edges(request):
     serializer = EditEdgesSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
@@ -29,8 +30,8 @@ def edit_edges(request):
     try:
         state = FSMState.objects.filter(id=serializer.validated_data['tail'])[0]
     except:
-        return Response("state not found",status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response("state not found", status=status.HTTP_400_BAD_REQUEST)
+
     data = []
     ids = []
     index = 0
@@ -43,11 +44,12 @@ def edit_edges(request):
             instance = FSMEdgeSerializer().create(edge_data)
         data.append(FSMEdgeSerializer().to_representation(instance))
         ids.append(instance.id)
-        index +=1
+        index += 1
     for edge in FSMEdge.objects.filter(tail=state):
         if edge.id not in ids:
             edge.delete()
     return Response(data, status=status.HTTP_200_OK)
+
 
 @transaction.atomic
 @api_view(['POST'])
@@ -78,7 +80,7 @@ def get_team_history(request):
     try:
         team = Team.objects.filter(id=request.data['team'])[0]
     except:
-        return Response("team not found",status=status.HTTP_400_BAD_REQUEST)
+        return Response("team not found", status=status.HTTP_400_BAD_REQUEST)
     history = team.histories.filter(state=team.current_state.id)[0]
     serializer = TeamHistorySerializer(history)
     data = serializer.data
@@ -98,14 +100,16 @@ def submit_team(request):
     validated_data['pk'] = history.pk
     history.delete()
     history = PlayerHistory.objects.create(**validated_data)
-    logger.info(f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
+    logger.info(
+        f'mentor {request.user} changed state team {history.team.id} from {history.team.current_state.name} to {history.edge.head.name}')
     team_change_current_state(history.team, history.edge.head)
     data = TeamHistorySerializer().to_representation(history)
     return Response(data, status=status.HTTP_200_OK)
 
-#create history auto
-#get history
-#clock + state
+
+# create history auto
+# get history
+# clock + state
 
 @transaction.atomic
 @api_view(['POST'])
@@ -159,12 +163,117 @@ def mentor_get_player_state(request):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated,])
-def mentor_get_fsm_and_states(request):
+@permission_classes([permissions.IsAuthenticated, ])
+def mentor_get_all_problems(request):
     result = []
-    fsms = list(FSM.objects.all())
+    fsms = FSM.objects.all()
     for fsm in fsms:
-        states = MainState.objects.filter(fsm=fsm).values_list('id', 'name')
-        result.append({'id': fsm.id, 'name': fsm.name, 'states': states})
+        states = MainState.objects.filter(fsm=fsm)
+        states_result = []
+        for state in states:
+            problems = Problem.objects.filter(state=state).values('id', 'name')
+            states_result.append({'id': state.id, 'name': state.name, 'problems': problems})
+        result.append({'id': fsm.id, 'name': fsm.name, 'states': states_result})
 
     return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission])
+def mentor_get_submissions(request):
+    fsm_id = request.data.get('fsm_id', None)
+    state_id = request.data.get('state_id', None)
+    problem_id = request.data.get('problem_id', None)
+    fsm = FSM.objects.filter(id=fsm_id).last()
+    state = FSM.objects.filter(id=state_id).last()
+    problem = FSM.objects.filter(id=problem_id).last()
+
+    result = []
+
+    if fsm and state and state.fsm != fsm:
+        return Response([], status=status.HTTP_400_BAD_REQUEST)
+    if fsm and state and problem and problem.state != state:
+        return Response([], status=status.HTTP_400_BAD_REQUEST)
+
+    fsms = FSM.objects.all()
+    if fsm:
+        fsms = fsms.filter(id=fsm.id)
+
+    for f in fsms:
+        states = MainState.objects.filter(fsm=f)
+        if state:
+            states = states.filter(id=state.id)
+
+        states_result = []
+        for s in states:
+            problems = Problem.objects.filter(state=s)
+            if problem:
+                problems = problems.filter(id=problem.id)
+
+            problems_result = []
+            for p in problems:
+                submitted_answers = p.submitted_answers
+                submissions_result = []
+                for s_a in submitted_answers:
+                    if s_a.answer is None:
+                        continue
+                    ans = s_a.answer
+                    submit_result = {'id': s_a.id,
+                                     'player_id': s_a.player.id,
+                                     'submission_date': s_a.publish_date,
+                                     'answer_id': ans.id}
+                    if ans is UploadFileAnswer:
+                        submit_result['answer_file_url'] = ans.answer_file.url
+                        submit_result['answer_file_name'] = ans.file_name
+                    else:
+                        submit_result['answer_text'] = ans.text
+                    if s_a.review:
+                        review = {'score': s_a.review.score,
+                                  'description': s_a.description,
+                                  'is_valid': s_a.is_valid}
+                        submit_result['review'] = review
+                    submissions_result.append(submit_result)
+                problems_result.append(
+                    {'id': p.id, 'name': p.name, 'max_score': p.max_score, 'submissions': submissions_result})
+            states_result.append({'id': s.id, 'name': s.name, 'problems': problems_result})
+        result.append({'id': f.id, 'name': f.name, 'states': states_result})
+
+    return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission])
+@transaction.atomic
+def mentor_mark_submission(request):
+    submission_id = request.data.get('submission_id', None)
+    score = request.data.get('score', None)
+    description = request.data.get('description', None)
+    submission = get_object_or_404(SubmittedAnswer, id=submission_id)
+
+    if len(ScoreTransaction.objects.filter(submitted_answer=submission)) > 0:
+        return Response({'error': 'this submission has already been marked'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if score is None:
+        return Response({'error': 'score is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    state = submission.problem.state
+    if state is MainState:
+        fsm = state.fsm
+    else:
+        fsm = state.state.fsm
+    player_workshop = get_player_workshop(submission.player, fsm)
+
+    if player_workshop is None:
+        return Response({'error': 'Player_workshop not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    new_tr = ScoreTransaction.objects.create(score=score,
+                                             player_workshop=player_workshop,
+                                             description=description,
+                                             is_valid=True,
+                                             submitted_answer=submission)
+    invalid_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop,
+                                                           submitted_answer__problem=submission.problem)
+    for tr in invalid_transactions:
+        if tr.is_valid:
+            tr.is_valid = False
+    return Response({'new_score': new_tr}, status=status.HTTP_201_CREATED)

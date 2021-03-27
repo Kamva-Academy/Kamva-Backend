@@ -78,7 +78,6 @@ class ReviewScore(APIView):
             return Response(status=HTTP_200_OK)
 
 
-
 class PlayerScoreHistoryAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

@@ -403,9 +403,8 @@ def get_scores(request):
     player_id = request.data.get('player', None)
     player = get_object_or_404(Player, id=player_id)
     player_workshop = get_player_workshop(player, fsm)
-    result = dict()
-    result['score_transactions'] = get_score_histories(player_workshop)
-    result['scores_sum'] = get_scores_sum(player_workshop)
+    result = {'score_transactions': get_score_histories(player_workshop),
+              'scores_sum': get_scores_sum(player_workshop)}
 
     return Response(result, status=status.HTTP_200_OK)
 

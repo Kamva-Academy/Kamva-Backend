@@ -171,6 +171,37 @@ class Image(Widget):
         return self.name
 
 
+class Problem(Widget):
+    name = models.CharField(max_length=100, null=True)
+    text = models.TextField()
+    max_score = models.FloatField()
+    objects = InheritanceManager()
+
+
+class ProblemSmallAnswer(Problem):
+    pass
+
+
+class ProblemBigAnswer(Problem):
+    pass
+
+
+class ProblemMultiChoice(Problem):
+    pass
+
+
+class ProblemUploadFileAnswer(Problem):
+    pass
+
+
+class Choice(models.Model):
+    problem = models.ForeignKey(ProblemMultiChoice, null=True, on_delete=models.CASCADE, related_name='choices')
+    text = models.TextField()
+
+    def __str__(self):
+        return self.text
+
+
 class Answer(models.Model):
     answer_type = models.CharField(max_length=20, default="Answer")
     objects = InheritanceManager()
@@ -201,42 +232,12 @@ class UploadFileAnswer(Answer):
     file_name = models.CharField(max_length=50)
 
 
-class Problem(Widget):
-    name = models.CharField(max_length=100, null=True)
-    text = models.TextField()
-    objects = InheritanceManager()
-
-
-class ProblemSmallAnswer(Problem):
-    pass
-
-
-class ProblemBigAnswer(Problem):
-    pass
-
-
-class ProblemMultiChoice(Problem):
-    pass
-
-
-class ProblemUploadFileAnswer(Problem):
-    pass
-
-
-class Choice(models.Model):
-    problem = models.ForeignKey(ProblemMultiChoice, null=True, on_delete=models.CASCADE, related_name='choices')
-    text = models.TextField()
-
-    def __str__(self):
-        return self.text
-
-
 class SubmittedAnswer(models.Model):
-    player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='submited_answers')
+    player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='submitted_answers')
     publish_date = models.DateTimeField(null=True, blank=True)
     # team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='answers')
     answer = models.OneToOneField(Answer, null=True, on_delete=models.CASCADE, unique=True)
-    problem = models.ForeignKey('Problem', null=True, on_delete=models.CASCADE, related_name='submited_answers')
+    problem = models.ForeignKey(Problem, null=True, on_delete=models.CASCADE, related_name='submitted_answers')
 
     def xanswer(self):
         try:
