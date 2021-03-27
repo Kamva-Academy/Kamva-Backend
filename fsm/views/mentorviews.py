@@ -257,11 +257,15 @@ def mentor_get_submissions(request):
                             continue
                     else:
                         continue
-                    if s_a.review:
-                        review = {'score': s_a.review.score,
-                                  'description': s_a.description,
-                                  'is_valid': s_a.is_valid}
-                        submit_result['review'] = review
+                    try:
+                        if s_a.review:
+                            review = {'score': s_a.review.score,
+                                      'description': s_a.description,
+                                      'is_valid': s_a.is_valid}
+                            submit_result['review'] = review
+                    except ScoreTransaction.DoesNotExist:
+                        logger.info(f'not found any score transaction for submission{s_a.id}')
+                        pass
                     submissions_result.append(submit_result)
                 problems_result.append({'problem_id': p.id, 'problem_name': p.name, 'max_score': p.max_score,
                                         'submissions': submissions_result})
