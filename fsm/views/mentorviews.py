@@ -212,6 +212,7 @@ def mentor_get_submissions(request):
             submit_result = {'id': s_a.id,
                              'player_id': s_a.player.id,
                              'problem_id': p.id,
+                             'problem_name': p.name,
                              'submission_date': s_a.publish_date,
                              'answer_id': ans.id}
             if p.widget_type == 'ProblemUploadFileAnswer':

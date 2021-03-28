@@ -106,6 +106,8 @@ def get_score_histories(player_workshop):
              'player_workshop': s.player_workshop.id,
              'score': s.score,
              'submitted_answer': s.submitted_answer.id if s.submitted_answer is not None else None,
+             'problem_name': s.submitted_answer.problem.name if (s.submitted_answer is not None) and (
+                     s.submitted_answer.problem is not None) else None,
              'problem_id': s.submitted_answer.problem.id if (s.submitted_answer is not None) and (
                      s.submitted_answer.problem is not None) else None} for s in score_transactions]
 
