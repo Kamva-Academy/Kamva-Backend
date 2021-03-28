@@ -307,6 +307,25 @@ def player_go_forward_on_edge(request):
 
 
 @transaction.atomic
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_team(request):
+    participant = get_participant(request.user)
+    team = participant.event_team
+    result = {'team_id': team.id,
+              'team_name': team.group_name,
+              'team_uuid': team.uuid,
+              'team_code': team.team_code,
+              'participants': []}
+    for p in team.team_participants:
+        result['participants'].append({'team_member_id': p.id,
+                                       'team_member_name': p.member.first_name,
+                                       'team_member_uuid': p.member.uuid,
+                                       'is_me': participant == p})
+    return Response(result, status=status.HTTP_200_OK)
+
+
+@transaction.atomic
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def player_go_backward_on_edge(request):

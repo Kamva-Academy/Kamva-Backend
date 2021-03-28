@@ -54,6 +54,7 @@ urlpatterns = [
      # path('gobackto/', team_go_back_to_state),
      path('visitteam/', go_to_team),
      path('requestmentor/', request_mentor),
+     path('get_team/', get_team, name="get_team"),
 
      # new ones
      path('userworkshops/', user_workshops, name="user_workshops"),
