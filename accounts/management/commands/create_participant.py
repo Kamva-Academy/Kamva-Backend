@@ -15,6 +15,8 @@ class Command(BaseCommand):
             username = f'user_{i}'
             password = '123456'
 
+            print(Member.objects.get(username=username).delete())
+
             current_event = Event.objects.get(name='مسافر صفر')
 
             team_code = Member.objects.make_random_password(length=6)
@@ -29,6 +31,9 @@ class Command(BaseCommand):
                 member=member,
                 event=current_event,
                 player_type='PARTICIPANT',
+                is_paid=True,
+                is_accepted=True,
+                is_participated=True,
             )
 
             team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
