@@ -216,7 +216,7 @@ def mentor_get_submissions(request):
                 submitted_answers = p.submitted_answers
                 submissions_result = []
 
-                logger.info(submitted_answers.objects.values('player', 'problem').annotate(last_submission=Max('publish_date')))
+                # logger.info(submitted_answers.objects.values('player', 'problem').annotate(last_submission=Max('publish_date')))
 
                 for s_a in submitted_answers.all():
                     if s_a.answer is None:
