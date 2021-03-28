@@ -184,98 +184,80 @@ def mentor_get_all_problems(request):
 def mentor_get_submissions(request):
     fsm_id = request.data.get('fsm_id', None)
     state_id = request.data.get('state_id', None)
+    if not fsm_id or not state_id:
+        return Response([], status=status.HTTP_400_BAD_REQUEST)
+
     problem_id = request.data.get('problem_id', None)
-    fsm = FSM.objects.filter(id=fsm_id).last()
-    state = MainState.objects.filter(id=state_id).last()
+    f = FSM.objects.filter(id=fsm_id).last()
+    s = MainState.objects.filter(id=state_id).last()
     problem = Problem.objects.filter(id=problem_id).last()
 
+    if f and s and s.fsm != f:
+        return Response([], status=status.HTTP_400_BAD_REQUEST)
+    if f and s and problem and problem.state != s:
+        return Response([], status=status.HTTP_400_BAD_REQUEST)
+
+    problems = Problem.objects.filter(state=s)
+    if problem:
+        problems = problems.filter(id=problem.id)
+
     result = []
+    for p in problems:
+        submitted_answers = p.submitted_answers
 
-    if fsm and state and state.fsm != fsm:
-        return Response([], status=status.HTTP_400_BAD_REQUEST)
-    if fsm and state and problem and problem.state != state:
-        return Response([], status=status.HTTP_400_BAD_REQUEST)
-
-    fsms = FSM.objects.all()
-    if fsm:
-        fsms = fsms.filter(id=fsm.id)
-
-    for f in fsms:
-        states = MainState.objects.filter(fsm=f)
-        if state:
-            states = states.filter(id=state.id)
-
-        states_result = []
-        for s in states:
-            problems = Problem.objects.filter(state=s)
-            if problem:
-                problems = problems.filter(id=problem.id)
-
-            problems_result = []
-            for p in problems:
-                submitted_answers = p.submitted_answers
-                submissions_result = []
-
-                # logger.info(submitted_answers.objects.values('player', 'problem').annotate(last_submission=Max('publish_date')))
-
-                for s_a in submitted_answers.all():
-                    if s_a.answer is None:
-                        continue
-                    ans = s_a.answer
-                    submit_result = {'id': s_a.id,
-                                     'player_id': s_a.player.id,
-                                     'submission_date': s_a.publish_date,
-                                     'answer_id': ans.id}
-                    if p.widget_type == 'ProblemUploadFileAnswer':
-                        try:
-                            upload_file_answer = UploadFileAnswer.objects.filter(answer_ptr_id=ans.id).last()
-                            submit_result['answer_file_url'] = upload_file_answer.answer_file.url
-                            submit_result['answer_file_name'] = upload_file_answer.file_name
-                        except Exception as e:
-                            logger.warning('answer was not UploadFile')
-                            logger.warning(str(e))
-                            continue
-                    elif p.widget_type == 'ProblemMultiChoice':
-                        try:
-                            multi_choice_answer = MultiChoiceAnswer.objects.filter(answer_ptr_id=ans.id).last()
-                            submit_result['answer_text'] = multi_choice_answer.text
-                        except Exception as e:
-                            logger.warning('answer was not MultiChoice')
-                            logger.warning(str(e))
-                            continue
-                    elif p.widget_type == 'ProblemSmallAnswer':
-                        try:
-                            small_answer = SmallAnswer.objects.filter(answer_ptr_id=ans.id).last()
-                            submit_result['answer_text'] = small_answer.text
-                        except Exception as e:
-                            logger.warning('answer was not SmallAnswer')
-                            logger.warning(str(e))
-                            continue
-                    elif p.widget_type == 'ProblemBigAnswer':
-                        try:
-                            big_answer = BigAnswer.objects.filter(answer_ptr_id=ans.id).last()
-                            submit_result['answer_text'] = big_answer.text
-                        except Exception as e:
-                            logger.warning('answer was not BigAnswer')
-                            logger.warning(str(e))
-                            continue
-                    else:
-                        continue
-                    try:
-                        if s_a.review:
-                            review = {'score': s_a.review.score,
-                                      'description': s_a.review.description,
-                                      'is_valid': s_a.review.is_valid}
-                            submit_result['review'] = review
-                    except ScoreTransaction.DoesNotExist:
-                        logger.info(f'not found any score transaction for submission{s_a.id}')
-                        pass
-                    submissions_result.append(submit_result)
-                problems_result.append({'problem_id': p.id, 'problem_name': p.name, 'max_score': p.max_score,
-                                        'submissions': submissions_result})
-            states_result.append({'state_id': s.id, 'state_name': s.name, 'problems': problems_result})
-        result.append({'fsm_id': f.id, 'fsm_name': f.name, 'states': states_result})
-
+        for s_a in submitted_answers.all():
+            if s_a.answer is None:
+                continue
+            ans = s_a.answer
+            submit_result = {'id': s_a.id,
+                             'player_id': s_a.player.id,
+                             'problem_id': p.id,
+                             'submission_date': s_a.publish_date,
+                             'answer_id': ans.id}
+            if p.widget_type == 'ProblemUploadFileAnswer':
+                try:
+                    upload_file_answer = UploadFileAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                    submit_result['answer_file_url'] = upload_file_answer.answer_file.url
+                    submit_result['answer_file_name'] = upload_file_answer.file_name
+                except Exception as e:
+                    logger.warning('answer was not UploadFile')
+                    logger.warning(str(e))
+                    continue
+            elif p.widget_type == 'ProblemMultiChoice':
+                try:
+                    multi_choice_answer = MultiChoiceAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                    submit_result['answer_text'] = multi_choice_answer.text
+                except Exception as e:
+                    logger.warning('answer was not MultiChoice')
+                    logger.warning(str(e))
+                    continue
+            elif p.widget_type == 'ProblemSmallAnswer':
+                try:
+                    small_answer = SmallAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                    submit_result['answer_text'] = small_answer.text
+                except Exception as e:
+                    logger.warning('answer was not SmallAnswer')
+                    logger.warning(str(e))
+                    continue
+            elif p.widget_type == 'ProblemBigAnswer':
+                try:
+                    big_answer = BigAnswer.objects.filter(answer_ptr_id=ans.id).last()
+                    submit_result['answer_text'] = big_answer.text
+                except Exception as e:
+                    logger.warning('answer was not BigAnswer')
+                    logger.warning(str(e))
+                    continue
+            else:
+                continue
+            try:
+                if s_a.review:
+                    review = {'score': s_a.review.score,
+                              'description': s_a.review.description,
+                              'is_valid': s_a.review.is_valid}
+                    submit_result['review'] = review
+            except ScoreTransaction.DoesNotExist:
+                pass
+            result.append(submit_result)
     return Response(result, status=status.HTTP_200_OK)
 
 

@@ -100,11 +100,15 @@ def get_participant(user, event="مسافر صفر"):
 
 def get_score_histories(player_workshop):
     score_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop)
-    serialized = ScoreTransactionsSerializer(score_transactions, many=True)
-    return serialized.data
+    return [{'description': s.description,
+             'id': s.id,
+             'is_valid': True,
+             'player_workshop': s.player_workshop.id,
+             'score': s.score,
+             'submitted_answer': s.submitted_answer.id,
+             'problem_id': s.submitted_answer.problem.id} for s in score_transactions]
 
 
 def get_scores_sum(player_workshop):
     sum_scores = ScoreTransaction.objects.filter(player_workshop=player_workshop, is_valid=True).aggregate(Sum('score'))
-    logger.info(sum_scores)
-    return sum_scores.get('score__sum', None)
+    return sum_scores.get('score__sum', 0)
