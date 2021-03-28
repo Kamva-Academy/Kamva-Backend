@@ -213,6 +213,7 @@ def mentor_get_submissions(request):
                              'player_id': s_a.player.id,
                              'problem_id': p.id,
                              'problem_name': p.name,
+                             'state_name': p.state.name,
                              'submission_date': s_a.publish_date,
                              'answer_id': ans.id}
             if p.widget_type == 'ProblemUploadFileAnswer':

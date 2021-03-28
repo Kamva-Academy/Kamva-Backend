@@ -289,6 +289,10 @@ def player_go_forward_on_edge(request):
         last_state_history.save()
         PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(),
                                      state=edge.head)
+    elif player_workshop.current_state == edge.head:
+        state_result = player_state(player_workshop.current_state, player_workshop)
+        return Response(state_result,
+                        status=status.HTTP_200_OK)
     else:
         logger.warning(
             f'illegal transmission - player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
