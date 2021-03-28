@@ -1,4 +1,5 @@
 from django.core.paginator import Paginator
+from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -214,6 +215,9 @@ def mentor_get_submissions(request):
             for p in problems:
                 submitted_answers = p.submitted_answers
                 submissions_result = []
+
+                logger.info(submitted_answers.objects.values('player', 'problem').annotate(last_submission=Max('publish_date')))
+
                 for s_a in submitted_answers.all():
                     if s_a.answer is None:
                         continue

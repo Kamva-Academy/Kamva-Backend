@@ -255,7 +255,7 @@ def player_go_forward_on_edge(request):
 
     if player_workshop.current_state == edge.tail:
 
-        if len(PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.head, inward_edge=edge)) < 0:
+        if len(PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.head, inward_edge=edge)) <= 0:
             player_workshop_score = get_scores_sum(player_workshop)
             if player_workshop_score - edge.cost < edge.min_score:
                 result = {'error': 'امتیاز شما برای ورود به این گام کافی نیست'}
