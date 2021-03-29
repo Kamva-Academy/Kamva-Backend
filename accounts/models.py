@@ -236,7 +236,7 @@ class Participant(Player):
 
 
 class Team(Player):
-    group_name = models.CharField(max_length=30, blank=True)
+    group_name = models.CharField(max_length=200, blank=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     team_code = models.CharField(max_length=10)
 
