@@ -22,8 +22,6 @@ DB_PORT = get_environment_var('DB_PORT', '5432')
 REDIS_HOST = get_environment_var('REDIS_HOST', 'localhost')
 REDIS_PORT = get_environment_var('REDIS_PORT', '6379')
 
-redis_instance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
