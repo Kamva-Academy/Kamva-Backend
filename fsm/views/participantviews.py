@@ -253,7 +253,7 @@ def player_go_forward_on_edge(request):
 
     player_workshop_lock = redis_instance.get(player_workshop.id)
     logger.info(f'player_workshop_lock: {player_workshop_lock}')
-    if player_workshop_lock == 'locked':
+    if player_workshop_lock:
         return Response({'error': 'چه خبرتونه! چه خبرتوووونهههه! یه نفر از گروهتون داره جابجاتون می‌کنه دیگه'},
                         status=status.HTTP_400_BAD_REQUEST)
     redis_instance.set(player_workshop.id, 'locked')
