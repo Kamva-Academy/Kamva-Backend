@@ -307,6 +307,7 @@ def player_go_forward_on_edge(request):
 
 
 @transaction.atomic
+@permission_classes([permissions.AllowAny])
 @api_view(['GET'])
 def get_team(request):
     logger.info('1')
