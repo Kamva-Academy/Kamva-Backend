@@ -102,7 +102,7 @@ def get_score_histories(player_workshop):
     score_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop)
     return [{'description': s.description,
              'id': s.id,
-             'is_valid': True,
+             'is_valid': s.is_valid,
              'player_workshop': s.player_workshop.id,
              'score': s.score,
              'submitted_answer': s.submitted_answer.id if s.submitted_answer is not None else None,
