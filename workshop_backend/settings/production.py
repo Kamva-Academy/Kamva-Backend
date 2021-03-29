@@ -19,8 +19,8 @@ DB_PASS = get_environment_var('DB_PASS', 'p4s$pAsS')
 DB_HOST = get_environment_var('DB_HOST', 'localhost')
 DB_PORT = get_environment_var('DB_PORT', '5432')
 
-# REDIS_HOST = get_environment_var('REDIS_HOST', 'localhost')
-# REDIS_PORT = get_environment_var('REDIS_PORT', '6379')
+REDIS_HOST = get_environment_var('REDIS_HOST', 'localhost')
+REDIS_PORT = get_environment_var('REDIS_PORT', '6379')
 
 DATABASES = {
     'default': {
