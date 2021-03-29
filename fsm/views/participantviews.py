@@ -1,7 +1,7 @@
 import json
 import os
 
-import redis
+# import redis
 from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from scoring.models import ScoreTransaction
-from workshop_backend.settings.production import REDIS_HOST, REDIS_PORT
+# from workshop_backend.settings.production import REDIS_HOST, REDIS_PORT
 from .permissions import ParticipantPermission
 
 from django.contrib.contenttypes.models import ContentType
@@ -31,7 +31,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-redis_instance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+# redis_instance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
 
 # @transaction.atomic
@@ -251,11 +251,12 @@ def player_go_forward_on_edge(request):
     fsm = edge.tail.fsm
     player_workshop = get_player_workshop(player, fsm)
 
-    player_workshop_lock = redis_instance.get(player_workshop.id)
-    logger.info(f'player_workshop_lock: {player_workshop_lock}')
-    if player_workshop_lock == 'locked':
-        return Response({'error': 'چه خبرتونه! چه خبرتوووونهههه! یه نفر از گروهتون داره جابجاتون می‌کنه دیگه'}, status=status.HTTP_400_BAD_REQUEST)
-    redis_instance.set(player_workshop.id, 'locked')
+    # player_workshop_lock = redis_instance.get(player_workshop.id)
+    # logger.info(f'player_workshop_lock: {player_workshop_lock}')
+    # if player_workshop_lock == 'locked':
+    #     return Response({'error': 'چه خبرتونه! چه خبرتوووونهههه! یه نفر از گروهتون داره جابجاتون می‌کنه دیگه'}, status=status.HTTP_400_BAD_REQUEST)
+    # redis_instance.set(player_workshop.id, 'locked')
+
     # if fsm.fsm_p_type == 'hybrid':
     #     player = get_participant(request.user)
 
@@ -270,18 +271,18 @@ def player_go_forward_on_edge(request):
                 player_workshop_score = 0
             if player_workshop_score - edge.cost < edge.min_score:
                 result = {'error': 'امتیاز شما برای ورود به این گام کافی نیست'}
-                redis_instance.delete(player_workshop.id)
+                # redis_instance.delete(player_workshop.id)
                 return Response(result, status=status.HTTP_403_FORBIDDEN)
 
             if edge.lock and len(edge.lock) > 0:
                 if not key:
                     result = {'error': 'ورود به این گام قفل شده است؛ لطفا کلیدی وارد کنید.'}
-                    redis_instance.delete(player_workshop.id)
+                    # redis_instance.delete(player_workshop.id)
                     return Response(result, status=status.HTTP_403_FORBIDDEN)
                 else:
                     if key != edge.lock:
                         result = {'error': 'کلید واردشده معتبر نیست؛ لطفا کلید معتبری وارد کنید.'}
-                        redis_instance.delete(player_workshop.id)
+                        # redis_instance.delete(player_workshop.id)
                         return Response(result, status.HTTP_403_FORBIDDEN)
 
             if edge.cost != 0:
@@ -308,7 +309,7 @@ def player_go_forward_on_edge(request):
     elif player_workshop.current_state == edge.head:
         state_result = player_state(player_workshop.current_state, player_workshop)
 
-        redis_instance.delete(player_workshop.id)
+        # redis_instance.delete(player_workshop.id)
         return Response(state_result,
                         status=status.HTTP_200_OK)
     else:
@@ -317,12 +318,12 @@ def player_go_forward_on_edge(request):
 
         state_result = player_state(player_workshop.current_state, player_workshop)
         state_result['error'] = "transmission is not accessible from this state"
-        redis_instance.delete(player_workshop.id)
+        # redis_instance.delete(player_workshop.id)
         return Response(state_result,
                         status=status.HTTP_400_BAD_REQUEST)
 
     state_result = player_state(player_workshop.current_state, player_workshop)
-    redis_instance.delete(player_workshop.id)
+    # redis_instance.delete(player_workshop.id)
     return Response(state_result, status=status.HTTP_200_OK)
 
 
