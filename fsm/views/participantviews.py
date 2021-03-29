@@ -362,7 +362,7 @@ def player_go_backward_on_edge(request):
         last_state_history.save()
         PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(),
                                      state=edge.tail)
-    elif player_workshop.current_state == edge.head:
+    elif player_workshop.current_state == edge.tail:
         state_result = player_state(player_workshop.current_state, player_workshop)
         return Response(state_result,
                         status=status.HTTP_200_OK)
