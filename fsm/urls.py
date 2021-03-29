@@ -72,5 +72,4 @@ urlpatterns = [
      # path('mentorgetplayerstate/', mentor_get_workshop_player, name="mentor_get_workshop_player"),
 ]
 
-
 urlpatterns += router.urls
