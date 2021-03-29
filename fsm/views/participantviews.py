@@ -272,12 +272,15 @@ def player_go_forward_on_edge(request):
                         result = {'error': 'کلید واردشده معتبر نیست؛ لطفا کلید معتبری وارد کنید.'}
                         return Response(result, status.HTTP_403_FORBIDDEN)
 
-            if edge.cost > 0:
-                cost_tr = ScoreTransaction.objects.create(score=-edge.cost,
-                                                          description=f'به دلیل حرکت {str(edge)}',
-                                                          player_workshop=player_workshop,
-                                                          is_valid=True,
-                                                          submitted_answer=None)
+            if edge.cost != 0:
+                description = f'به دلیل حرکت {str(edge)}'
+                if len(ScoreTransaction.objects.filter(description=description, player_workshop=player,
+                                                       score=-edge.cost)) <= 0:
+                    cost_tr = ScoreTransaction.objects.create(score=-edge.cost,
+                                                              description=description,
+                                                              player_workshop=player_workshop,
+                                                              is_valid=True,
+                                                              submitted_answer=None)
 
         player_workshop.current_state = edge.head
         player_workshop.last_visit = timezone.now()
