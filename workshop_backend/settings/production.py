@@ -1,4 +1,5 @@
 from workshop_backend.settings.base import *
+import redis
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -17,6 +18,11 @@ DB_USER = get_environment_var('DB_USER', 'user')
 DB_PASS = get_environment_var('DB_PASS', 'p4s$pAsS')
 DB_HOST = get_environment_var('DB_HOST', 'localhost')
 DB_PORT = get_environment_var('DB_PORT', '5432')
+
+REDIS_HOST = get_environment_var('REDIS_HOST', 'localhost')
+REDIS_PORT = get_environment_var('REDIS_PORT', '6379')
+
+redis_instance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
 DATABASES = {
     'default': {
