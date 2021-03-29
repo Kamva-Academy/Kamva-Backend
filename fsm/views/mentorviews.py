@@ -74,7 +74,7 @@ def get_team_outward_edges(request):
 @transaction.atomic
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
-def sam_history(request):
+def get_team_history(request):
     serializer = GetTeamHistorySerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
