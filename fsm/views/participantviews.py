@@ -322,6 +322,7 @@ def get_team(request):
                                        'team_member_name': p.member.first_name,
                                        'team_member_uuid': p.member.uuid,
                                        'is_me': participant == p})
+    logger.info(result)
     return Response(result, status=status.HTTP_200_OK)
 
 
