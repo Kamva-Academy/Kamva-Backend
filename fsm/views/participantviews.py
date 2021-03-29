@@ -310,13 +310,16 @@ def player_go_forward_on_edge(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def get_team(request):
+    logger.info('1')
     participant = get_participant(request.user)
     team = participant.event_team
+    logger.info('2')
     result = {'team_id': team.id,
               'team_name': team.group_name,
               'team_uuid': team.uuid,
               'team_code': team.team_code,
               'participants': []}
+    logger.info('3')
     for p in team.team_participants.all():
         result['participants'].append({'team_member_id': p.id,
                                        'team_member_name': p.member.first_name,
