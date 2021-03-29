@@ -96,6 +96,7 @@ class FSMEdge(models.Model):
     cost = models.FloatField(default=0.0)
     priority = models.IntegerField()
     lock = models.CharField(max_length=10, null=True, blank=True)
+    has_lock = models.BooleanField(default=False)
     text = models.TextField(null=True)
 
     def get_next_state(self, abilities):
