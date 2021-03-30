@@ -253,8 +253,9 @@ def player_go_forward_on_edge(request):
 
     player_workshop_lock = redis_instance.get(player_workshop.id)
     logger.info(f'player_workshop_lock: {player_workshop_lock}')
-    if player_workshop_lock == 'locked':
-        return Response({'error': 'چه خبرتونه! چه خبرتوووونهههه! یه نفر از گروهتون داره جابجاتون می‌کنه دیگه'}, status=status.HTTP_400_BAD_REQUEST)
+    if player_workshop_lock:
+        return Response({'error': 'چه خبرتونه! چه خبرتوووونهههه! یه نفر از گروهتون داره جابجاتون می‌کنه دیگه'},
+                        status=status.HTTP_400_BAD_REQUEST)
     redis_instance.set(player_workshop.id, 'locked')
 
     # if fsm.fsm_p_type == 'hybrid':
@@ -287,13 +288,20 @@ def player_go_forward_on_edge(request):
 
             if edge.cost != 0:
                 description = f'به دلیل حرکت {str(edge)}'
-                if len(ScoreTransaction.objects.filter(description=description, player_workshop=player,
-                                                       score=-edge.cost)) <= 0:
+                previous_transactions = ScoreTransaction.objects.filter(description=description,
+                                                                        player_workshop=player_workshop,
+                                                                        score=-edge.cost,
+                                                                        is_valid=True)
+                if len(previous_transactions) <= 0:
                     cost_tr = ScoreTransaction.objects.create(score=-edge.cost,
                                                               description=description,
                                                               player_workshop=player_workshop,
                                                               is_valid=True,
                                                               submitted_answer=None)
+                else:
+                    for tr in previous_transactions:
+                        tr.is_valid=False
+                        tr.save()
 
         player_workshop.current_state = edge.head
         player_workshop.last_visit = timezone.now()
