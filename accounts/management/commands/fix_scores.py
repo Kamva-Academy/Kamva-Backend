@@ -3,7 +3,7 @@ from accounts.models import Participant, Member, Team
 import os
 import logging
 
-from fsm.models import PlayerWorkshop, FSM, ProblemBigAnswer
+from fsm.models import PlayerWorkshop, FSM, ProblemBigAnswer, Problem
 from fsm.views.functions import get_scores_sum
 from scoring.models import ScoreTransaction
 from .users import users
@@ -15,7 +15,7 @@ class Command(BaseCommand):
     help = 'Get scores of a workshop'
 
     def handle(self, *args, **options):
-        for p in ProblemBigAnswer.objects.filter(state__fsm__id=22):
+        for p in Problem.objects.all():
             for player_workshop in PlayerWorkshop.objects.filter(workshop__id=22):
                 max_tr = None
                 for score_tr in ScoreTransaction.objects.filter(player_workshop=player_workshop,
@@ -29,9 +29,10 @@ class Command(BaseCommand):
 
                     score_tr.is_valid = False
                     score_tr.save()
-                max_tr.is_valid = True
-                print(f'for player_workshop {player_workshop.id} in problem {p.id} score{max_tr.score} is set true')
-                max_tr.save()
+                if max_tr is not None:
+                    max_tr.is_valid = True
+                    print(f'for player_workshop {player_workshop.id} in problem {p.id} score{max_tr.score} is set true')
+                    max_tr.save()
                 #
 
             # team = Team.objects.get(player_ptr_id=player_workshop.player.id)
