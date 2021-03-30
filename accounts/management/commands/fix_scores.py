@@ -14,9 +14,6 @@ logger = logging.getLogger(__file__)
 class Command(BaseCommand):
     help = 'Get scores of a workshop'
 
-    def add_arguments(self, parser):
-        parser.add_argument('workshop_id', nargs='+', type=int)
-
     def handle(self, *args, **options):
         for player_workshop in PlayerWorkshop.objects.filter(workshop__id=22):
             for score_tr in ScoreTransaction.objects.filter(player_workshop=player_workshop,
