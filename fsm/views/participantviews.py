@@ -573,6 +573,12 @@ def start_workshop(request):
                 player=team,
                 current_state=fsm.first_state,
                 last_visit=timezone.now())
+            if fsm.id > 21:
+                cost_tr = ScoreTransaction.objects.create(score=1000,
+                                                          description=f'شروع کارگاه',
+                                                          player_workshop=player_workshop,
+                                                          is_valid=True,
+                                                          submitted_answer=None)
             history = PlayerHistory.objects.create(
                 player_workshop=player_workshop,
                 state=fsm.first_state,
