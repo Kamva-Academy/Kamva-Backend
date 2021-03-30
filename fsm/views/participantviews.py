@@ -250,7 +250,7 @@ def player_go_forward_on_edge(request):
     player = get_object_or_404(Player, id=player_id)
     fsm = edge.tail.fsm
     player_workshop = get_player_workshop(player, fsm)
-    redis_instance.delete(player_workshop.id)
+
     player_workshop_lock = redis_instance.get(player_workshop.id)
     logger.info(f'player_workshop_lock: {player_workshop_lock}')
     if player_workshop_lock:
