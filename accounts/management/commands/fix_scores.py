@@ -21,6 +21,8 @@ class Command(BaseCommand):
                 if 0 < score_tr.score <= 100:
                     score = 6 * score_tr.score
                     print(f'{score_tr.score} -> {score} : {score_tr.submitted_answer.problem.id}')
+                    score_tr.score = score
+                    score_tr.save()
 
             # team = Team.objects.get(player_ptr_id=player_workshop.player.id)
             # print(f'{team.group_name}: {get_scores_sum(player_workshop)}')
