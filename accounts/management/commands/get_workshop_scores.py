@@ -14,9 +14,9 @@ class Command(BaseCommand):
     help = 'Get scores of a workshop'
 
     def add_arguments(self, parser):
-        parser.add_argument('workshop', nargs='+', type=str)
+        parser.add_argument('workshop_id', nargs='+', type=str)
 
     def handle(self, *args, **options):
-        for player_workshop in PlayerWorkshop.objects.filter(workshop=options['workshop']):
+        for player_workshop in PlayerWorkshop.objects.filter(workshop__id=options['workshop_id']):
             team = Team.objects.get(player_ptr_id=player_workshop.player.id)
             print(f'{team.group_name}: {get_scores_sum(player_workshop)}')
