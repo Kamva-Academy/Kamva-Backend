@@ -17,16 +17,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for player_workshop in PlayerWorkshop.objects.filter(workshop__id=22):
             for score_tr in ScoreTransaction.objects.filter(player_workshop=player_workshop,):
-                if -100 <= score_tr.score < 0:
-                    score = 0.1 * score_tr.score
-                    print(f'{score_tr.score} -> {score}')
-                    score_tr.score = score
+                if 0 < score_tr.score:
+                    score_tr.is_valid = True
                     score_tr.save()
 
-        for edge in FSMEdge.objects.all():
-            if edge.cost is not None and edge.cost > 0:
-                cost = edge.cost * 0.1
-                edge.cost = cost
-                edge.save()
+
             # team = Team.objects.get(player_ptr_id=player_workshop.player.id)
             # print(f'{team.group_name}: {get_scores_sum(player_workshop)}')
