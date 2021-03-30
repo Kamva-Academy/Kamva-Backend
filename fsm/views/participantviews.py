@@ -250,89 +250,91 @@ def player_go_forward_on_edge(request):
     player = get_object_or_404(Player, id=player_id)
     fsm = edge.tail.fsm
     player_workshop = get_player_workshop(player, fsm)
-
+    redis_instance.delete(player_workshop.id)
     player_workshop_lock = redis_instance.get(player_workshop.id)
     logger.info(f'player_workshop_lock: {player_workshop_lock}')
     if player_workshop_lock:
         return Response({'error': 'چه خبرتونه! چه خبرتوووونهههه! یه نفر از گروهتون داره جابجاتون می‌کنه دیگه'},
                         status=status.HTTP_400_BAD_REQUEST)
     redis_instance.set(player_workshop.id, 'locked')
+    try:
+        # if fsm.fsm_p_type == 'hybrid':
+        #     player = get_participant(request.user)
 
-    # if fsm.fsm_p_type == 'hybrid':
-    #     player = get_participant(request.user)
+        logger.info(
+            f'player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
 
-    logger.info(
-        f'player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+        if player_workshop.current_state == edge.tail:
 
-    if player_workshop.current_state == edge.tail:
-
-        if len(PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.head, inward_edge=edge)) <= 0:
-            player_workshop_score = get_scores_sum(player_workshop)
-            if player_workshop_score is None:
-                player_workshop_score = 0
-            if player_workshop_score - edge.cost < edge.min_score:
-                result = {'error': 'امتیاز شما برای ورود به این گام کافی نیست'}
-                redis_instance.delete(player_workshop.id)
-                return Response(result, status=status.HTTP_403_FORBIDDEN)
-
-            if edge.lock and len(edge.lock) > 0:
-                if not key:
-                    result = {'error': 'ورود به این گام قفل شده است؛ لطفا کلیدی وارد کنید.'}
+            if len(PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.head, inward_edge=edge)) <= 0:
+                player_workshop_score = get_scores_sum(player_workshop)
+                if player_workshop_score is None:
+                    player_workshop_score = 0
+                if player_workshop_score - edge.cost < edge.min_score:
+                    result = {'error': 'امتیاز شما برای ورود به این گام کافی نیست'}
                     redis_instance.delete(player_workshop.id)
                     return Response(result, status=status.HTTP_403_FORBIDDEN)
-                else:
-                    if key != edge.lock:
-                        result = {'error': 'کلید واردشده معتبر نیست؛ لطفا کلید معتبری وارد کنید.'}
+
+                if edge.lock and len(edge.lock) > 0:
+                    if not key:
+                        result = {'error': 'ورود به این گام قفل شده است؛ لطفا کلیدی وارد کنید.'}
                         redis_instance.delete(player_workshop.id)
-                        return Response(result, status.HTTP_403_FORBIDDEN)
+                        return Response(result, status=status.HTTP_403_FORBIDDEN)
+                    else:
+                        if key != edge.lock:
+                            result = {'error': 'کلید واردشده معتبر نیست؛ لطفا کلید معتبری وارد کنید.'}
+                            redis_instance.delete(player_workshop.id)
+                            return Response(result, status.HTTP_403_FORBIDDEN)
 
-            if edge.cost != 0:
-                description = f'به دلیل حرکت {str(edge)}'
-                previous_transactions = ScoreTransaction.objects.filter(description=description,
-                                                                        player_workshop=player_workshop,
-                                                                        score=-edge.cost,
-                                                                        is_valid=True)
-                if len(previous_transactions) <= 0:
-                    cost_tr = ScoreTransaction.objects.create(score=-edge.cost,
-                                                              description=description,
-                                                              player_workshop=player_workshop,
-                                                              is_valid=True,
-                                                              submitted_answer=None)
-                else:
-                    for tr in previous_transactions:
-                        tr.is_valid=False
-                        tr.save()
+                if edge.cost != 0:
+                    description = f'به دلیل حرکت {str(edge)}'
+                    previous_transactions = ScoreTransaction.objects.filter(description=description,
+                                                                            player_workshop=player_workshop,
+                                                                            score=-edge.cost,
+                                                                            is_valid=True)
+                    if len(previous_transactions) <= 0:
+                        cost_tr = ScoreTransaction.objects.create(score=-edge.cost,
+                                                                  description=description,
+                                                                  player_workshop=player_workshop,
+                                                                  is_valid=True,
+                                                                  submitted_answer=None)
+                    else:
+                        for tr in previous_transactions:
+                            tr.is_valid=False
+                            tr.save()
 
-        player_workshop.current_state = edge.head
-        player_workshop.last_visit = timezone.now()
-        player_workshop.save()
+            player_workshop.current_state = edge.head
+            player_workshop.last_visit = timezone.now()
+            player_workshop.save()
 
-        # player history management
-        last_state_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.tail).last()
-        last_state_history.end_time = timezone.now()
-        last_state_history.save()
-        PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(),
-                                     state=edge.head)
+            # player history management
+            last_state_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=edge.tail).last()
+            last_state_history.end_time = timezone.now()
+            last_state_history.save()
+            PlayerHistory.objects.create(player_workshop=player_workshop, inward_edge=edge, start_time=timezone.now(),
+                                         state=edge.head)
 
-    elif player_workshop.current_state == edge.head:
+        elif player_workshop.current_state == edge.head:
+            state_result = player_state(player_workshop.current_state, player_workshop)
+
+            redis_instance.delete(player_workshop.id)
+            return Response(state_result,
+                            status=status.HTTP_200_OK)
+        else:
+            logger.warning(
+                f'illegal transmission - player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
+
+            state_result = player_state(player_workshop.current_state, player_workshop)
+            state_result['error'] = "transmission is not accessible from this state"
+            redis_instance.delete(player_workshop.id)
+            return Response(state_result,
+                            status=status.HTTP_400_BAD_REQUEST)
+
         state_result = player_state(player_workshop.current_state, player_workshop)
-
         redis_instance.delete(player_workshop.id)
-        return Response(state_result,
-                        status=status.HTTP_200_OK)
-    else:
-        logger.warning(
-            f'illegal transmission - player in {player_workshop.current_state.name} trying to changed state from {edge.tail.name} to {edge.head.name}')
-
-        state_result = player_state(player_workshop.current_state, player_workshop)
-        state_result['error'] = "transmission is not accessible from this state"
+        return Response(state_result, status=status.HTTP_200_OK)
+    except:
         redis_instance.delete(player_workshop.id)
-        return Response(state_result,
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    state_result = player_state(player_workshop.current_state, player_workshop)
-    redis_instance.delete(player_workshop.id)
-    return Response(state_result, status=status.HTTP_200_OK)
 
 
 @transaction.atomic
