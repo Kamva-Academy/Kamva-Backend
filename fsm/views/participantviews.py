@@ -105,7 +105,13 @@ def send_pdf_answer(request):
     answer_file = request.data['answer_file']
     file_name = answer_file.name
     pasvand = file_name[file_name.rfind('.'):]
-    answer_file.name = str(player.id) + "-" + str(problem.id) + str(pasvand)
+    team = None
+    try:
+        team = Team.objects.get(id=request.data['player'])
+    except Team.DoesNotExist:
+        pass
+    team_name = str(team.group_name) if team else ''
+    answer_file.name = team_name + '-' + str(player.id) + "-" + str(problem.id) + str(pasvand)
 
     upload_file_answer = UploadFileAnswer.objects.create(
         answer_file=answer_file,

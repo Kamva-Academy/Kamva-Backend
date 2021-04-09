@@ -180,6 +180,16 @@ class ParticipantManager(models.Manager):
                                                  player_type='PARTICIPANT')
         return participant, password
 
+    @transaction.atomic
+    def create_participant_2(self, phone_number, name, national_code, *args, **kwargs):
+        member = Member.objects.create_user(username=phone_number, first_name=name, password=national_code)
+        member.is_mentor = False
+        member.is_participant = True
+        member.save()
+        participant = Participant.objects.create(member=member, active=True,
+                                                 player_type='PARTICIPANT')
+        return participant
+
 
 class Participant(Player):
     member = models.OneToOneField(Member, related_name='participant', on_delete=models.CASCADE, primary_key=True)
