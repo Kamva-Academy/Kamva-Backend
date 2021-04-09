@@ -105,13 +105,7 @@ def send_pdf_answer(request):
     answer_file = request.data['answer_file']
     file_name = answer_file.name
     pasvand = file_name[file_name.rfind('.'):]
-    team = None
-    try:
-        team = Team.objects.get(id=request.data['player'])
-    except Team.DoesNotExist:
-        pass
-    team_name = str(team.group_name) if team else ''
-    answer_file.name = team_name + '-' + str(player.id) + "-" + str(problem.id) + str(pasvand)
+    answer_file.name = str(problem.name) + "-" + "(" + str(problem.id) + ")" + "-" + str(player.id) + str(pasvand)
 
     upload_file_answer = UploadFileAnswer.objects.create(
         answer_file=answer_file,
@@ -123,7 +117,7 @@ def send_pdf_answer(request):
         problem=problem,
         player=player
     )
-    if len(former_answer)>0:
+    if len(former_answer) > 0:
         former_answer = former_answer[0]
         old_file = former_answer.answer.uploadfileanswer.answer_file
         former_answer.delete()
@@ -259,6 +253,9 @@ def player_go_forward_on_edge(request):
 
         # player history management
         last_state_history = PlayerHistory.objects.filter(player=player, state=edge.tail).last()
+        # TODO dirty code
+        # if last_state_history is None:
+        #     last_state_history = PlayerHistory.objects.create(player=player, state=edge.tail, start_time=timezone.now())
         last_state_history.end_time = timezone.now()
         last_state_history.save()
         PlayerHistory.objects.create(player=player, edge=edge, start_time=timezone.now(), state=edge.head)
