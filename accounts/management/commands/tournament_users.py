@@ -1,3 +1,4 @@
+
 tournament_teams = {
     't1': [
         {

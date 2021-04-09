@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
+
+from accounts.management.commands.tournament_users import tournament_teams
 from accounts.models import Participant, Team
 import logging
-from tournament_users import tournament_teams
 from fsm.models import FSM, PlayerWorkshop
 
 logger = logging.getLogger(__file__)
