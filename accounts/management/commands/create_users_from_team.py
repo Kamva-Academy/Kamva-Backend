@@ -21,17 +21,17 @@ class Command(BaseCommand):
             event = Event.objects.get(id=1)
             for team in tournament_teams[mode]:
                 user_1 = Participant.objects.create_participant_2(
-                    phone_number=team['phone_1'],
+                    phone_number=team['password_1'],
                     name=team['name_1'],
                     national_code=team['password_1'],
                 )
                 user_2 = Participant.objects.create_participant_2(
-                    phone_number=team['phone_2'],
+                    phone_number=team['password_2'],
                     name=team['name_2'],
                     national_code=team['password_2'],
                 )
                 user_3 = Participant.objects.create_participant_2(
-                    phone_number=team['phone_3'],
+                    phone_number=team['password_3'],
                     name=team['name_3'],
                     national_code=team['password_3'],
                 )
