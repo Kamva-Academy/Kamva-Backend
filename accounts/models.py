@@ -27,30 +27,18 @@ from workshop_backend.settings.base import KAVENEGAR_TOKEN
 logger = logging.getLogger(__file__)
 
 
-#
-# class ParticipantStatus(Enum):
-#     Pending = 'Pending'
-#     Verified = 'Verified'
-#     Rejected = 'Rejected'
-
 class User(AbstractUser):
     class Gender(models.TextChoices):
         Man = 'Man'
         Woman = 'Woman'
 
-    first_name = models.CharField(max_length=40, blank=True, null=True)
-    last_name = models.CharField(max_length=40, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     city = models.CharField(max_length=20, null=True, blank=True)
-    gender = models.CharField(max_length=10, null=True, blank=True,
-                              choices=Gender.choices)
+    gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
-    def __str__(self):
-        return f'{self.first_name} {self.last_name}'
 
-
-class Member(AbstractUser):
+class Member(AbstractBaseUser):
     class Grade(models.TextChoices):
         Pre = 'پیش‌ از دبستان'
         One = 'اول'
@@ -70,10 +58,13 @@ class Member(AbstractUser):
         Man = 'Man'
         Woman = 'Woman'
 
+    username = models.CharField(unique=True, max_length=15, blank=True, null=True)
     is_participant = models.BooleanField(default=True)
     is_mentor = models.BooleanField(default=False)
     is_event_owner = models.BooleanField(default=False)
-
+    first_name = models.CharField(max_length=15, blank=True, null=True)
+    last_name = models.CharField(max_length=15, blank=True, null=True)
+    email = models.CharField(max_length=15, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     school = models.CharField(max_length=50, null=True, blank=True)
     city = models.CharField(max_length=20, null=True, blank=True)
@@ -83,6 +74,8 @@ class Member(AbstractUser):
     grade = models.CharField(max_length=15, null=True, blank=True,
                              choices=Grade.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+
+    USERNAME_FIELD = 'username'
 
     def send_signup_email(self, base_url, password=''):
         options = {
