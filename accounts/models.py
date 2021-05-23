@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser, Group, Permission
@@ -31,6 +32,22 @@ logger = logging.getLogger(__file__)
 #     Pending = 'Pending'
 #     Verified = 'Verified'
 #     Rejected = 'Rejected'
+
+class User(AbstractUser):
+    class Gender(models.TextChoices):
+        Man = 'Man'
+        Woman = 'Woman'
+
+    first_name = models.CharField(max_length=40, blank=True, null=True)
+    last_name = models.CharField(max_length=40, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    city = models.CharField(max_length=20, null=True, blank=True)
+    gender = models.CharField(max_length=10, null=True, blank=True,
+                              choices=Gender.choices)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+
+    def __str__(self):
+        return f'{self.first_name} {self.last_name}'
 
 
 class Member(AbstractUser):
@@ -267,7 +284,8 @@ class Payment(models.Model):
     status = models.CharField(blank=False, choices=STATUS_CHOICE, max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     uniq_code = models.CharField(blank=False, max_length=100, default="")
-    discount_code = models.ForeignKey('accounts.DiscountCode', related_name="payments", on_delete=models.CASCADE, null=True)
+    discount_code = models.ForeignKey('accounts.DiscountCode', related_name="payments", on_delete=models.CASCADE,
+                                      null=True)
 
     def __str__(self):
         return self.uniq_code

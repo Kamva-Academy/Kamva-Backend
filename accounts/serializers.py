@@ -7,6 +7,8 @@ from .models import Member, Participant, Team
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
+
+
     @classmethod
     def get_token(cls, user):
         token = super(MyTokenObtainPairSerializer, cls).get_token(user)
@@ -19,6 +21,22 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             # token['team'] = str(user.participant.team_id)
             token['uuid'] = str(user.uuid)
         return token
+
+    def validate(self, attrs):
+        credentials = {
+            'username': '',
+            'password': attrs.get("password")
+        }
+
+        # This is answering the original question, but do whatever you need here.
+        # For example in my case I had to check a different model that stores more user info
+        # But in the end, you should obtain the username to continue.
+        user_obj = User.objects.filter(email=attrs.get("username")).first() or User.objects.filter(
+            username=attrs.get("username")).first()
+        if user_obj:
+            credentials['username'] = user_obj.username
+
+        return super().validate(credentials)
 
 
 class MemberSerializer(serializers.ModelSerializer):
