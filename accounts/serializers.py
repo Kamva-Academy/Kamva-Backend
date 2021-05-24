@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
@@ -9,7 +10,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super(MyTokenObtainPairSerializer, cls).get_token(user)
-
         # TODO Add custom claims
         # token['is_mentor'] = user.is_mentor
         # token['is_participant'] = user.is_participant
@@ -24,14 +24,29 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             'username': '',
             'password': attrs.get("password")
         }
-
         user_obj = User.objects.filter(email=attrs.get("username")).first() \
                    or User.objects.filter(username=attrs.get("username")).first() \
                    or User.objects.filter(phone_number=attrs.get("username")).first()
         if user_obj:
             credentials['username'] = user_obj.username
-
         return super().validate(credentials)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        help_text='Leave empty if no change needed',
+        style={'input_type': 'password', 'placeholder': 'Password'}
+    )
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data.get('password'))
+        return super(UserSerializer, self).create(validated_data)
+
+    class Meta:
+        model = User
+        fields = ['email', 'username', 'phone_number', 'password']
 
 
 class MemberSerializer(serializers.ModelSerializer):

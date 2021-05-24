@@ -29,7 +29,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from .utils import *
-from .serializers import MyTokenObtainPairSerializer, MemberSerializer
+from .serializers import MyTokenObtainPairSerializer, MemberSerializer, UserSerializer
 import pytz
 
 logger = logging.getLogger(__name__)
@@ -46,13 +46,10 @@ class ObtainTokenPair(TokenObtainPairView):
         phone = data.get('phone')
         if email:
             user = get_object_or_404(User, email=email)
-            print(user)
         elif username:
             user = get_object_or_404(User, username=username)
-            print(user)
         elif phone:
             user = User.objects.get(phone=phone)
-            print(user)
         else:
             return Response(
                 {'success': False, 'error': "کاربری پیدا نشد."}, status=status.HTTP_400_BAD_REQUEST)
@@ -67,6 +64,163 @@ class ObtainTokenPair(TokenObtainPairView):
         validated_data = serializer.validated_data
         validated_data['user_info'] = get_user_json_info(user)
         return Response(validated_data, status=status.HTTP_200_OK)
+
+
+class Signup(TokenObtainPairView):
+    # after phone verification code sent
+    parser_class = (MultiPartParser,)
+    permission_classes = (permissions.AllowAny,)
+
+    @transaction.atomic
+    def post(self, request):
+        data = request.data
+        verify_code = data.get("verify_code")
+        phone_number = data.get("phone_number")
+        username = data.get("username")
+        email = data.get("email")
+        # verify_code_obj = VerifyCode.objects.filter(phone_number=phone_number, code=verify_code, is_valid=True).first()
+        # if not verify_code_obj:
+        #     return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+        #
+        # if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
+        #     return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+
+        if not phone_number or not username or not email:
+            return Response({"success": False, "error": "لطفا همه‌ی اطلاعات خواسته شده را وارد کنید."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username__exact=username).count() > 0:
+            return Response(
+                {'success': False, "error": "کاربری با نام " + username + " قبلا ثبت‌نام کرده است."},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(phone_number__exact=phone_number).count() > 0:
+            return Response(
+                {'success': False, "error": "کاربری با شماره تلفن " + phone_number + " قبلا ثبت‌نام کرده است."},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email__exact=email).count() > 0:
+            return Response(
+                {'success': False, "error": "کاربری با ایمیل " + email + " قبلا ثبت‌نام کرده است."},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = UserSerializer(data=data)
+        if serializer.is_valid():
+            user = serializer.save()
+            token = MyTokenObtainPairSerializer.get_token(user)
+            return Response({"user_info": serializer.data, "access": str(token)}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # if 'document' not in request.data:
+        #     raise ParseError("اطلاعات تأیید هویت ضمیمه نشده است.")
+
+        # doc = request.data['document']
+        # doc.name = str(request.data['phone']) + "-" + doc.name
+
+        # # TODO Hard coded event name
+        # current_event = Event.objects.get(name='مسافر صفر')
+        # if current_event.has_selection:
+        #     if 'selection_doc' not in request.data:
+        #         raise ParseError("پاسخ سوالات ضمیمه نشده است.")
+        #     selection_doc = request.data['selection_doc']
+        #     selection_doc.name = str(request.data['phone']) + "-" + selection_doc.name
+        # else:
+        #     if current_event.maximum_participant:
+        #         if current_event.event_cost <= 0:
+        #             participants = Participant.objects.filter(event=current_event)
+        #             if len(participants) >= current_event.maximum_participant:
+        #                 return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
+        #                                 status=status.HTTP_400_BAD_REQUEST)
+        #         else:
+        #             paid_participants = Participant.objects.filter(event=current_event, is_paid=True)
+        #             if len(paid_participants) >= current_event.maximum_participant:
+        #                 return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
+        #                                 status=status.HTTP_400_BAD_REQUEST)
+        #
+        # if current_event.event_type == 'team':
+        #     if 'team_code' in request.data and request.data['team_code'] != '':
+        #         team_code = request.data['team_code']
+        #         try:
+        #             team = Team.objects.get(team_code=team_code)
+        #         except Team.DoesNotExist:
+        #             return Response(
+        #                 {'success': False, 'error': "کد تیم نامعتبر است."},
+        #                 status=status.HTTP_400_BAD_REQUEST)
+        #         if len(team.team_participants.all()) >= current_event.team_size:
+        #             return Response(
+        #                 {'success': False, 'error': "ظرفیت تیم تکمیل است"},
+        #                 status=status.HTTP_400_BAD_REQUEST)
+        #         is_team_head = False
+        #     else:
+        #         team_code = Member.objects.make_random_password(length=6)
+        #         is_team_head = True
+        #
+        # member = Member.objects.create(
+        #     first_name=request.data['name'],
+        #     username=request.data['username'],
+        #     email=request.data['email'],
+        #     is_active=True,
+        #     gender=request.data['gender'],
+        #     city=request.data['city'],
+        #     school=request.data['school'],
+        #     grade=request.data['grade'],
+        #     phone_number=request.data['phone'],
+        #     document=doc,
+        # )
+        # member.set_password(request.data['password'])
+        #
+        # participant = Participant.objects.create(
+        #     member=member,
+        #     event=current_event,
+        #     player_type='PARTICIPANT',
+        # )
+        # if current_event.has_selection:
+        #     participant.selection_doc = selection_doc
+        #
+        # if current_event.event_type == 'team':
+        #     if 'team_code' not in request.data or request.data['team_code'] == '':
+        #         team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
+        #     participant.event_team = team
+        #
+        # member.save()
+        # participant.save()
+        #
+        # # TODO check email - unit test سپس
+        # # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
+        # # member.send_signup_email(absolute_uri)
+        # if current_event.event_type == 'team':
+        #     if is_team_head:
+        #         try:
+        #             Signup.send_signup_sms(phone, request.data['username'], team_code)
+        #         except:
+        #             return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+        #                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        #     else:
+        #         try:
+        #             Signup.send_signup_sms(phone, request.data['username'])
+        #         except:
+        #             return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+        #                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        #     return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head},
+        #                     status=status.HTTP_200_OK)
+        # else:
+        #     # TODO - add individual signup
+        #     return Response({'success': True}, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def send_signup_sms(phone_number, username, team_code=None):
+        api = KAVENEGAR_TOKEN
+        params = {
+            'receptor': phone_number,
+            'template': 'signupNew' if team_code else 'signupTeam',
+            'token': username,
+            'type': 'sms'
+        }
+        if team_code:
+            params['token2'] = team_code
+        api.verify_lookup(params)
 
 
 class ChangePassword(APIView):
@@ -92,143 +246,6 @@ class ChangePassword(APIView):
         member.set_password(request.data['password'])
         member.save()
         return Response({'success': True, 'error': "عملیات با موفقیت انجام شد"}, status=status.HTTP_200_OK)
-
-
-class Signup(APIView):
-    # after phone verification code sent
-    parser_class = (MultiPartParser,)
-    permission_classes = (permissions.AllowAny,)
-
-    @transaction.atomic
-    def post(self, request):
-        verify_code = request.data['verify_code']
-        phone = request.data['phone']
-        v = VerifyCode.objects.filter(phone_number=phone, code=verify_code, is_valid=True)
-        if len(v) <= 0:
-            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if datetime.now(v[0].expiration_date.tzinfo) > v[0].expiration_date:
-            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if Member.objects.filter(username__exact=request.data['username']).count() > 0:
-            return Response(
-                {'success': False, "error": "فردی با نام کاربری " + request.data['username'] + "قبلا ثبت‌نام کرده"},
-                status=status.HTTP_400_BAD_REQUEST)
-        if Member.objects.filter(phone_number__exact=request.data['phone']).count() > 0:
-            return Response(
-                {'success': False, "error": "فردی با شماره همراه " + request.data['phone'] + "قبلا ثبت‌نام کرده"},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        if 'document' not in request.data:
-            raise ParseError("اطلاعات تأیید هویت ضمیمه نشده است.")
-
-        doc = request.data['document']
-        doc.name = str(request.data['phone']) + "-" + doc.name
-
-        # TODO Hard coded event name
-        current_event = Event.objects.get(name='مسافر صفر')
-        if current_event.has_selection:
-            if 'selection_doc' not in request.data:
-                raise ParseError("پاسخ سوالات ضمیمه نشده است.")
-            selection_doc = request.data['selection_doc']
-            selection_doc.name = str(request.data['phone']) + "-" + selection_doc.name
-        else:
-            if current_event.maximum_participant:
-                if current_event.event_cost <= 0:
-                    participants = Participant.objects.filter(event=current_event)
-                    if len(participants) >= current_event.maximum_participant:
-                        return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
-                                        status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    paid_participants = Participant.objects.filter(event=current_event, is_paid=True)
-                    if len(paid_participants) >= current_event.maximum_participant:
-                        return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
-                                        status=status.HTTP_400_BAD_REQUEST)
-
-        if current_event.event_type == 'team':
-            if 'team_code' in request.data and request.data['team_code'] != '':
-                team_code = request.data['team_code']
-                try:
-                    team = Team.objects.get(team_code=team_code)
-                except Team.DoesNotExist:
-                    return Response(
-                        {'success': False, 'error': "کد تیم نامعتبر است."},
-                        status=status.HTTP_400_BAD_REQUEST)
-                if len(team.team_participants.all()) >= current_event.team_size:
-                    return Response(
-                        {'success': False, 'error': "ظرفیت تیم تکمیل است"},
-                        status=status.HTTP_400_BAD_REQUEST)
-                is_team_head = False
-            else:
-                team_code = Member.objects.make_random_password(length=6)
-                is_team_head = True
-
-        member = Member.objects.create(
-            first_name=request.data['name'],
-            username=request.data['username'],
-            email=request.data['email'],
-            is_active=True,
-            gender=request.data['gender'],
-            city=request.data['city'],
-            school=request.data['school'],
-            grade=request.data['grade'],
-            phone_number=request.data['phone'],
-            document=doc,
-        )
-        member.set_password(request.data['password'])
-
-        participant = Participant.objects.create(
-            member=member,
-            event=current_event,
-            player_type='PARTICIPANT',
-        )
-        if current_event.has_selection:
-            participant.selection_doc = selection_doc
-
-        if current_event.event_type == 'team':
-            if 'team_code' not in request.data or request.data['team_code'] == '':
-                team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
-            participant.event_team = team
-
-        member.save()
-        participant.save()
-
-        # TODO check email - unit test سپس
-        # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
-        # member.send_signup_email(absolute_uri)
-        if current_event.event_type == 'team':
-            if is_team_head:
-                try:
-                    Signup.send_signup_sms(phone, request.data['username'], team_code)
-                except:
-                    return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
-                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            else:
-                try:
-                    Signup.send_signup_sms(phone, request.data['username'])
-                except:
-                    return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
-                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head},
-                            status=status.HTTP_200_OK)
-        else:
-            # TODO - add individual signup
-            return Response({'success': True}, status=status.HTTP_200_OK)
-
-    @staticmethod
-    def send_signup_sms(phone_number, username, team_code=None):
-        api = KAVENEGAR_TOKEN
-        params = {
-            'receptor': phone_number,
-            'template': 'signupNew' if team_code else 'signupTeam',
-            'token': username,
-            'type': 'sms'
-        }
-        if team_code:
-            params['token2'] = team_code
-        api.verify_lookup(params)
 
 
 class SendVerifyCode(APIView):

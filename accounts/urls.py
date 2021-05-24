@@ -20,11 +20,11 @@ from .views import ObtainTokenPair, Signup, activate, ChangePass, LogOut, Upload
     RegistrationInfo, VerifyDiscount
 
 urlpatterns = [
-    path('sendVerify/', SendVerifyCode.as_view(), name="send_verify_code"),
+    path('token/obtain/', ObtainTokenPair.as_view(), name='token_create'),
     path('signup/', Signup.as_view(), name="signup"),
+    path('sendVerify/', SendVerifyCode.as_view(), name="send_verify_code"),
     path('logout/', LogOut.as_view(), name="logout"),
     path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),
-    path('token/obtain/', ObtainTokenPair.as_view(), name='token_create'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 
     # path('pay/', PayView.as_view(), name="pay"),
