@@ -159,7 +159,7 @@ CONSTANTS = {
 }
 
 # Custom user model
-AUTH_USER_MODEL = "accounts.Member"
+AUTH_USER_MODEL = "accounts.User"
 
 ASGI_APPLICATION = 'workshop_backend.routing.application'
 
