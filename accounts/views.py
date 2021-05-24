@@ -9,7 +9,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from fsm.models import PlayerHistory, Event
 from workshop_backend.settings.base import KAVENEGAR_TOKEN
-from .models import Team, VerifyCode, DiscountCode
+from .models import *
 import random
 from django.db import transaction
 from django.conf import settings
@@ -35,30 +35,25 @@ import pytz
 logger = logging.getLogger(__name__)
 
 
-# def check_bibot_response(request):
-#     if request.POST.get('bibot-response') is not None:
-#         if request.POST.get('bibot-response') != '':
-#             r = requests.post('https://api.bibot.ir/api1/siteverify/', data={
-#                 'secretkey': '9270bf6cd4a087673ca9e86666977a30',
-#                 'response': request.POST['bibot-response']
-#             })
-#             if r.json()['success']:
-#                 return True
-#             else:
-#                 messages.error(request, 'کپچا به درستی حل نشده است!')
-#                 return False
-#         else:
-#             messages.error(request, 'کپچا به درستی حل نشده است!')
-#             return False
-#     return False
-
-
 class ObtainTokenPair(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, *args, **kwargs):
         data = request.data.copy()
+        email = data.get('email')
+        username = data.get('username')
+        phone = data.get('phone')
+        if email is not None:
+            user = User.objects.get(email=email)
+        elif username is not None:
+            user = User.objects.get(username=username)
+        elif phone is not None:
+            user = User.objects.get(phone=phone)
+        else:
+            return Response(
+                {'success': False, 'error': "اطلاعات ورود کامل نیست."}, status=status.HTTP_400_BAD_REQUEST)
+
         if 'username' not in request.data:
             try:
                 if 'phone' in request.data:

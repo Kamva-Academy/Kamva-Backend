@@ -1,6 +1,6 @@
 import logging
 
-from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser, Group, Permission
@@ -32,10 +32,14 @@ class User(AbstractUser):
         Man = 'Man'
         Woman = 'Woman'
 
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
     city = models.CharField(max_length=20, null=True, blank=True)
     gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+
+
+class MemberManager(BaseUserManager):
+    pass
 
 
 class Member(AbstractBaseUser):
@@ -58,6 +62,7 @@ class Member(AbstractBaseUser):
         Man = 'Man'
         Woman = 'Woman'
 
+    objects = MemberManager()
     username = models.CharField(unique=True, max_length=15, blank=True, null=True)
     is_participant = models.BooleanField(default=True)
     is_mentor = models.BooleanField(default=False)
@@ -76,6 +81,9 @@ class Member(AbstractBaseUser):
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
     USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = []
+    is_anonymous = False
+    is_authenticated = False
 
     def send_signup_email(self, base_url, password=''):
         options = {
