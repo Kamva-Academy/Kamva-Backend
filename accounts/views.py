@@ -78,14 +78,14 @@ class Signup(TokenObtainPairView):
         phone_number = data.get("phone_number")
         username = data.get("username")
         email = data.get("email")
-        # verify_code_obj = VerifyCode.objects.filter(phone_number=phone_number, code=verify_code, is_valid=True).first()
-        # if not verify_code_obj:
-        #     return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
-        #                     status=status.HTTP_400_BAD_REQUEST)
-        #
-        # if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
-        #     return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
-        #                     status=status.HTTP_400_BAD_REQUEST)
+        verify_code_obj = VerifyCode.objects.filter(phone_number=phone_number, code=verify_code, is_valid=True).first()
+        if not verify_code_obj:
+            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
+            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if not phone_number or not username or not email:
             return Response({"success": False, "error": "لطفا همه‌ی اطلاعات خواسته شده را وارد کنید."},
@@ -109,7 +109,7 @@ class Signup(TokenObtainPairView):
         serializer = UserSerializer(data=data)
         if serializer.is_valid():
             user = serializer.save()
-            token = MyTokenObtainPairSerializer.get_token(user)
+            token = MyTokenObtainPairSerializer.get_token(user)  # todo: is it true to use token in this way?
             return Response({"user_info": serializer.data, "access": str(token)}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
