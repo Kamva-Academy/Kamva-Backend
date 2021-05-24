@@ -44,36 +44,19 @@ class ObtainTokenPair(TokenObtainPairView):
         email = data.get('email')
         username = data.get('username')
         phone = data.get('phone')
-        if email is not None:
-            user = User.objects.get(email=email)
-        elif username is not None:
-            user = User.objects.get(username=username)
-        elif phone is not None:
+        if email:
+            user = get_object_or_404(User, email=email)
+            print(user)
+        elif username:
+            user = get_object_or_404(User, username=username)
+            print(user)
+        elif phone:
             user = User.objects.get(phone=phone)
+            print(user)
         else:
             return Response(
-                {'success': False, 'error': "اطلاعات ورود کامل نیست."}, status=status.HTTP_400_BAD_REQUEST)
+                {'success': False, 'error': "کاربری پیدا نشد."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if 'username' not in request.data:
-            try:
-                if 'phone' in request.data:
-                    member = Member.objects.get(phone_number=request.data['phone'])
-                elif 'email' in request.data:
-                    member = Member.objects.get(email=request.data['email'])
-                else:
-                    return Response(
-                        {'success': False, 'error': "اطلاعات ورود کامل نیست."}, status=status.HTTP_400_BAD_REQUEST)
-                data['username'] = member.username
-            except Member.DoesNotExist:
-                return Response(
-                    {'success': False, 'error': "کاربری با این اطلاعات یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            try:
-                member = Member.objects.get(username=data['username'])
-            except Member.DoesNotExist:
-                return Response(
-                    {'success': False, 'error': "کاربری با این نام‌کاربری یافت نشد."},
-                    status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(data=data)
 
         try:
@@ -82,13 +65,7 @@ class ObtainTokenPair(TokenObtainPairView):
             raise InvalidToken(e.args[0])
 
         validated_data = serializer.validated_data
-        validated_data['user_info'] = get_member_json_info(member)
-        participants = member.event_participant
-        validated_data['events'] = [{'id': p.event.id,
-                                     'name': p.event.name,
-                                     'description': p.event.description,
-                                     'cover_page': p.event.cover_page.url if p.event.cover_page else None,
-                                     'is_active': p.event.active, } for p in participants.all()]
+        validated_data['user_info'] = get_user_json_info(user)
         return Response(validated_data, status=status.HTTP_200_OK)
 
 
@@ -455,7 +432,7 @@ class UserInfo(APIView):
             if not member.count() > 0:
                 return Response({'success': False, "error": "user not found"}, status=status.HTTP_400_BAD_REQUEST)
             member = member[0]
-        response = get_member_json_info(member)
+        response = get_user_json_info(member)
         return Response(response)
 
 

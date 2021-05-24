@@ -2,24 +2,21 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 
-from .models import Member, Participant, Team
+from .models import Member, Participant, Team, User
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
-
-
     @classmethod
     def get_token(cls, user):
         token = super(MyTokenObtainPairSerializer, cls).get_token(user)
 
         # TODO Add custom claims
-        token['is_mentor'] = user.is_mentor
-        token['is_participant'] = user.is_participant
-        if user.is_participant:
-            token['name'] = user.first_name
-            # token['team'] = str(user.participant.team_id)
-            token['uuid'] = str(user.uuid)
+        # token['is_mentor'] = user.is_mentor
+        # token['is_participant'] = user.is_participant
+        # if user.is_participant:
+        #     token['name'] = user.first_name
+        #     # token['team'] = str(user.participant.team_id)
+        #     token['uuid'] = str(user.uuid)
         return token
 
     def validate(self, attrs):
@@ -28,11 +25,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             'password': attrs.get("password")
         }
 
-        # This is answering the original question, but do whatever you need here.
-        # For example in my case I had to check a different model that stores more user info
-        # But in the end, you should obtain the username to continue.
-        user_obj = User.objects.filter(email=attrs.get("username")).first() or User.objects.filter(
-            username=attrs.get("username")).first()
+        user_obj = User.objects.filter(email=attrs.get("username")).first() \
+                   or User.objects.filter(username=attrs.get("username")).first() \
+                   or User.objects.filter(phone_number=attrs.get("username")).first()
         if user_obj:
             credentials['username'] = user_obj.username
 

@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-from .models import Member, Participant, Team, Payment, Mentor, Player, DiscountCode
+from .models import Member, Participant, Team, Payment, Mentor, Player, DiscountCode, User
 
 from import_export.admin import ExportActionMixin
 from import_export.fields import Field
@@ -480,6 +480,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
 # Register your models here.
 admin.site.register(Member, CustomUserAdmin)
+admin.site.register(User)
 admin.site.register(Participant, ParticipantInline)
 admin.site.register(Team, TeamAdmin)
 admin.site.register(Mentor)

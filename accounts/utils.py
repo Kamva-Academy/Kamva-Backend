@@ -2,18 +2,18 @@ from fsm.models import PlayerHistory, FSM
 from fsm.views.participantviews import get_last_state_in_fsm
 
 
-def get_member_json_info(member):
+def get_user_json_info(user):
     response = {
-        "email": member.email,
-        "name": member.first_name,
-        "is_mentor": member.is_mentor,
-        "uuid": member.uuid,
-        "phone": member.phone_number,
-        "gender": member.gender,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "username": user.username,
+        "email": user.email,
+        "phone_number": user.phone_number,
+        "gender": user.gender,
     }
 
-    if member.is_participant:
-        pass
+    # if user.is_participant:
+    #     pass
         # participant = member.participant
         # response['grade'] = participant.member.grade
         # response['gender'] = participant.member.gender
