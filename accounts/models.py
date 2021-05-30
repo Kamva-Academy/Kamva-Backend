@@ -32,10 +32,85 @@ class User(AbstractUser):
         Man = 'Man'
         Woman = 'Woman'
 
-    phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
-    city = models.CharField(max_length=20, null=True, blank=True)
+    phone_number = models.CharField(max_length=15, blank=False, null=False, unique=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    national_code = models.CharField(max_length=10, null=True, blank=True)
+
+    country = models.CharField(max_length=30, null=True, blank=True)
+    address = models.CharField(max_length=100, null=True, blank=True)
+    province = models.CharField(max_length=30, null=True, blank=True)
+    city = models.CharField(max_length=30, null=True, blank=True)
+    postal_code = models.CharField(max_length=10, null=True, blank=True)
+
+
+class EducationalInstitute(models.Model):
+    class InstituteType(models.TextChoices):
+        School = 'SCHOOL'
+        University = 'UNIVERSITY'
+        Other = 'Other'
+
+    name = models.CharField(max_length=30, null=False, blank=False)
+    type = models.CharField(max_length=10, null=False, blank=False, choices=InstituteType.choices)
+    address = models.CharField(max_length=100, null=True, blank=True)
+    province = models.CharField(max_length=30, null=True, blank=True)
+    city = models.CharField(max_length=30, null=True, blank=True)
+    postal_code = models.CharField(max_length=10, null=True, blank=True)
+
+
+class School(EducationalInstitute):
+    principle_name = models.CharField(max_length=30, null=True, blank=True)
+    principle_phone = models.CharField(max_length=15, null=True, blank=True, unique=True)
+
+
+class University(EducationalInstitute):
+    pass
+
+
+class Student(models.Model):
+    class Grade(models.TextChoices):
+        Pre = 'PRE'
+        One = 'ONE'
+        Two = 'TWO'
+        Three = 'THREE'
+        Four = 'FOUR'
+        Five = 'FIVE'
+        Six = 'SIX'
+        Seven = 'SEVEN'
+        Eight = 'EIGHT'
+        Nine = 'NINE'
+        Ten = 'TEN'
+        Eleven = 'ELEVEN'
+        Twelve = 'TWELVE'
+
+    class Major(models.TextChoices):
+        Math = 'MATH'
+        Biology = 'BIOLOGY'
+        Literature = 'LITERATURE'
+        IslamicStudies = 'ISLAMIC_STUDIES'
+        TechnicalTraining = 'TECHNICAL_TRAINING'
+        Others = 'Others'
+
+    user = models.OneToOneField(User, related_name='student', on_delete=models.CASCADE, null=False)
+    school = models.ForeignKey(School, related_name='students', on_delete=models.SET_NULL, null=True)
+    document = models.FileField(upload_to='school_documents/', null=True, blank=True)
+    grade = models.CharField(max_length=15, null=True, blank=True, choices=Grade.choices)
+    major = models.CharField(max_length=25, null=True, blank=True, choices=Major.choices)
+
+
+class CollegeStudent(models.Model):
+    class Degree(models.TextChoices):
+        BA = 'BA'
+        MA = 'MA'
+        PHD = 'PHD'
+        Postdoc = 'POSTDOC'
+
+    user = models.OneToOneField(User, related_name='college_student', on_delete=models.CASCADE, null=False)
+    university = models.ForeignKey(School, related_name='college_students', on_delete=models.SET_NULL, null=True)
+    document = models.FileField(upload_to='college_documents/', null=True, blank=True)
+    degree = models.CharField(max_length=15, null=True, blank=True, choices=Degree.choices)
+    major = models.CharField(max_length=30, null=True, blank=True)
 
 
 class MemberManager(BaseUserManager):
@@ -43,24 +118,6 @@ class MemberManager(BaseUserManager):
 
 
 class Member(AbstractBaseUser):
-    class Grade(models.TextChoices):
-        Pre = 'پیش‌ از دبستان'
-        One = 'اول'
-        Two = 'دوم'
-        Three = 'سوم'
-        four = 'چهارم'
-        Five = 'پنچم'
-        Six = 'ششم'
-        Seven = 'هفتم'
-        Eight = 'هشتم'
-        Nine = 'نهم'
-        Ten = 'دهم'
-        Eleven = 'یازدهم'
-        Twelve = 'دوازدهم'
-
-    class Gender(models.TextChoices):
-        Man = 'Man'
-        Woman = 'Woman'
 
     objects = MemberManager()
     username = models.CharField(unique=True, max_length=15, blank=True, null=True)
@@ -75,9 +132,9 @@ class Member(AbstractBaseUser):
     city = models.CharField(max_length=20, null=True, blank=True)
     document = models.FileField(upload_to='documents/', null=True, blank=True)
     gender = models.CharField(max_length=10, null=True, blank=True,
-                              choices=Gender.choices)
+                              default='Male')
     grade = models.CharField(max_length=15, null=True, blank=True,
-                             choices=Grade.choices)
+                             default='ONE')
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
     USERNAME_FIELD = 'username'

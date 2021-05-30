@@ -41,9 +41,9 @@ class ObtainTokenPair(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         data = request.data.copy()
-        email = data.get('email')
-        username = data.get('username')
-        phone = data.get('phone')
+        email = data.get('email', None)
+        username = data.get('username', None)
+        phone = data.get('phone', None)
         if email:
             user = get_object_or_404(User, email=email)
         elif username:
