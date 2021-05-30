@@ -32,7 +32,7 @@ class User(AbstractUser):
         Man = 'Man'
         Woman = 'Woman'
 
-    phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
+    phone_number = models.CharField(max_length=15, unique=True)
     city = models.CharField(max_length=20, null=True, blank=True)
     gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)

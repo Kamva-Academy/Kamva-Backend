@@ -15,13 +15,13 @@ from django.urls import path, re_path
 
 from django.urls import path
 from rest_framework_simplejwt import views as jwt_views
-from .views import ObtainTokenPair, Signup, activate, ChangePass, LogOut, UploadAnswerView, \
+from .views import ObtainTokenPair, CreateAccount, activate, ChangePass, LogOut, UploadAnswerView, \
     PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerifyCode, GetTeamData, ChangePassword, \
     RegistrationInfo, VerifyDiscount
 
 urlpatterns = [
     path('token/obtain/', ObtainTokenPair.as_view(), name='token_create'),
-    path('signup/', Signup.as_view(), name="signup"),
+    path('create-account/', CreateAccount.as_view(), name="signup"),
     path('sendVerify/', SendVerifyCode.as_view(), name="send_verify_code"),
     path('logout/', LogOut.as_view(), name="logout"),
     path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),

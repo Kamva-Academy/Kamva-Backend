@@ -66,7 +66,7 @@ class ObtainTokenPair(TokenObtainPairView):
         return Response(validated_data, status=status.HTTP_200_OK)
 
 
-class Signup(TokenObtainPairView):
+class CreateAccount(TokenObtainPairView):
     # after phone verification code sent
     parser_class = (MultiPartParser,)
     permission_classes = (permissions.AllowAny,)
@@ -75,41 +75,33 @@ class Signup(TokenObtainPairView):
     def post(self, request):
         data = request.data
         verify_code = data.get("verify_code")
-        phone_number = data.get("phone_number")
         username = data.get("username")
-        email = data.get("email")
-        verify_code_obj = VerifyCode.objects.filter(phone_number=phone_number, code=verify_code, is_valid=True).first()
-        if not verify_code_obj:
-            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        verify_code_obj = VerifyCode.objects.filter(phone_number=username, code=verify_code, is_valid=True).first()
+        # if not verify_code_obj:
+        #     return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+        #
+        # if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
+        #     return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
+        #                     status=status.HTTP_400_BAD_REQUEST)
 
-        if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
-            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if not phone_number or not username or not email:
+        if not username:
             return Response({"success": False, "error": "لطفا همه‌ی اطلاعات خواسته شده را وارد کنید."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if User.objects.filter(username__exact=username).count() > 0:
+        if User.objects.filter(username__exact=username).count() > 0 \
+                or User.objects.filter(phone_number__exact=username).count() > 0:
             return Response(
-                {'success': False, "error": "کاربری با نام " + username + " قبلا ثبت‌نام کرده است."},
+                {"error": "کاربری با شماره تلفن " + username + " قبلا ثبت‌نام کرده است."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        if User.objects.filter(phone_number__exact=phone_number).count() > 0:
-            return Response(
-                {'success': False, "error": "کاربری با شماره تلفن " + phone_number + " قبلا ثبت‌نام کرده است."},
-                status=status.HTTP_400_BAD_REQUEST)
+        data_plus_phone_number = data.copy()
+        data_plus_phone_number['phone_number'] = username
 
-        if User.objects.filter(email__exact=email).count() > 0:
-            return Response(
-                {'success': False, "error": "کاربری با ایمیل " + email + " قبلا ثبت‌نام کرده است."},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = UserSerializer(data=data)
+        serializer = UserSerializer(data=data_plus_phone_number)
         if serializer.is_valid():
             user = serializer.save()
-            token = MyTokenObtainPairSerializer.get_token(user)  # todo: is it true to use token in this way?
+            token = MyTokenObtainPairSerializer.get_token(user)  # todo: is it ok to use token in this way?
             return Response({"user_info": serializer.data, "access": str(token)}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
