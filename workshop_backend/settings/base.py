@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 from kavenegar import *
+from django.utils.translation import ugettext_lazy as _
 
 
 def get_environment_var(var_name, default, prefixed=True):
@@ -57,12 +58,29 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # 'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+# multi-lingual settings below
+# LANGUAGES = [
+#     ('en', _('English')),
+#     ('fa', _('Persian')),
+# ]
+
+# USE_I18N = True
+#
+# USE_L10N = True
+#
+# LANGUAGE_CODE = 'en'
+#
+# LOCALE_PATHS = [
+#     os.path.join(BASE_DIR, 'locale'),
+# ]
+# multilingual settings above
 
 CORS_ORIGIN_ALLOW_ALL = True
 

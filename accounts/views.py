@@ -5,6 +5,8 @@ import string
 from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.generics import GenericAPIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from fsm.models import PlayerHistory, Event
@@ -29,10 +31,32 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from .utils import *
-from .serializers import MyTokenObtainPairSerializer, MemberSerializer, UserSerializer
+from .serializers import MyTokenObtainPairSerializer, UserSerializer, PhoneNumberSerializer
 import pytz
 
 logger = logging.getLogger(__name__)
+
+
+class SendVerificationCode(GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = PhoneNumberSerializer
+
+    @swagger_auto_schema(operation_description="Sends verification code to a valid phone number",
+                         responses={200: "Verification code sent successfully",
+                                    400: "error code 1000 for being not digits"})
+    @transaction.atomic
+    def post(self, request):
+        serializer = PhoneNumberSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            verification_code = VerificationCode.objects.create_verification_code(
+                phone_number=serializer.validated_data.get('phone_number', None))
+
+            try:
+                verification_code.send_sms()
+            except:
+                return Response({'error': ''},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'success': True, 'msg': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
 
 
 class ObtainTokenPair(TokenObtainPairView):
@@ -76,14 +100,14 @@ class CreateAccount(TokenObtainPairView):
         data = request.data
         verify_code = data.get("verify_code")
         username = data.get("username")
-        verify_code_obj = VerifyCode.objects.filter(phone_number=username, code=verify_code, is_valid=True).first()
-        # if not verify_code_obj:
-        #     return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
-        #                     status=status.HTTP_400_BAD_REQUEST)
-        #
-        # if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
-        #     return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
-        #                     status=status.HTTP_400_BAD_REQUEST)
+        verify_code_obj = VerificationCode.objects.filter(phone_number=username, code=verify_code, is_valid=True).first()
+        if not verify_code_obj:
+            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
+            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if not username:
             return Response({"success": False, "error": "لطفا همه‌ی اطلاعات خواسته شده را وارد کنید."},
@@ -223,7 +247,7 @@ class ChangePassword(APIView):
     def post(self, request):
         verify_code = request.data['verify_code']
         phone = request.data['phone']
-        v = VerifyCode.objects.filter(phone_number=phone, code=verify_code, is_valid=True)
+        v = VerificationCode.objects.filter(phone_number=phone, code=verify_code, is_valid=True)
         if len(v) <= 0:
             return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -238,28 +262,6 @@ class ChangePassword(APIView):
         member.set_password(request.data['password'])
         member.save()
         return Response({'success': True, 'error': "عملیات با موفقیت انجام شد"}, status=status.HTTP_200_OK)
-
-
-class SendVerifyCode(APIView):
-    permission_classes = (permissions.AllowAny,)
-
-    @transaction.atomic
-    def post(self, request):
-        code = Member.objects.make_random_password(length=5, allowed_chars='1234567890')
-        phone_number = request.data['phone']
-        other_codes = VerifyCode.objects.filter(phone_number=phone_number, is_valid=True)
-        for c in other_codes:
-            c.is_valid = False
-            c.save()
-        verify_code = VerifyCode.objects.create(code=code, phone_number=phone_number,
-                                                expiration_date=datetime.now(pytz.timezone('Asia/Tehran')) + timedelta(
-                                                    minutes=5))
-        try:
-            verify_code.send_sms(request.data['code_type'])
-        except:
-            return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 class GetTeamData(APIView):

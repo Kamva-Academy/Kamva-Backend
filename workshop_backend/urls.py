@@ -1,3 +1,5 @@
+from django.conf.urls import url
+from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -10,8 +12,8 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Rasta workshop API",
-      default_version='v1',
+      title="Rasta Workshop API",
+      default_version='v2',
       # description="Test description",
 
    ),
@@ -41,3 +43,7 @@ urlpatterns = [
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# urlpatterns += i18n_patterns(
+#     url(r'^/{}'.format(ADMIN_URL), admin.site.urls)
+# )

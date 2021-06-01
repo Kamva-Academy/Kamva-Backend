@@ -3,7 +3,22 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 
-from .models import Member, Participant, Team, User
+from .models import Member, Participant, Team, User, VerificationCode
+
+
+class PhoneNumberSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(max_length=15, required=True)
+
+    def validate_phone_number(self, phone_number):
+        if not phone_number.isdigit():
+            raise serializers.ValidationError({"error_code": 1000, "error_msg": "phone number must be digit"})
+        return phone_number
+
+    class Meta:
+        model = VerificationCode
+        fields = [
+            'phone_number'
+        ]
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

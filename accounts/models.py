@@ -1,11 +1,12 @@
 import logging
 
+import pytz
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.conf import settings
 from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -26,6 +27,8 @@ from workshop_backend.settings.base import KAVENEGAR_TOKEN
 
 logger = logging.getLogger(__file__)
 
+VERIFICATION_CODE_DELAY = 5
+
 
 class User(AbstractUser):
     class Gender(models.TextChoices):
@@ -37,6 +40,7 @@ class User(AbstractUser):
     gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     national_code = models.CharField(max_length=10, null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
 
     country = models.CharField(max_length=30, null=True, blank=True)
     address = models.CharField(max_length=100, null=True, blank=True)
@@ -107,7 +111,7 @@ class CollegeStudent(models.Model):
         Postdoc = 'POSTDOC'
 
     user = models.OneToOneField(User, related_name='college_student', on_delete=models.CASCADE, null=False)
-    university = models.ForeignKey(School, related_name='college_students', on_delete=models.SET_NULL, null=True)
+    university = models.ForeignKey(University, related_name='college_students', on_delete=models.SET_NULL, null=True)
     document = models.FileField(upload_to='college_documents/', null=True, blank=True)
     degree = models.CharField(max_length=15, null=True, blank=True, choices=Degree.choices)
     major = models.CharField(max_length=30, null=True, blank=True)
@@ -118,7 +122,6 @@ class MemberManager(BaseUserManager):
 
 
 class Member(AbstractBaseUser):
-
     objects = MemberManager()
     username = models.CharField(unique=True, max_length=15, blank=True, null=True)
     is_participant = models.BooleanField(default=True)
@@ -360,11 +363,29 @@ class DiscountCode(models.Model):
         return str(self.participant) + " " + self.code + " " + str(self.value)
 
 
-class VerifyCode(models.Model):
+class VerificationCodeManager(models.Manager):
+    @transaction.atomic
+    def create_verification_code(self, phone_number, time_zone='Asia/Tehran'):
+        print('phone number creation started')
+
+        code = User.objects.make_random_password(length=5, allowed_chars='1234567890')
+        other_codes = VerificationCode.objects.filter(phone_number=phone_number, is_valid=True)
+        for c in other_codes:
+            c.is_valid = False
+            c.save()
+        verification_code = VerificationCode.objects.create(code=code, phone_number=phone_number,
+                                                      expiration_date=datetime.now(pytz.timezone(time_zone))
+                                                                      + timedelta(minutes=VERIFICATION_CODE_DELAY))
+        return verification_code
+
+
+class VerificationCode(models.Model):
     phone_number = models.CharField(blank=True, max_length=13, null=True)
     code = models.CharField(blank=True, max_length=10, null=True)
     expiration_date = models.DateTimeField(blank=False, null=False)
     is_valid = models.BooleanField(default=True)
+
+    objects = VerificationCodeManager()
 
     def send_sms(self, type='verify'):
         api = KAVENEGAR_TOKEN
@@ -375,3 +396,6 @@ class VerifyCode(models.Model):
             'type': 'sms'
         }
         api.verify_lookup(params)
+
+    def __str__(self):
+        return f'{self.phone_number}\'s code is: {self.code} {"+" if self.is_valid else "-"}'
