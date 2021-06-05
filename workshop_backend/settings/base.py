@@ -198,8 +198,9 @@ REST_FRAMEWORK = {
 
 
 SWAGGER_SETTINGS = {
+    'LOGIN_URL': '/api/auth/accounts/login/',
     'SECURITY_DEFINITIONS': {
-        'api_key': {
+        'Bearer': {
             'type': 'apiKey',
             'in': 'header',
             'name': 'Authorization'
@@ -209,3 +210,5 @@ SWAGGER_SETTINGS = {
 
 KAVENEGAR_TOKEN = KavenegarAPI('6A4F554D384477574A7162444F614B4A6C626A64495169306A43417566473655624644394833566C352F593D')
 
+SMS_VERIFICATION_CODE_DELAY = 5
+SMS_CODE_LENGTH = 5

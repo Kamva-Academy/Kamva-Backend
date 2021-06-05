@@ -6,9 +6,12 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
+from errors.error_codes import serialize_error
 from fsm.models import PlayerHistory, Event
 from workshop_backend.settings.base import KAVENEGAR_TOKEN
 from .models import *
@@ -19,7 +22,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import render, redirect, get_object_or_404
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, NotFound
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
@@ -30,8 +33,12 @@ from accounts import zarinpal
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
 from rest_framework.views import APIView
+
+from .permissions import IsHimself
 from .utils import *
-from .serializers import MyTokenObtainPairSerializer, UserSerializer, PhoneNumberSerializer
+from .serializers import MyTokenObtainPairSerializer, PhoneNumberSerializer, VerificationCodeSerializer, \
+    AccountSerializer, UserSerializer
+
 import pytz
 
 logger = logging.getLogger(__name__)
@@ -41,227 +48,268 @@ class SendVerificationCode(GenericAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = PhoneNumberSerializer
 
-    @swagger_auto_schema(operation_description="Sends verification code to a valid phone number",
+    @swagger_auto_schema(operation_description="Sends verification code to verify phone number or change password",
                          responses={200: "Verification code sent successfully",
-                                    400: "error code 1000 for being not digits"})
+                                    400: "error code 4000 for not being digits & 4001 for phone length less than 10",
+                                    404: "error code 4008 for not finding user to change password",
+                                    500: "error code 5000 for problems in sending SMS",
+                                    })
     @transaction.atomic
     def post(self, request):
         serializer = PhoneNumberSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             verification_code = VerificationCode.objects.create_verification_code(
                 phone_number=serializer.validated_data.get('phone_number', None))
+            # try:
+            #     verification_code.send_sms(serializer.validated_data.get('code_type', None))
+            # except:
+            #     return Response(serialize_error('5000'),
+            #                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'detail': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
 
-            try:
-                verification_code.send_sms()
-            except:
-                return Response({'error': ''},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response({'success': True, 'msg': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
+
+class UserViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    serializer_action_classes = {
+        'create': VerificationCodeSerializer
+    }
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except(KeyError, AttributeError):
+            return super().get_serializer_class()
+
+    def get_permissions(self):
+        if self.action == 'create':
+            permission_classes = [permissions.AllowAny]
+        elif self.action == 'update' or self.action == 'partial_update':
+            permission_classes = [IsHimself]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+    @swagger_auto_schema(responses={201: AccountSerializer,
+                                    400: "error code 4002 for len(code) < 5, 4003 for invalid code, "
+                                         "4004 for previously submitted users & 4005 for expired code",
+                                    })
+    @transaction.atomic
+    def create(self, request):
+        data = request.data
+        serializer = VerificationCodeSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+
+            phone_number = serializer.validated_data.get('phone_number', None)
+            if User.objects.filter(phone_number__exact=phone_number).count() > 0:
+                raise ParseError(serialize_error('4004', {'param1': phone_number}))
+
+            serializer = AccountSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                user = serializer.save()
+                token = MyTokenObtainPairSerializer.get_token(user)
+                return Response({"account": serializer.data, "access": str(token)},
+                                status=status.HTTP_201_CREATED)
 
 
-class ObtainTokenPair(TokenObtainPairView):
+class Login(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
     permission_classes = (permissions.AllowAny,)
 
+    @swagger_auto_schema(responses={201: AccountSerializer,
+                                    400: "error code 4007 for not enough credentials",
+                                    401: "error code 4006 for not submitted users & 4009 for wrong credentials"})
     def post(self, request, *args, **kwargs):
-        data = request.data.copy()
+        data = request.data
         email = data.get('email', None)
         username = data.get('username', None)
-        phone = data.get('phone', None)
-        if email:
-            user = get_object_or_404(User, email=email)
-        elif username:
-            user = get_object_or_404(User, username=username)
-        elif phone:
-            user = User.objects.get(phone=phone)
-        else:
-            return Response(
-                {'success': False, 'error': "کاربری پیدا نشد."}, status=status.HTTP_400_BAD_REQUEST)
-
+        phone_number = data.get('phone_number', None)
+        if not username:
+            username = phone_number or email
+            if username:
+                data['username'] = username
+            else:
+                raise ParseError(serialize_error('4007'))
         serializer = self.get_serializer(data=data)
 
         try:
-            serializer.is_valid(raise_exception=True)
+            if serializer.is_valid(raise_exception=True):
+                user = get_object_or_404(User, username=username)
+                return Response({'account': AccountSerializer(user).data, **serializer.validated_data},
+                                status=status.HTTP_200_OK)
         except TokenError as e:
             raise InvalidToken(e.args[0])
 
-        validated_data = serializer.validated_data
-        validated_data['user_info'] = get_user_json_info(user)
-        return Response(validated_data, status=status.HTTP_200_OK)
+# class CreateAccount(GenericAPIView):
+#     # after phone verification code sent
+#     permission_classes = (permissions.AllowAny,)
+#     serializer_class = VerificationCodeSerializer
+#
+#     @swagger_auto_schema(operation_description="verifies code with phone number and creates an account",
+#                          responses={201: AccountSerializer,
+#                                     400: "error code 4002 for code length less than 5, 4003 for invalid code, "
+#                                          "4004 for previously submitted users & 4005 for expired code",
+#                                     })
+#     @transaction.atomic
+#     def post(self, request):
+#         data = request.data
+#         serializer = VerificationCodeSerializer(data=request.data)
+#         if serializer.is_valid(raise_exception=True):
+#             code = serializer.validated_data.get("code", None)
+#             phone_number = serializer.validated_data.get("phone_number", None)
+#             verification_code = VerificationCode.objects.filter(phone_number=phone_number, code=code,
+#                                                                 is_valid=True).first()
+#             if not verification_code:
+#                 return Response(serialize_error('4003', code),
+#                                 status=status.HTTP_400_BAD_REQUEST)
+#
+#             if datetime.now(verification_code.expiration_date.tzinfo) > verification_code.expiration_date:
+#                 return Response(serialize_error('4005'),
+#                                 status=status.HTTP_400_BAD_REQUEST)
+#
+#             if User.objects.filter(phone_number__exact=phone_number).count() > 0:
+#                 return Response(serialize_error('4004', {1: phone_number}),
+#                                 status=status.HTTP_400_BAD_REQUEST)
+#
+#             serializer = AccountSerializer(data=data)
+#             if serializer.is_valid(raise_exception=True):
+#                 user = serializer.save()
+#                 token = MyTokenObtainPairSerializer.get_token(user)
+#                 return Response({"user": serializer.data, "access": str(token)}, status=status.HTTP_201_CREATED)
+#
+#             # if 'document' not in request.data:
+#             #     raise ParseError("اطلاعات تأیید هویت ضمیمه نشده است.")
+#
+#             # doc = request.data['document']
+#             # doc.name = str(request.data['phone']) + "-" + doc.name
+#
+#             # # TODO Hard coded event name
+#             # current_event = Event.objects.get(name='مسافر صفر')
+#             # if current_event.has_selection:
+#             #     if 'selection_doc' not in request.data:
+#             #         raise ParseError("پاسخ سوالات ضمیمه نشده است.")
+#             #     selection_doc = request.data['selection_doc']
+#             #     selection_doc.name = str(request.data['phone']) + "-" + selection_doc.name
+#             # else:
+#             #     if current_event.maximum_participant:
+#             #         if current_event.event_cost <= 0:
+#             #             participants = Participant.objects.filter(event=current_event)
+#             #             if len(participants) >= current_event.maximum_participant:
+#             #                 return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
+#             #                                 status=status.HTTP_400_BAD_REQUEST)
+#             #         else:
+#             #             paid_participants = Participant.objects.filter(event=current_event, is_paid=True)
+#             #             if len(paid_participants) >= current_event.maximum_participant:
+#             #                 return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
+#             #                                 status=status.HTTP_400_BAD_REQUEST)
+#             #
+#             # if current_event.event_type == 'team':
+#             #     if 'team_code' in request.data and request.data['team_code'] != '':
+#             #         team_code = request.data['team_code']
+#             #         try:
+#             #             team = Team.objects.get(team_code=team_code)
+#             #         except Team.DoesNotExist:
+#             #             return Response(
+#             #                 {'success': False, 'error': "کد تیم نامعتبر است."},
+#             #                 status=status.HTTP_400_BAD_REQUEST)
+#             #         if len(team.team_participants.all()) >= current_event.team_size:
+#             #             return Response(
+#             #                 {'success': False, 'error': "ظرفیت تیم تکمیل است"},
+#             #                 status=status.HTTP_400_BAD_REQUEST)
+#             #         is_team_head = False
+#             #     else:
+#             #         team_code = Member.objects.make_random_password(length=6)
+#             #         is_team_head = True
+#             #
+#             # member = Member.objects.create(
+#             #     first_name=request.data['name'],
+#             #     username=request.data['username'],
+#             #     email=request.data['email'],
+#             #     is_active=True,
+#             #     gender=request.data['gender'],
+#             #     city=request.data['city'],
+#             #     school=request.data['school'],
+#             #     grade=request.data['grade'],
+#             #     phone_number=request.data['phone'],
+#             #     document=doc,
+#             # )
+#             # member.set_password(request.data['password'])
+#             #
+#             # participant = Participant.objects.create(
+#             #     member=member,
+#             #     event=current_event,
+#             #     player_type='PARTICIPANT',
+#             # )
+#             # if current_event.has_selection:
+#             #     participant.selection_doc = selection_doc
+#             #
+#             # if current_event.event_type == 'team':
+#             #     if 'team_code' not in request.data or request.data['team_code'] == '':
+#             #         team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
+#             #     participant.event_team = team
+#             #
+#             # member.save()
+#             # participant.save()
+#             #
+#             # # TODO check email - unit test سپس
+#             # # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
+#             # # member.send_signup_email(absolute_uri)
+#             # if current_event.event_type == 'team':
+#             #     if is_team_head:
+#             #         try:
+#             #             Signup.send_signup_sms(phone, request.data['username'], team_code)
+#             #         except:
+#             #             return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+#             #                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             #     else:
+#             #         try:
+#             #             Signup.send_signup_sms(phone, request.data['username'])
+#             #         except:
+#             #             return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
+#             #                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             #     return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head},
+#             #                     status=status.HTTP_200_OK)
+#             # else:
+#             #     # TODO - add individual signup
+#             #     return Response({'success': True}, status=status.HTTP_200_OK)
+#
+#         # @staticmethod
+#         # def send_signup_sms(phone_number, username, team_code=None):
+#         #     api = KAVENEGAR_TOKEN
+#         #     params = {
+#         #         'receptor': phone_number,
+#         #         'template': 'signupNew' if team_code else 'signupTeam',
+#         #         'token': username,
+#         #         'type': 'sms'
+#         #     }
+#         #     if team_code:
+#         #         params['token2'] = team_code
+#         #     api.verify_lookup(params)
 
 
-class CreateAccount(TokenObtainPairView):
-    # after phone verification code sent
-    parser_class = (MultiPartParser,)
+class ChangePassword(GenericAPIView):
     permission_classes = (permissions.AllowAny,)
+    serializer_class = VerificationCodeSerializer
 
+    @swagger_auto_schema(responses={200: AccountSerializer,
+                                    400: "error code 4002 for len(code) < 5, 4003 for invalid & 4005 for expired code",
+                                    })
     @transaction.atomic
     def post(self, request):
         data = request.data
-        verify_code = data.get("verify_code")
-        username = data.get("username")
-        verify_code_obj = VerificationCode.objects.filter(phone_number=username, code=verify_code, is_valid=True).first()
-        if not verify_code_obj:
-            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        serializer = VerificationCodeSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            phone_number = serializer.validated_data.get('phone_number', None)
+            users = User.objects.filter(phone_number__exact=phone_number)
+            if users.count() <= 0:
+                raise NotFound(serialize_error('4008'))
 
-        if datetime.now(verify_code_obj.expiration_date.tzinfo) > verify_code_obj.expiration_date:
-            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            user = users.first()
+            serializer = AccountSerializer(instance=user, data=data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
-        if not username:
-            return Response({"success": False, "error": "لطفا همه‌ی اطلاعات خواسته شده را وارد کنید."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if User.objects.filter(username__exact=username).count() > 0 \
-                or User.objects.filter(phone_number__exact=username).count() > 0:
-            return Response(
-                {"error": "کاربری با شماره تلفن " + username + " قبلا ثبت‌نام کرده است."},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        data_plus_phone_number = data.copy()
-        data_plus_phone_number['phone_number'] = username
-
-        serializer = UserSerializer(data=data_plus_phone_number)
-        if serializer.is_valid():
-            user = serializer.save()
-            token = MyTokenObtainPairSerializer.get_token(user)  # todo: is it ok to use token in this way?
-            return Response({"user_info": serializer.data, "access": str(token)}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # if 'document' not in request.data:
-        #     raise ParseError("اطلاعات تأیید هویت ضمیمه نشده است.")
-
-        # doc = request.data['document']
-        # doc.name = str(request.data['phone']) + "-" + doc.name
-
-        # # TODO Hard coded event name
-        # current_event = Event.objects.get(name='مسافر صفر')
-        # if current_event.has_selection:
-        #     if 'selection_doc' not in request.data:
-        #         raise ParseError("پاسخ سوالات ضمیمه نشده است.")
-        #     selection_doc = request.data['selection_doc']
-        #     selection_doc.name = str(request.data['phone']) + "-" + selection_doc.name
-        # else:
-        #     if current_event.maximum_participant:
-        #         if current_event.event_cost <= 0:
-        #             participants = Participant.objects.filter(event=current_event)
-        #             if len(participants) >= current_event.maximum_participant:
-        #                 return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
-        #                                 status=status.HTTP_400_BAD_REQUEST)
-        #         else:
-        #             paid_participants = Participant.objects.filter(event=current_event, is_paid=True)
-        #             if len(paid_participants) >= current_event.maximum_participant:
-        #                 return Response({'success': False, "error": "ظرفیت رویداد پر شده است."},
-        #                                 status=status.HTTP_400_BAD_REQUEST)
-        #
-        # if current_event.event_type == 'team':
-        #     if 'team_code' in request.data and request.data['team_code'] != '':
-        #         team_code = request.data['team_code']
-        #         try:
-        #             team = Team.objects.get(team_code=team_code)
-        #         except Team.DoesNotExist:
-        #             return Response(
-        #                 {'success': False, 'error': "کد تیم نامعتبر است."},
-        #                 status=status.HTTP_400_BAD_REQUEST)
-        #         if len(team.team_participants.all()) >= current_event.team_size:
-        #             return Response(
-        #                 {'success': False, 'error': "ظرفیت تیم تکمیل است"},
-        #                 status=status.HTTP_400_BAD_REQUEST)
-        #         is_team_head = False
-        #     else:
-        #         team_code = Member.objects.make_random_password(length=6)
-        #         is_team_head = True
-        #
-        # member = Member.objects.create(
-        #     first_name=request.data['name'],
-        #     username=request.data['username'],
-        #     email=request.data['email'],
-        #     is_active=True,
-        #     gender=request.data['gender'],
-        #     city=request.data['city'],
-        #     school=request.data['school'],
-        #     grade=request.data['grade'],
-        #     phone_number=request.data['phone'],
-        #     document=doc,
-        # )
-        # member.set_password(request.data['password'])
-        #
-        # participant = Participant.objects.create(
-        #     member=member,
-        #     event=current_event,
-        #     player_type='PARTICIPANT',
-        # )
-        # if current_event.has_selection:
-        #     participant.selection_doc = selection_doc
-        #
-        # if current_event.event_type == 'team':
-        #     if 'team_code' not in request.data or request.data['team_code'] == '':
-        #         team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
-        #     participant.event_team = team
-        #
-        # member.save()
-        # participant.save()
-        #
-        # # TODO check email - unit test سپس
-        # # absolute_uri = request.build_absolute_uri('/')[:-1].strip("/")
-        # # member.send_signup_email(absolute_uri)
-        # if current_event.event_type == 'team':
-        #     if is_team_head:
-        #         try:
-        #             Signup.send_signup_sms(phone, request.data['username'], team_code)
-        #         except:
-        #             return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
-        #                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        #     else:
-        #         try:
-        #             Signup.send_signup_sms(phone, request.data['username'])
-        #         except:
-        #             return Response({'error': 'مشکلی در ارسال پیامک بوجود آمده'},
-        #                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        #     return Response({'success': True, 'team_code': team_code, 'is_team_head': is_team_head},
-        #                     status=status.HTTP_200_OK)
-        # else:
-        #     # TODO - add individual signup
-        #     return Response({'success': True}, status=status.HTTP_200_OK)
-
-    @staticmethod
-    def send_signup_sms(phone_number, username, team_code=None):
-        api = KAVENEGAR_TOKEN
-        params = {
-            'receptor': phone_number,
-            'template': 'signupNew' if team_code else 'signupTeam',
-            'token': username,
-            'type': 'sms'
-        }
-        if team_code:
-            params['token2'] = team_code
-        api.verify_lookup(params)
-
-
-class ChangePassword(APIView):
-    # parser_class = (MultiPartParser,)
-    permission_classes = (permissions.AllowAny,)
-
-    @transaction.atomic
-    def post(self, request):
-        verify_code = request.data['verify_code']
-        phone = request.data['phone']
-        v = VerificationCode.objects.filter(phone_number=phone, code=verify_code, is_valid=True)
-        if len(v) <= 0:
-            return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if datetime.now(v[0].expiration_date.tzinfo) > v[0].expiration_date:
-            return Response({'success': False, 'error': "اعتبار این کد منقضی شده است."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        try:
-            member = Member.objects.get(phone_number=phone)
-        except Member.DoesNotExist:
-            return Response({'success': False, 'error': "کاربری با این شماره تلفن یافت نشد."})
-        member.set_password(request.data['password'])
-        member.save()
-        return Response({'success': True, 'error': "عملیات با موفقیت انجام شد"}, status=status.HTTP_200_OK)
 
 
 class GetTeamData(APIView):
@@ -366,14 +414,6 @@ class RegistrationInfo(APIView):
             return Response(
                 {'success': False, 'error': "کاربر برای ثبت‌نام در این رویداد اقدام نکرده است."},
                 status=status.HTTP_400_BAD_REQUEST)
-
-
-class LogOut(APIView):
-
-    # TODO - invalidate previous token
-    def post(self, request):
-        auth_logout(request)
-        return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 def get_random_alphanumeric_string(length):

@@ -1,91 +1,153 @@
+import logging
+from datetime import datetime
+
 from django.contrib.auth.hashers import make_password
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
+from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from errors.error_codes import serialize_error
+from workshop_backend.settings.base import SMS_CODE_LENGTH
 from .models import Member, Participant, Team, User, VerificationCode
+from .validators import phone_number_validator
+
+logger = logging.getLogger(__name__)
 
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(max_length=15, required=True)
+    phone_number = serializers.CharField(max_length=15, required=True, validators=[phone_number_validator])
+    code_type = serializers.ChoiceField(choices=['change_pass', 'verify'])
 
-    def validate_phone_number(self, phone_number):
-        if not phone_number.isdigit():
-            raise serializers.ValidationError({"error_code": 1000, "error_msg": "phone number must be digit"})
-        return phone_number
+    def validate(self, attrs):
+        if User.objects.filter(phone_number__exact=attrs.get('phone_number')).count() <= 0:
+            if attrs.get('code_type') == 'change_pass':
+                raise NotFound(serialize_error('4008'))
+        else:
+            if attrs.get('code_type') == 'verify':
+                raise ParseError(serialize_error('4004', params={'param1': attrs.get('phone_number')}))
+
+        return attrs
 
     class Meta:
         model = VerificationCode
-        fields = [
-            'phone_number'
-        ]
+        fields = ['phone_number', 'code_type']
+
+
+class VerificationCodeSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(max_length=15, required=True, validators=[phone_number_validator])
+    code = serializers.CharField(max_length=SMS_CODE_LENGTH, required=True)
+    password = serializers.CharField(required=True)
+
+    def validate_code(self, code):
+        if len(code) < SMS_CODE_LENGTH:
+            raise serializers.ValidationError(serialize_error('4002'))
+        return code
+
+    def validate(self, attrs):
+        code = attrs.get("code", None)
+        phone_number = attrs.get("phone_number", None)
+        verification_code = VerificationCode.objects.filter(phone_number=phone_number, code=code, is_valid=True).first()
+
+        if not verification_code:
+            raise ParseError(serialize_error('4003'))
+
+        if datetime.now(verification_code.expiration_date.tzinfo) > verification_code.expiration_date:
+            raise ParseError(serialize_error('4005'))
+
+        return attrs
+
+    class Meta:
+        model = VerificationCode
+        fields = ['phone_number', 'code', 'password']
+
+
+class AccountSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
+    password = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(required=False)
+    id = serializers.ReadOnlyField()
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data.get('password'))
+        validated_data['username'] = validated_data.get('phone_number')
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['password'] = make_password(validated_data.get('password'))
+        instance.password = validated_data.get('password')
+        instance.save()
+        return instance
+
+    class Meta:
+        model = User
+        fields = ['id', 'phone_number', 'password', 'username', 'email', 'uuid']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
+    username = serializers.CharField(required=False)
+    id = serializers.ReadOnlyField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'phone_number', 'username', 'email', 'uuid', 'gender', 'national_code', 'birth_date',
+                  'country', 'address', 'province', 'city', 'postal_code']
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
+    username = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False)
+
     @classmethod
     def get_token(cls, user):
-        token = super(MyTokenObtainPairSerializer, cls).get_token(user)
-        # TODO Add custom claims
-        # token['is_mentor'] = user.is_mentor
-        # token['is_participant'] = user.is_participant
-        # if user.is_participant:
-        #     token['name'] = user.first_name
-        #     # token['team'] = str(user.participant.team_id)
-        #     token['uuid'] = str(user.uuid)
+        token = super().get_token(user)
+        token['uuid'] = str(user.uuid)
         return token
 
     def validate(self, attrs):
         credentials = {
-            'username': '',
             'password': attrs.get("password")
         }
-        user_obj = User.objects.filter(email=attrs.get("username")).first() \
-                   or User.objects.filter(username=attrs.get("username")).first() \
-                   or User.objects.filter(phone_number=attrs.get("username")).first()
-        if user_obj:
-            credentials['username'] = user_obj.username
-        return super().validate(credentials)
+        user = User.objects.filter(email=attrs.get("email")).first() \
+               or User.objects.filter(username=attrs.get("username")).first() \
+               or User.objects.filter(phone_number=attrs.get("phone_number")).first()
+        if user:
+            credentials['username'] = user.username
+            try:
+                return super().validate(credentials)
+            except:
+                raise AuthenticationFailed(serialize_error('4009'))
+        else:
+            raise AuthenticationFailed(serialize_error('4006'))
 
 
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        help_text='Leave empty if no change needed',
-        style={'input_type': 'password', 'placeholder': 'Password'}
-    )
-
-    def create(self, validated_data):
-        validated_data['password'] = make_password(validated_data.get('password'))
-        return super(UserSerializer, self).create(validated_data)
-
-    class Meta:
-        model = User
-        fields = ['email', 'username', 'phone_number', 'password']
-
-
-class MemberSerializer(serializers.ModelSerializer):
-    """
-    Currently unused in preference of the below.
-    """
-    email = serializers.EmailField(
-        required=True
-    )
-    username = serializers.CharField()
-    password = serializers.CharField(min_length=8, write_only=True)
-
-    class Meta:
-        model = Member
-        fields = ('email', 'username', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        password = validated_data.pop('password', None)
-        instance = self.Meta.model(**validated_data)  # as long as the fields are the same, we can just use this
-        if password is not None:
-            instance.set_password(password)
-        instance.save()
-        return instance
+#
+# class MemberSerializer(serializers.ModelSerializer):
+#     """
+#     Currently unused in preference of the below.
+#     """
+#     email = serializers.EmailField(
+#         required=True
+#     )
+#     username = serializers.CharField()
+#     password = serializers.CharField(min_length=8, write_only=True)
+#
+#     class Meta:
+#         model = Member
+#         fields = ('email', 'username', 'password')
+#         extra_kwargs = {'password': {'write_only': True}}
+#
+#     def create(self, validated_data):
+#         password = validated_data.pop('password', None)
+#         instance = self.Meta.model(**validated_data)  # as long as the fields are the same, we can just use this
+#         if password is not None:
+#             instance.set_password(password)
+#         instance.save()
+#         return instance
 
 
 class ParticipantsListField(serializers.RelatedField):

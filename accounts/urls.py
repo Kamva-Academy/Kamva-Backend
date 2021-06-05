@@ -1,31 +1,18 @@
-from django.urls import path, re_path
-
-# from .views import signup
-# ,login, logout, send_request, verify, activate,
-
-# urlpatterns = [
-#     # path('request/', send_request, name='request'),
-#     # path('verify/', verify, name='verify'),
-#     path('signup/', signup, name="signup"),
-#     # path('logout/', logout, name="logout"),
-#     # path('login/', login, name="login"),
-#     #re_path(r'activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/',
-#             # activate, name='activate')
-# ]
-
 from django.urls import path
-from rest_framework_simplejwt import views as jwt_views
-from .views import ObtainTokenPair, CreateAccount, activate, ChangePass, LogOut, UploadAnswerView, \
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from .views import activate, ChangePass, UploadAnswerView, \
     PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerificationCode, GetTeamData, ChangePassword, \
-    RegistrationInfo, VerifyDiscount
+    RegistrationInfo, VerifyDiscount, UserViewSet, Login
 
 urlpatterns = [
-    path('send-verification-code/', SendVerificationCode.as_view(), name="send_verification_code"),
-    path('create-account/', CreateAccount.as_view(), name="signup"),
-    path('token/obtain/', ObtainTokenPair.as_view(), name='token_create'),
-    path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
-    path('logout/', LogOut.as_view(), name="logout"),
-    path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),
+    path('accounts/verification-code/', SendVerificationCode.as_view(), name="send_verification_code"),
+    path('accounts/login/', Login.as_view(), name='create_token'),
+    path('accounts/refresh/', TokenRefreshView.as_view(), name='refresh_token'),
+    path('accounts/change-pass/', ChangePassword.as_view(), name="logout"),
+
+    # path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),
 
     # path('pay/', PayView.as_view(), name="pay"),
     # path('pay/verify-payment/', VerifyPayView.as_view(), name="verify-payment"),
@@ -41,3 +28,7 @@ urlpatterns = [
     # path('teams/', Teams.as_view(), name="teams"),
     # path('verify-discount/', VerifyDiscount.as_view(), name="verify_discount"),
 ]
+
+router = DefaultRouter()
+router.register(r'accounts', UserViewSet, basename='account')
+urlpatterns += router.urls

@@ -23,17 +23,15 @@ import random
 import re
 
 from fsm.models import *
-from workshop_backend.settings.base import KAVENEGAR_TOKEN
+from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_VERIFICATION_CODE_DELAY, SMS_CODE_LENGTH
 
 logger = logging.getLogger(__file__)
-
-VERIFICATION_CODE_DELAY = 5
 
 
 class User(AbstractUser):
     class Gender(models.TextChoices):
-        Man = 'Man'
-        Woman = 'Woman'
+        Male = 'Male'
+        Female = 'Female'
 
     phone_number = models.CharField(max_length=15, blank=False, null=False, unique=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
@@ -61,6 +59,7 @@ class EducationalInstitute(models.Model):
     province = models.CharField(max_length=30, null=True, blank=True)
     city = models.CharField(max_length=30, null=True, blank=True)
     postal_code = models.CharField(max_length=10, null=True, blank=True)
+    approved = models.BooleanField(null=True, blank=True)
 
 
 class School(EducationalInstitute):
@@ -366,16 +365,14 @@ class DiscountCode(models.Model):
 class VerificationCodeManager(models.Manager):
     @transaction.atomic
     def create_verification_code(self, phone_number, time_zone='Asia/Tehran'):
-        print('phone number creation started')
-
-        code = User.objects.make_random_password(length=5, allowed_chars='1234567890')
+        code = User.objects.make_random_password(length=SMS_CODE_LENGTH, allowed_chars='1234567890')
         other_codes = VerificationCode.objects.filter(phone_number=phone_number, is_valid=True)
         for c in other_codes:
             c.is_valid = False
             c.save()
         verification_code = VerificationCode.objects.create(code=code, phone_number=phone_number,
-                                                      expiration_date=datetime.now(pytz.timezone(time_zone))
-                                                                      + timedelta(minutes=VERIFICATION_CODE_DELAY))
+                                                            expiration_date=datetime.now(pytz.timezone(time_zone))
+                                                                            + timedelta(minutes=SMS_VERIFICATION_CODE_DELAY))
         return verification_code
 
 
@@ -387,11 +384,11 @@ class VerificationCode(models.Model):
 
     objects = VerificationCodeManager()
 
-    def send_sms(self, type='verify'):
+    def send_sms(self, code_type='verify'):
         api = KAVENEGAR_TOKEN
         params = {
             'receptor': self.phone_number,
-            'template': type,  # 'verify' if type != 'changePass' else 'changePass',
+            'template': code_type,
             'token': str(self.code),
             'type': 'sms'
         }
