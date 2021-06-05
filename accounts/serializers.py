@@ -97,6 +97,12 @@ class UserSerializer(serializers.ModelSerializer):
                   'country', 'address', 'province', 'city', 'postal_code']
 
 
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'phone_number']
+
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
     username = serializers.CharField(required=False)

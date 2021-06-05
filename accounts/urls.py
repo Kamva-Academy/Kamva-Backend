@@ -2,15 +2,14 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import activate, ChangePass, UploadAnswerView, \
-    PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerificationCode, GetTeamData, ChangePassword, \
-    RegistrationInfo, VerifyDiscount, UserViewSet, Login
+from .views import *
 
 urlpatterns = [
     path('accounts/verification-code/', SendVerificationCode.as_view(), name="send_verification_code"),
     path('accounts/login/', Login.as_view(), name='create_token'),
     path('accounts/refresh/', TokenRefreshView.as_view(), name='refresh_token'),
     path('accounts/change-pass/', ChangePassword.as_view(), name="logout"),
+    path('update-profile/', UpdateProfile.as_view(), name="update-profile"),
 
     # path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),
 

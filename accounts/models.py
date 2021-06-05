@@ -63,6 +63,7 @@ class EducationalInstitute(models.Model):
 
 
 class School(EducationalInstitute):
+    # todo: دبستان یا راهنمایی یا دبیرستان رو هم اضافه کنیم
     principle_name = models.CharField(max_length=30, null=True, blank=True)
     principle_phone = models.CharField(max_length=15, null=True, blank=True, unique=True)
 

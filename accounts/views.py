@@ -36,10 +36,7 @@ from rest_framework.views import APIView
 
 from .permissions import IsHimself
 from .utils import *
-from .serializers import MyTokenObtainPairSerializer, PhoneNumberSerializer, VerificationCodeSerializer, \
-    AccountSerializer, UserSerializer
-
-import pytz
+from .serializers import *
 
 logger = logging.getLogger(__name__)
 
@@ -139,6 +136,7 @@ class Login(TokenObtainPairView):
                                 status=status.HTTP_200_OK)
         except TokenError as e:
             raise InvalidToken(e.args[0])
+
 
 # class CreateAccount(GenericAPIView):
 #     # after phone verification code sent
@@ -310,6 +308,20 @@ class ChangePassword(GenericAPIView):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+class UpdateProfile(APIView):
+    parser_class = (MultiPartParser,)
+    permission_classes = (permissions.BasePermission,)
+
+    def post(self, request):
+        user = request.user
+        data = request.data
+        updated_data = {**user.__dict__, **data}
+        serializer = UserUpdateSerializer(user, data=updated_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"user_info": serializer.data}, status=status.HTTP_200_OK)
+        return Response({serializer.data}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetTeamData(APIView):
