@@ -10,6 +10,16 @@ class IsHimself(permissions.BasePermission):
         return obj.id == request.user.id and request.user.is_authenticated
 
 
+class IsInstituteOwner(permissions.BasePermission):
+    """
+    Permission for updating or deleting or adding owners to institutes
+    """
+    message = 'You are not this institutes owner'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.owners
+
+
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
     Object-level permission to only allow owners of an object to edit it.

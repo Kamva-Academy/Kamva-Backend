@@ -6,14 +6,14 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import action
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, ListModelMixin
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-
 from errors.error_codes import serialize_error
-from fsm.models import PlayerHistory, Event
-from workshop_backend.settings.base import KAVENEGAR_TOKEN
+from fsm.models import Event
 from .models import *
 import random
 from django.db import transaction
@@ -22,7 +22,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import render, redirect, get_object_or_404
-from rest_framework.exceptions import ParseError, NotFound
+from rest_framework.exceptions import ParseError, NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
@@ -34,12 +34,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 
-from .permissions import IsHimself
+from .permissions import IsHimself, IsInstituteOwner
 from .utils import *
 from .serializers import MyTokenObtainPairSerializer, PhoneNumberSerializer, VerificationCodeSerializer, \
-    AccountSerializer, UserSerializer
-
-import pytz
+    AccountSerializer, UserSerializer, InstituteSerializer, StudentshipSerializer, ProfileSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +66,8 @@ class SendVerificationCode(GenericAPIView):
             return Response({'detail': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
 
 
-class UserViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin):
+class UserViewSet(ModelViewSet):
+    parser_classes = (MultiPartParser, )
     queryset = User.objects.all()
     serializer_class = UserSerializer
     serializer_action_classes = {
@@ -84,7 +83,7 @@ class UserViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, UpdateMo
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [permissions.AllowAny]
-        elif self.action == 'update' or self.action == 'partial_update':
+        elif self.action == 'update' or self.action == 'partial_update' or self.action == 'destroy':
             permission_classes = [IsHimself]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -121,24 +120,127 @@ class Login(TokenObtainPairView):
                                     401: "error code 4006 for not submitted users & 4009 for wrong credentials"})
     def post(self, request, *args, **kwargs):
         data = request.data
-        email = data.get('email', None)
-        username = data.get('username', None)
-        phone_number = data.get('phone_number', None)
-        if not username:
-            username = phone_number or email
-            if username:
-                data['username'] = username
-            else:
-                raise ParseError(serialize_error('4007'))
+        user = find_user(data)
         serializer = self.get_serializer(data=data)
-
         try:
             if serializer.is_valid(raise_exception=True):
-                user = get_object_or_404(User, username=username)
                 return Response({'account': AccountSerializer(user).data, **serializer.validated_data},
                                 status=status.HTTP_200_OK)
         except TokenError as e:
             raise InvalidToken(e.args[0])
+
+
+class ChangePassword(GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = VerificationCodeSerializer
+
+    @swagger_auto_schema(responses={200: AccountSerializer,
+                                    400: "error code 4002 for len(code) < 5, 4003 for invalid & 4005 for expired code",
+                                    })
+    @transaction.atomic
+    def post(self, request):
+        data = request.data
+        serializer = VerificationCodeSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            phone_number = serializer.validated_data.get('phone_number', None)
+            users = User.objects.filter(phone_number__exact=phone_number)
+            if users.count() <= 0:
+                raise NotFound(serialize_error('4008'))
+
+            user = users.first()
+            serializer = AccountSerializer(instance=user, data=data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class InstituteViewSet(ModelViewSet):
+    queryset = EducationalInstitute.objects.all()
+    serializer_class = InstituteSerializer
+    serializer_action_classes = {
+        'add_owners': AccountSerializer
+    }
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except(KeyError, AttributeError):
+            return super().get_serializer_class()
+
+    def get_permissions(self):
+        if self.action == 'update' or self.action == 'partial_update' or self.action == 'delete':
+            permission_classes = [IsInstituteOwner]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+    @transaction.atomic
+    def create(self, request):
+        data = request.data
+        serializer = InstituteSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            user = request.user
+            serializer.validated_data['creator'] = user
+            serializer.validated_data['date_added'] = timezone.now().date()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @swagger_auto_schema(responses={200: InstituteSerializer,
+                                    400: "error code 4010 for institute not being approved"
+                                    })
+    @transaction.atomic
+    @action(detail=True, methods=['post'], permission_classes=[IsInstituteOwner, ])
+    def add_owners(self, request, pk=None):
+        data = request.data
+        institute = self.get_object()
+        if institute.is_approved:
+            serializer = AccountSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                new_owner = find_user(serializer.validated_data)
+                institute.owners.add(new_owner)
+                return Response(InstituteSerializer(institute).data, status=status.HTTP_200_OK)
+        else:
+            raise PermissionDenied(serialize_error("4010"))
+
+
+class StudentshipViewSet(ModelViewSet):
+    parser_classes = [MultiPartParser, ]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = StudentshipSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Studentship.objects.all()
+        else:
+            return Studentship.objects.filter(user=user)
+
+    @swagger_auto_schema(responses={200: InstituteSerializer,
+                                    403: "error code 4011 for already associating a studentship to user"
+                                    })
+    @transaction.atomic
+    def create(self, request):
+        data = request.data
+        serializer = StudentshipSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            user = request.user
+            serializer.validated_data['user'] = user
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
+    parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = ProfileSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return User.objects.all()
+        else:
+            return User.objects.filter(id=user.id)
+
 
 # class CreateAccount(GenericAPIView):
 #     # after phone verification code sent
@@ -285,31 +387,6 @@ class Login(TokenObtainPairView):
 #         #     if team_code:
 #         #         params['token2'] = team_code
 #         #     api.verify_lookup(params)
-
-
-class ChangePassword(GenericAPIView):
-    permission_classes = (permissions.AllowAny,)
-    serializer_class = VerificationCodeSerializer
-
-    @swagger_auto_schema(responses={200: AccountSerializer,
-                                    400: "error code 4002 for len(code) < 5, 4003 for invalid & 4005 for expired code",
-                                    })
-    @transaction.atomic
-    def post(self, request):
-        data = request.data
-        serializer = VerificationCodeSerializer(data=data)
-        if serializer.is_valid(raise_exception=True):
-            phone_number = serializer.validated_data.get('phone_number', None)
-            users = User.objects.filter(phone_number__exact=phone_number)
-            if users.count() <= 0:
-                raise NotFound(serialize_error('4008'))
-
-            user = users.first()
-            serializer = AccountSerializer(instance=user, data=data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 class GetTeamData(APIView):

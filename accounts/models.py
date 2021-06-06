@@ -23,7 +23,7 @@ import random
 import re
 
 from fsm.models import *
-from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_VERIFICATION_CODE_DELAY, SMS_CODE_LENGTH
+from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH
 
 logger = logging.getLogger(__file__)
 
@@ -35,6 +35,7 @@ class User(AbstractUser):
 
     phone_number = models.CharField(max_length=15, blank=False, null=False, unique=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    bio = models.CharField(max_length=300, blank=True, null=True)
     gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     national_code = models.CharField(max_length=10, null=True, blank=True)
@@ -51,69 +52,82 @@ class EducationalInstitute(models.Model):
     class InstituteType(models.TextChoices):
         School = 'SCHOOL'
         University = 'UNIVERSITY'
-        Other = 'Other'
+        Other = 'OTHER'
 
     name = models.CharField(max_length=30, null=False, blank=False)
-    type = models.CharField(max_length=10, null=False, blank=False, choices=InstituteType.choices)
+    institute_type = models.CharField(max_length=10, null=False, blank=False, choices=InstituteType.choices)
     address = models.CharField(max_length=100, null=True, blank=True)
     province = models.CharField(max_length=30, null=True, blank=True)
     city = models.CharField(max_length=30, null=True, blank=True)
     postal_code = models.CharField(max_length=10, null=True, blank=True)
-    approved = models.BooleanField(null=True, blank=True)
+    phone_number = models.CharField(max_length=15, null=True, blank=True)
+    contact_info = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateField(null=True, blank=True)
+
+    date_added = models.DateField(null=True, blank=True)
+    is_approved = models.BooleanField(null=True, blank=True)
+    creator = models.ForeignKey(User, related_name='created_institutes', on_delete=models.SET_NULL, null=True,
+                                blank=True)
+    owners = models.ManyToManyField(User, related_name='owned_institutes', blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class School(EducationalInstitute):
+    class SchoolType(models.Choices):
+        Elementary = 'ELEMENTARY'
+        Junior_High = 'JUNIOR_HIGH'
+        High = 'HIGH'
+
     principle_name = models.CharField(max_length=30, null=True, blank=True)
     principle_phone = models.CharField(max_length=15, null=True, blank=True, unique=True)
+    school_type = models.CharField(max_length=15, null=True, blank=True, choices=SchoolType.choices)
 
 
 class University(EducationalInstitute):
     pass
 
 
-class Student(models.Model):
-    class Grade(models.TextChoices):
-        Pre = 'PRE'
-        One = 'ONE'
-        Two = 'TWO'
-        Three = 'THREE'
-        Four = 'FOUR'
-        Five = 'FIVE'
-        Six = 'SIX'
-        Seven = 'SEVEN'
-        Eight = 'EIGHT'
-        Nine = 'NINE'
-        Ten = 'TEN'
-        Eleven = 'ELEVEN'
-        Twelve = 'TWELVE'
+class Studentship(models.Model):
+    class StudentshipType(models.Choices):
+        School = 'SCHOOL'
+        Academic = 'ACADEMIC'
 
+    studentship_type = models.CharField(max_length=10, null=False, blank=False, choices=StudentshipType.choices)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    is_currently_studying = models.BooleanField(default=False)
+    document = models.FileField(upload_to='studentship_documents/', null=True, blank=True)
+    is_document_verified = models.BooleanField(default=False)
+    user = models.ForeignKey(User, related_name='studentships', on_delete=models.CASCADE, null=False)
+
+
+class SchoolStudentship(Studentship):
     class Major(models.TextChoices):
         Math = 'MATH'
         Biology = 'BIOLOGY'
         Literature = 'LITERATURE'
         IslamicStudies = 'ISLAMIC_STUDIES'
         TechnicalTraining = 'TECHNICAL_TRAINING'
-        Others = 'Others'
+        Others = 'OTHERS'
 
-    user = models.OneToOneField(User, related_name='student', on_delete=models.CASCADE, null=False)
     school = models.ForeignKey(School, related_name='students', on_delete=models.SET_NULL, null=True)
-    document = models.FileField(upload_to='school_documents/', null=True, blank=True)
-    grade = models.CharField(max_length=15, null=True, blank=True, choices=Grade.choices)
+    grade = models.IntegerField(null=True, blank=True)
     major = models.CharField(max_length=25, null=True, blank=True, choices=Major.choices)
 
 
-class CollegeStudent(models.Model):
+class AcademicStudentship(Studentship):
     class Degree(models.TextChoices):
         BA = 'BA'
         MA = 'MA'
         PHD = 'PHD'
         Postdoc = 'POSTDOC'
 
-    user = models.OneToOneField(User, related_name='college_student', on_delete=models.CASCADE, null=False)
-    university = models.ForeignKey(University, related_name='college_students', on_delete=models.SET_NULL, null=True)
-    document = models.FileField(upload_to='college_documents/', null=True, blank=True)
+    university = models.ForeignKey(University, related_name='academic_students', on_delete=models.SET_NULL, null=True)
     degree = models.CharField(max_length=15, null=True, blank=True, choices=Degree.choices)
-    major = models.CharField(max_length=30, null=True, blank=True)
+    university_major = models.CharField(max_length=30, null=True, blank=True)
 
 
 class MemberManager(BaseUserManager):
@@ -372,7 +386,7 @@ class VerificationCodeManager(models.Manager):
             c.save()
         verification_code = VerificationCode.objects.create(code=code, phone_number=phone_number,
                                                             expiration_date=datetime.now(pytz.timezone(time_zone))
-                                                                            + timedelta(minutes=SMS_VERIFICATION_CODE_DELAY))
+                                                                            + timedelta(minutes=SMS_CODE_DELAY))
         return verification_code
 
 

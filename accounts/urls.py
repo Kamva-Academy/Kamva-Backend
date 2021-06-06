@@ -4,13 +4,13 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import activate, ChangePass, UploadAnswerView, \
     PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerificationCode, GetTeamData, ChangePassword, \
-    RegistrationInfo, VerifyDiscount, UserViewSet, Login
+    RegistrationInfo, VerifyDiscount, UserViewSet, Login, InstituteViewSet, StudentshipViewSet, ProfileViewSet
 
 urlpatterns = [
-    path('accounts/verification-code/', SendVerificationCode.as_view(), name="send_verification_code"),
+    path('accounts/verification_code/', SendVerificationCode.as_view(), name="send_verification_code"),
     path('accounts/login/', Login.as_view(), name='create_token'),
     path('accounts/refresh/', TokenRefreshView.as_view(), name='refresh_token'),
-    path('accounts/change-pass/', ChangePassword.as_view(), name="logout"),
+    path('accounts/change_pass/', ChangePassword.as_view(), name="logout"),
 
     # path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),
 
@@ -30,5 +30,8 @@ urlpatterns = [
 ]
 
 router = DefaultRouter()
-router.register(r'accounts', UserViewSet, basename='account')
+router.register(r'accounts', UserViewSet, basename='accounts')
+router.register(r'institutes', InstituteViewSet, basename='institutes')
+router.register(r'profile', ProfileViewSet, basename='profiles')
+router.register(r'studentship', StudentshipViewSet, basename='studentships')
 urlpatterns += router.urls

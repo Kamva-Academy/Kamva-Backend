@@ -11,8 +11,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from errors.error_codes import serialize_error
 from workshop_backend.settings.base import SMS_CODE_LENGTH
-from .models import Member, Participant, Team, User, VerificationCode
-from .validators import phone_number_validator
+from .models import Member, Participant, Team, User, VerificationCode, EducationalInstitute, School, University, \
+    SchoolStudentship, Studentship, AcademicStudentship
+from .validators import phone_number_validator, grade_validator
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
 
 class AccountSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
-    password = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=False)
     username = serializers.CharField(required=False)
     id = serializers.ReadOnlyField()
 
@@ -83,7 +84,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'password', 'username', 'email', 'uuid']
+        fields = ['id', 'phone_number', 'first_name', 'last_name', 'password', 'username', 'email', 'uuid']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -94,11 +95,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'phone_number', 'username', 'email', 'uuid', 'gender', 'national_code', 'birth_date',
-                  'country', 'address', 'province', 'city', 'postal_code']
+                  'country', 'address', 'province', 'city', 'postal_code', 'profile_picture']
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
+    password = serializers.CharField(write_only=True, required=True)
     username = serializers.CharField(required=False)
     email = serializers.EmailField(required=False)
 
@@ -123,6 +125,83 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 raise AuthenticationFailed(serialize_error('4009'))
         else:
             raise AuthenticationFailed(serialize_error('4006'))
+
+
+class InstituteSerializer(serializers.ModelSerializer):
+    principal_name = serializers.CharField(max_length=30, required=False)
+    principal_phone = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
+    phone_number = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
+    institute_type = serializers.ChoiceField(choices=['SCHOOL', 'UNIVERSITY', 'OTHER'])
+    is_approved = serializers.BooleanField(required=False, read_only=True)
+    creator = serializers.PrimaryKeyRelatedField(many=False, required=False, read_only=True)
+    owners = serializers.PrimaryKeyRelatedField(many=True, required=False, read_only=True)
+    date_added = serializers.DateField(required=False, read_only=True)
+
+    def create(self, validated_data):
+        institute_type = validated_data.get('institute_type', None)
+        if institute_type == 'SCHOOL':
+            return School.objects.create(**validated_data)
+        elif institute_type == 'UNIVERSITY':
+            return University.objects.create(**validated_data)
+        else:
+            return super().create(validated_data)
+
+    class Meta:
+        model = EducationalInstitute
+        fields = ['id', 'name', 'institute_type', 'address', 'province', 'city', 'postal_code', 'phone_number',
+                  'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved', 'creator',
+                  'owners', 'date_added', 'created_at']
+
+
+class StudentshipSerializer(serializers.ModelSerializer):
+    university = serializers.PrimaryKeyRelatedField(many=False, queryset=University.objects.all(), required=False)
+    degree = serializers.ChoiceField(choices=['BA', 'MA', 'PHD', 'POSTDOC'], required=False)
+    university_major = serializers.CharField(max_length=30, required=False)
+
+    school = serializers.PrimaryKeyRelatedField(many=False, queryset=School.objects.all(), required=False)
+    grade = serializers.IntegerField(required=False, validators=[grade_validator])
+    major = serializers.ChoiceField(choices=[
+        'MATH', 'BIOLOGY', 'LITERATURE', 'ISLAMIC_STUDIES', 'TECHNICAL_TRAINING', 'OTHERS'], required=False)
+
+    def create(self, validated_data):
+        studentship_type = validated_data.get('studentship_type', None)
+        if studentship_type == 'SCHOOL':
+            return SchoolStudentship.objects.create(**validated_data)
+        elif studentship_type == 'ACADEMIC':
+            return AcademicStudentship.objects.create(**validated_data)
+
+    def validate(self, attrs):
+        studentship_type = attrs.get('studentship_type', None)
+        if studentship_type == 'SCHOOL':
+            grade = attrs.get('grade', None)
+            major = attrs.get('major', None)
+            if grade:
+                if 9 < grade <= 12:
+                    if not major:
+                        raise ParseError(serialize_error('4013'))
+                elif major:
+                    raise ParseError(serialize_error('4014'))
+        elif studentship_type == 'ACADEMIC':
+            degree = attrs.get('degree', None)
+            if not degree:
+                raise ParseError(serialize_error('4015'))
+        return attrs
+
+    class Meta:
+        model = Studentship
+        fields = ['id', 'user', 'studentship_type', 'start_date', 'end_date', 'is_currently_studying', 'document',
+                  'is_document_verified', 'university', 'degree', 'university_major', 'school', 'grade', 'major']
+        read_only_fields = ['is_document_verified', 'user', ]
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    studentships = StudentshipSerializer(many=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'phone_number', 'username', 'email', 'uuid', 'gender', 'national_code', 'birth_date',
+                  'country', 'address', 'province', 'city', 'postal_code', 'profile_picture', 'bio',
+                  'studentships']
 
 
 #

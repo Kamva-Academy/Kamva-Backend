@@ -1,6 +1,23 @@
-from fsm.models import PlayerHistory, FSM
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ParseError
+
+from accounts.models import User
+from errors.error_codes import serialize_error
 from fsm.views.participantviews import get_last_state_in_fsm
 
+
+def find_user(data):
+    email = data.get('email', None)
+    username = data.get('username', None)
+    phone_number = data.get('phone_number', None)
+    if not username:
+        username = phone_number or email
+        if username:
+            data['username'] = username
+        else:
+            raise ParseError(serialize_error('4007'))
+
+    return get_object_or_404(User, username=username)
 
 def get_user_json_info(user):
     response = {

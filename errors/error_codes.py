@@ -12,6 +12,12 @@ errors_dict = {'4000': 'phone number must be digit',
                '4007': 'no credentials were provided',
                '4008': 'no user found with given phone number',
                '4009': 'either your credentials were wrong or your account has been deactivated',
+               '4010': 'this institute is has not been approved yet',
+               '4011': 'this user already has a studentship',
+               '4012': 'grade must be between 0 and 12',
+               '4013': 'major is required for high school students',
+               '4014': 'non-high school students can\'t have major',
+               '4015': 'college students must enter their studying degree',
 
 
                '5000': 'sending SMS failed'}
