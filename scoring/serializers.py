@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from fsm.serializers import PlayerWorkshopSerializer
+from fsm.serializers.serializers import PlayerWorkshopSerializer
 from .models import ScoreTransaction
 from django.db import transaction
 from fsm.models import PlayerWorkshop

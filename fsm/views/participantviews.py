@@ -1,33 +1,30 @@
-import json
 import os
 
 import redis
-from django.core.paginator import Paginator
-from django.db.models import Sum
 from django.shortcuts import get_object_or_404
-from rest_framework import status, permissions, viewsets
+from rest_framework import status, permissions
 
 import accounts
 from fsm.views import permissions as customPermissions
-from accounts.models import Member, Player, Participant
+from accounts.models import Member
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from scoring.models import ScoreTransaction
 from workshop_backend.settings.production import REDIS_HOST, REDIS_PORT
 from .permissions import ParticipantPermission
 
 from django.contrib.contenttypes.models import ContentType
-from rest_framework.exceptions import ParseError
 
-from fsm.models import *
-from fsm.serializers import *
+from fsm.serializers.serializers import *
 from fsm.views.functions import *
 from notifications.signals import notify
 from notifications.models import Notification
 
 import logging
+
+from ..serializers.answer_serializer import AnswerSerializer
+from ..serializers.serializers import FSMEdgeSerializer, FSMSerializer
 
 logger = logging.getLogger(__name__)
 

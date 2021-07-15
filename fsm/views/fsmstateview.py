@@ -8,7 +8,8 @@ from rest_framework import mixins
 
 
 from fsm.models import MainState, HelpState, Article
-from fsm.serializers import MainStateSerializer, MainStateGetSerializer, HelpStateSerializer, ArticleSerializer
+from fsm.serializers.serializers import MainStateSerializer, MainStateGetSerializer, HelpStateSerializer
+from fsm.serializers.paper_serializer import ArticleSerializer
 
 from rest_framework import permissions
 from fsm.views import permissions as customPermissions

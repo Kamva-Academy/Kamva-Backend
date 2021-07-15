@@ -1,9 +1,7 @@
-from django.db import transaction
-from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 
-from fsm.serializers import RegistrationFormSerializer
+from fsm.serializers.paper_serializer import RegistrationFormSerializer
 from fsm.models import RegistrationForm
 
 
