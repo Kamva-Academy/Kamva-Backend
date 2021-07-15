@@ -10,8 +10,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-from .models import Member, Participant, Team, Payment, Mentor, Player, DiscountCode, User, VerificationCode, \
-    University, EducationalInstitute, School
+from .models import Member, Participant, Team, Purchase, Mentor, Player, DiscountCode, User, VerificationCode, \
+    University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship
 
 from import_export.admin import ExportActionMixin
 from import_export.fields import Field
@@ -462,21 +462,21 @@ class TeamAdmin(admin.ModelAdmin):
     team_status.boolean = True
 
 
-class PaymentAdmin(admin.ModelAdmin):
-    model = Payment
-    list_display = ['get_user_name', 'uniq_code', 'status', 'amount' , 'get_team' ]
-
-    def get_user_name(self, obj):
-        name = str(obj.participant.member.first_name) + "(" + str(obj.participant.member.username) + ")"
-        return name
-
-    def get_team(self, obj):
-        name = str(obj.participant.team)
-        return name
-
-
-    get_user_name.short_description = "نام"
-    get_team.short_description = "تیم"
+# class PaymentAdmin(admin.ModelAdmin):
+#     model = Purchase
+#     list_display = ['get_user_name', 'uniq_code', 'status', 'amount' ]
+#
+#     def get_user_name(self, obj):
+#         name = str(obj.participant.member.first_name) + "(" + str(obj.participant.member.username) + ")"
+#         return name
+#
+#     def get_team(self, obj):
+#         name = str(obj.participant.team)
+#         return name
+#
+#
+#     get_user_name.short_description = "نام"
+#     get_team.short_description = "تیم"
 
 
 # Register your models here.
@@ -491,4 +491,7 @@ admin.site.register(University)
 # admin.site.register(Player)
 admin.site.register(DiscountCode)
 admin.site.register(VerificationCode)
-admin.site.register(Payment, PaymentAdmin)
+admin.site.register(Purchase)
+admin.site.register(Player)
+admin.site.register(SchoolStudentship)
+admin.site.register(AcademicStudentship)

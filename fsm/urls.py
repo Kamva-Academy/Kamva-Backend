@@ -5,6 +5,7 @@ from .views.fsmview import *
 from .views.fsmstateview import *
 from .views.fsmedgeview import *
 from .views.abilityview import *
+from .views.registration_view import RegistrationFormViewSet
 from .views.widgetview import *
 from .views.teamhistoryview import *
 from .views.teamview import *
@@ -14,25 +15,24 @@ from .views.mentorviews import *
 router = DefaultRouter()
 # router.register('page', FSMPageView)
 # router.register('page/<int:pk>', FSMPageView)
-router.register('fsm', FSMView)
-router.register('fsm/<int:pk>', FSMView)
-router.register('state', MainStateView)
-router.register('state/<int:pk>', MainStateView)
-router.register('helpstate', HelpStateView)
-router.register('helpstate/<int:pk>', HelpStateView)
-router.register('article', ArticleView)
-router.register('article/<int:pk>', ArticleView)
-router.register('edge', FSMEdgeView)
-router.register('edge/<int:pk>', FSMEdgeView)
-router.register('ability', AbilityView)
-router.register('ability/<int:pk>', AbilityView)
-router.register('widget', WidgetView)
-router.register('widget/<int:pk>', WidgetView)
-# TODO check if fsm is team or individual
-router.register('history', TeamHistoryView)
-router.register('history/<int:pk>', TeamHistoryView)
-router.register('team', TeamView)
-router.register('team/<int:pk>', TeamView)
+# router.register('fsm', FSMView)
+# router.register('fsm/<int:pk>', FSMView)
+# router.register('state', MainStateView)
+# router.register('state/<int:pk>', MainStateView)
+# router.register('helpstate', HelpStateView)
+# router.register('helpstate/<int:pk>', HelpStateView)
+# router.register('article', ArticleView)
+# router.register('article/<int:pk>', ArticleView)
+# router.register('edge', FSMEdgeView)
+# router.register('edge/<int:pk>', FSMEdgeView)
+# router.register('ability', AbilityView)
+# router.register('ability/<int:pk>', AbilityView)
+# router.register('widget', WidgetView)
+# router.register('widget/<int:pk>', WidgetView)
+# router.register('history', TeamHistoryView)
+# router.register('history/<int:pk>', TeamHistoryView)
+# router.register('team', TeamView)
+# router.register('team/<int:pk>', TeamView)
 # router.register('small', SmallView)
 # router.register('small/<int:pk>', SmallView)
 urlpatterns = [
@@ -71,5 +71,7 @@ urlpatterns = [
      path('marksubmission/', mentor_mark_submission, name="mentor_mark_submission"),
      # path('mentorgetplayerstate/', mentor_get_workshop_player, name="mentor_get_workshop_player"),
 ]
+
+router.register(r'registration', RegistrationFormViewSet, basename='registrations')
 
 urlpatterns += router.urls

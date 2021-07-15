@@ -194,7 +194,7 @@ def mentor_get_submissions(request):
 
     if f and s and s.fsm != f:
         return Response([], status=status.HTTP_400_BAD_REQUEST)
-    if f and s and problem and problem.state != s:
+    if f and s and problem and problem.paper != s:
         return Response([], status=status.HTTP_400_BAD_REQUEST)
 
     problems = Problem.objects.filter(state=s)
@@ -213,7 +213,7 @@ def mentor_get_submissions(request):
                              'player_id': s_a.player.id,
                              'problem_id': p.id,
                              'problem_name': p.name,
-                             'state_name': p.state.name,
+                             'state_name': p.paper.name,
                              'submission_date': s_a.publish_date,
                              'answer_id': ans.id}
             if p.widget_type == 'ProblemUploadFileAnswer':
@@ -278,7 +278,7 @@ def mentor_mark_submission(request):
     if score is None:
         return Response({'error': 'score is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    state = submission.problem.state
+    state = submission.problem.paper
     state = MainState.objects.filter(id=state.id).last()
     if not state:
         return Response({'error': 'submissions related state not found'}, status=status.HTTP_404_NOT_FOUND)

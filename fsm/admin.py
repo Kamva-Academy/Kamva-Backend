@@ -47,7 +47,7 @@ class SubmittedAnswerAdmin(admin.ModelAdmin):
 class PlayerWorkshopAdmin(admin.ModelAdmin):
     model = PlayerWorkshop
     list_display = ['player', 'workshop', 'current_state', 'last_visit']
-    list_filter = ['last_visit', 'workshop', 'current_state', 'player__player_type']
+    list_filter = ['last_visit', 'workshop', 'current_state']
 
     # def name(self, obj):
     #     name = obj.problem.name
@@ -74,16 +74,21 @@ class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
 
 class DescriptionAdmin(admin.ModelAdmin):
     model = Description
-    list_display = ['state', 'text_part']
+    list_display = ['paper', 'text_part']
 
     #
-    def state(self, obj):
-        name = str(obj.state.name)
-        return name
+    def paper(self, obj):
+        return obj.paper.id
 
     def text_part(self, obj):
         name = str(obj.text)[0:100]
         return name
+
+
+
+admin.site.register(Paper)
+admin.site.register(RegistrationForm)
+admin.site.register(Problem)
 
 
 admin.site.register(FSM)
@@ -94,19 +99,18 @@ admin.site.register(MainState)
 admin.site.register(HelpState)
 admin.site.register(Widget)
 admin.site.register(Game)
-admin.site.register(ProblemSmallAnswer)
+admin.site.register(SmallAnswerProblem)
 admin.site.register(SmallAnswer)
-admin.site.register(ProblemBigAnswer)
+admin.site.register(BigAnswerProblem)
 admin.site.register(BigAnswer)
-admin.site.register(ProblemMultiChoice)
+admin.site.register(MultiChoiceProblem)
 admin.site.register(MultiChoiceAnswer)
 admin.site.register(Choice)
 admin.site.register(Answer)
 admin.site.register(Description, DescriptionAdmin)
-admin.site.register(Article)
 admin.site.register(Event)
 admin.site.register(UploadFileAnswer, AnswerAdmin)
-admin.site.register(ProblemUploadFileAnswer)
+admin.site.register(UploadFileProblem)
 admin.site.register(SubmittedAnswer, SubmittedAnswerAdmin)
 
 admin.site.register(PlayerHistory, PlayerHistoryAdmin)

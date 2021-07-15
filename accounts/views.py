@@ -5,11 +5,14 @@ import string
 from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import AnonymousUser
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from errors.error_codes import serialize_error
@@ -26,7 +29,7 @@ from rest_framework.exceptions import ParseError, NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from accounts.tokens import account_activation_token
-from .models import Member, Participant, Payment
+from .models import Member, Participant, Purchase
 from accounts.cache import TeamsCache
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from accounts import zarinpal
@@ -37,7 +40,8 @@ from rest_framework.views import APIView
 from .permissions import IsHimself, IsInstituteOwner
 from .utils import *
 from .serializers import MyTokenObtainPairSerializer, PhoneNumberSerializer, VerificationCodeSerializer, \
-    AccountSerializer, UserSerializer, InstituteSerializer, StudentshipSerializer, ProfileSerializer
+    AccountSerializer, UserSerializer, InstituteSerializer, StudentshipSerializer, ProfileSerializer, \
+    MerchandiseSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +50,12 @@ class SendVerificationCode(GenericAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = PhoneNumberSerializer
 
+    def __init__(self):
+        super()
+        print(self.schema)
+
     @swagger_auto_schema(operation_description="Sends verification code to verify phone number or change password",
+                         tags=['accounts'],
                          responses={200: "Verification code sent successfully",
                                     400: "error code 4000 for not being digits & 4001 for phone length less than 10",
                                     404: "error code 4008 for not finding user to change password",
@@ -73,6 +82,7 @@ class UserViewSet(ModelViewSet):
     serializer_action_classes = {
         'create': VerificationCodeSerializer
     }
+    my_tags = ['accounts']
 
     def get_serializer_class(self):
         try:
@@ -115,7 +125,8 @@ class Login(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
     permission_classes = (permissions.AllowAny,)
 
-    @swagger_auto_schema(responses={201: AccountSerializer,
+    @swagger_auto_schema(tags=['accounts'],
+                         responses={201: AccountSerializer,
                                     400: "error code 4007 for not enough credentials",
                                     401: "error code 4006 for not submitted users & 4009 for wrong credentials"})
     def post(self, request, *args, **kwargs):
@@ -134,7 +145,8 @@ class ChangePassword(GenericAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = VerificationCodeSerializer
 
-    @swagger_auto_schema(responses={200: AccountSerializer,
+    @swagger_auto_schema(tags=['accounts'],
+                         responses={200: AccountSerializer,
                                     400: "error code 4002 for len(code) < 5, 4003 for invalid & 4005 for expired code",
                                     })
     @transaction.atomic
@@ -160,6 +172,7 @@ class InstituteViewSet(ModelViewSet):
     serializer_action_classes = {
         'add_owners': AccountSerializer
     }
+    my_tags = ['institutes']
 
     def get_serializer_class(self):
         try:
@@ -207,9 +220,12 @@ class StudentshipViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, ]
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = StudentshipSerializer
+    my_tags = ['studentship', 'accounts']
 
     def get_queryset(self):
         user = self.request.user
+        if isinstance(user, AnonymousUser):
+            return []
         if user.is_staff or user.is_superuser:
             return Studentship.objects.all()
         else:
@@ -233,6 +249,7 @@ class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
     parser_classes = [MultiPartParser]
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = ProfileSerializer
+    my_tags = ['accounts']
 
     def get_queryset(self):
         user = self.request.user
@@ -240,6 +257,13 @@ class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
             return User.objects.all()
         else:
             return User.objects.filter(id=user.id)
+
+
+class MerchandiseViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = MerchandiseSerializer
+    queryset = Merchandise.objects.all()
+    my_tags = ['merchandises']
 
 
 # class CreateAccount(GenericAPIView):
@@ -668,13 +692,13 @@ class PayView(APIView):
             c.is_valid = False
             c.save()
             logger.info(f'new amount:{amount}, discount{c.value}')
-            payment = Payment.objects.create(participant=participant,
+            payment = Purchase.objects.create(participant=participant,
                                              amount=amount,
                                              discount_code=c,
                                              status="STARTED",
                                              uniq_code=random_s)
         else:
-            payment = Payment.objects.create(participant=participant,
+            payment = Purchase.objects.create(participant=participant,
                                              amount=amount,
                                              status="STARTED",
                                              uniq_code=random_s)
@@ -726,8 +750,8 @@ class VerifyPayView(APIView):
         logger.warning(request.META.get('REMOTE_ADDR'))
         if participant:
             try:
-                payment = Payment.objects.get(uniq_code=request.GET.get('uniq_code'), status="STARTED")
-            except Payment.DoesNotExist:
+                payment = Purchase.objects.get(uniq_code=request.GET.get('uniq_code'), status="STARTED")
+            except Purchase.DoesNotExist:
                 return Response(
                     {'success': False, 'error': "پرداخت موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
             logger.warning(f'Zarinpal callback: {request.GET}')

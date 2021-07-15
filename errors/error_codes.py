@@ -5,7 +5,7 @@ from workshop_backend.settings.base import SMS_CODE_LENGTH
 errors_dict = {'4000': 'phone number must be digit',
                '4001': 'phone number must have at least 10 digits',
                '4002': f'valid verification code must have {SMS_CODE_LENGTH} digits',
-               '4003': 'invalid verification code',
+               '4003': 'invalid verification code or phone number',
                '4004': {'msg': 'a user already submitted with this phone number', 'params': 1},
                '4005': 'verification code expired',
                '4006': 'user not submitted with given credentials',
@@ -18,6 +18,13 @@ errors_dict = {'4000': 'phone number must be digit',
                '4013': 'major is required for high school students',
                '4014': 'non-high school students can\'t have major',
                '4015': 'college students must enter their studying degree',
+               '4016': 'given condition has syntax error',
+               '4017': 'given number was not a positive integer',
+               '4018': 'price must be a multiple of 500 Tomans',
+               '4019': {'msg': 'number of selected choices can\'t be bigger than max choices for this problem',
+                        'params': 1},
+               '4020': 'selected choices can\'t have repetitions',
+               '4021': 'selected choices should be indices of choices',
 
 
                '5000': 'sending SMS failed'}

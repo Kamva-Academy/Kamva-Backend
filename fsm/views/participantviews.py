@@ -165,7 +165,7 @@ def move_to_next_state(request):
 def get_last_state_in_fsm(team, fsm):
     try:
         hist = PlayerHistory.objects.filter(team=team, state__fsm=fsm).order_by('-start_time')[0]
-        return hist.state
+        return hist.form
     except IndexError:
         try:
             return MainState.objects.filter(fsm=fsm, name='start')[0]
@@ -422,7 +422,7 @@ def user_get_team_outward_edges(request):
         # if state.type == str(StateType.withMentor):
         #     return Response("this state with mentor and user doesn't have permission to get forward edges", status=status.HTTP_403_FORBIDDEN)
 
-        edges = team.state.outward_edges.all()
+        edges = team.form.outward_edges.all()
         output_serializer = serializers.ListField(child=FSMEdgeSerializer())
         data = output_serializer.to_representation(edges)
         return Response(data, status=status.HTTP_200_OK)

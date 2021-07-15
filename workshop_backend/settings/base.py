@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 from kavenegar import *
-from django.utils.translation import ugettext_lazy as _
 
 
 def get_environment_var(var_name, default, prefixed=True):
@@ -48,7 +47,8 @@ INSTALLED_APPS = [
     'fsm',
     'drf_yasg',
     'notice',
-    'scoring'
+    'scoring',
+    'polymorphic',
 ]
 
 # SITE_ID=1
@@ -206,9 +206,16 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization'
         }
     },
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'workshop_backend.settings.custom_setting_classes.CustomAutoSchema',
+    'TAGS_SORTER': 'alpha',
+    'DOC_EXPANSION': 'none',
 }
 
 KAVENEGAR_TOKEN = KavenegarAPI('6A4F554D384477574A7162444F614B4A6C626A64495169306A43417566473655624644394833566C352F593D')
 
 SMS_CODE_DELAY = 5
 SMS_CODE_LENGTH = 5
+
+VOUCHER_CODE_LENGTH = 8
+
+DISCOUNT_CODE_LENGTH = 8

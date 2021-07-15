@@ -3,7 +3,7 @@ from accounts.models import Participant, Member, Team
 import os
 import logging
 
-from fsm.models import PlayerWorkshop, FSM, ProblemBigAnswer, Problem
+from fsm.models import PlayerWorkshop, FSM, BigAnswerProblem, Problem
 from fsm.views.functions import get_scores_sum
 from scoring.models import ScoreTransaction
 from .users import users

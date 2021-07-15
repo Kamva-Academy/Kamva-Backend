@@ -1,22 +1,30 @@
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import ParseError
+from rest_polymorphic.serializers import PolymorphicSerializer
 
 from accounts.serializers import PlayerSerializer
+from errors.error_codes import serialize_error
 from fsm.models import *
 from accounts.models import Team
 import sys
 from django.utils import timezone
+
+
 class AbilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Ability
         fields = '__all__'
 
+
 class FSMEdgeSerializer(serializers.ModelSerializer):
-    #abilities = AbilitySerializer(many=True)
+    # abilities = AbilitySerializer(many=True)
     class Meta:
         model = FSMEdge
         fields = '__all__'
+
     '''
     def create(self, validated_data):
         abilities_data = validated_data.pop('abilities')
@@ -50,328 +58,312 @@ class FSMSerializer(serializers.ModelSerializer):
         model = FSM
         fields = '__all__'
 
-    def get_validation_exclusions(self):
-        exclusions = super(FSMSerializer, self).get_validation_exclusions()
-        return exclusions + ['first_state', 'fsm_learning_type', 'fsm_p_type']
-
 
 class FSMRawSerializer(serializers.ModelSerializer):
     class Meta:
         model = FSM
         fields = '__all__'
 
-#
-# class FSMCreatSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = FSM
-#         fields = ['name', 'type', 'active', ]
 
-class GameSerializer(serializers.ModelSerializer):
+class CreateFSMSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Game
-        fields = '__all__'
-
-
-class VideoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Video
-        fields = '__all__'
-
-
-class ImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Image
-        fields = '__all__'
-
-
-class DescriptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Description
-        fields = '__all__'
-
-
-class SmallAnswerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SmallAnswer
-        fields = '__all__'
-
-
-class BigAnswerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BigAnswer
-        fields = '__all__'
-
-
-class MultiChoiceAnswerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MultiChoiceAnswer
-        fields = '__all__'
-
-
-class UploadFileAnswerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UploadFileAnswer
-        fields = '__all__'
+        model = FSM
+        fields = ['name', 'type', 'active', ]
 
 
 class AnswerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Answer
-        fields = '__all__'
-    
-    @classmethod
-    def get_serializer(cls, model):
-        if model == SmallAnswer:
-            return SmallAnswerSerializer
-        elif model == BigAnswer:
-            return BigAnswerSerializer
-        elif model == MultiChoiceAnswer:
-            return MultiChoiceAnswerSerializer
-        elif model == UploadFileAnswer:
-            return UploadFileAnswerSerializer
 
-    def to_representation(self, instance):
-        serializer = AnswerSerializer.get_serializer(instance.__class__)
-        return serializer(instance, context=self.context).data
+    def create(self, validated_data):
+        return super().create({'submitted_by': self.context.get('user', None), **validated_data})
+
+    # class Meta:
+    #     model = Answer
+    #     fields = '__all__'
+
+
+class SmallAnswerSerializer(AnswerSerializer):
+    class Meta:
+        model = SmallAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+                  'problem', 'text']
+        read_only_fields = ['id']
+
+
+class BigAnswerSerializer(AnswerSerializer):
+    class Meta:
+        model = BigAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+                  'problem', 'text']
+        read_only_fields = ['id']
+
+
+class MultiChoiceAnswerSerializer(AnswerSerializer):
+    class Meta:
+        model = MultiChoiceAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+                  'problem', 'choices']
+        read_only_fields = ['id']
+
+
+class UploadFileAnswerSerializer(AnswerSerializer):
+    class Meta:
+        model = UploadFileAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+                  'problem', 'answer_file', 'file_name']
+
+
+class AnswerPolymorphicSerializer(PolymorphicSerializer):
+    model_serializer_mapping = {
+        # Answer: AnswerSerializer,
+        SmallAnswer: SmallAnswerSerializer,
+        BigAnswer: BigAnswerSerializer,
+        MultiChoiceAnswer: MultiChoiceAnswerSerializer,
+        UploadFileAnswer: UploadFileAnswerSerializer
+    }
+
+    resource_type_field_name = 'answer_type'
+
+
+class WidgetSerializer(serializers.ModelSerializer):
+
+    def create(self, validated_data):
+        return super().create({'creator': self.context.get('user', None), **validated_data})
+
+    # class Meta:
+    #     model = Widget
+    #     fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of']
+    #     read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+
+class GameSerializer(WidgetSerializer):
+    class Meta:
+        model = Game
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+
+class VideoSerializer(WidgetSerializer):
+    class Meta:
+        model = Video
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+
+class ImageSerializer(WidgetSerializer):
+    class Meta:
+        model = Image
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+
+class DescriptionSerializer(WidgetSerializer):
+    class Meta:
+        model = Description
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+
+class ProblemSerializer(WidgetSerializer):
+    class Meta:
+        model = Problem
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+
+class SmallAnswerProblemSerializer(WidgetSerializer):
+    solution = SmallAnswerSerializer()
+
+    class Meta:
+        model = SmallAnswerProblem
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+                  'solution']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
 
     @transaction.atomic
     def create(self, validated_data):
-        serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['answer_type']))
-        serializer = serializerClass(validated_data)
-        return serializer.create(validated_data)
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['answer_type']))
-        serializer = serializerClass(validated_data)
-        return serializer.update(instance, validated_data)
+        solution = validated_data.pop('solution')
+        instance = super().create(validated_data)
+        SmallAnswer.objects.create(**{'problem': instance,
+                                      'is_final_answer': True,
+                                      'is_solution': True,
+                                      'submitted_by': self.context.get('user', None),
+                                      **solution})
+        return instance
 
 
-class ProblemSmallAnswerSerializer(serializers.ModelSerializer):
-    answer = SmallAnswerSerializer()
+class BigAnswerProblemSerializer(WidgetSerializer):
+    solution = BigAnswerSerializer()
 
     class Meta:
-        model = ProblemSmallAnswer
-        fields = '__all__'
+        model = SmallAnswerProblem
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+                  'solution']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
 
     @transaction.atomic
     def create(self, validated_data):
-        answer_data = validated_data.pop('answer')
-        instance = ProblemSmallAnswer.objects.create(**validated_data)
-        answer_data['answer_type'] = 'SmallAnswer'
-        answer = SmallAnswer.objects.create(**answer_data)
-        answer.problem = instance
-        answer.save()
-    
-        return instance
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        validated_data['pk'] = instance.pk
-        try:
-            answer = SmallAnswer.objects.filter(problem=instance)[0]
-            validated_data['answer']['pk'] = answer.pk
-            answer.delete()
-        except:
-            pass
-        instance.delete()
-        instance = self.create(validated_data)
-        return instance
-
-
-class ProblemBigAnswerSerializer(serializers.ModelSerializer):
-    answer = BigAnswerSerializer()
-    class Meta:
-        model = ProblemBigAnswer
-        fields = '__all__'
-
-    @transaction.atomic
-    def create(self, validated_data):
-        answer_data = validated_data.pop('answer')
-        instance = ProblemBigAnswer.objects.create(**validated_data)
-        answer_data['answer_type'] = 'BigAnswer'
-        answer = BigAnswer.objects.create(**answer_data)
-        answer.problem = instance
-        answer.save()
-    
-        return instance
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        validated_data['pk'] = instance.pk
-        try:
-            answer = BigAnswer.objects.filter(problem=instance)[0]
-            validated_data['answer']['pk'] = answer.pk
-            answer.delete()
-        except:
-            pass
-        instance.delete()
-        instance = self.create(validated_data)
+        solution = validated_data.pop('solution')
+        instance = super().create(validated_data)
+        BigAnswer.objects.create(**{'problem': instance,
+                                    'is_final_answer': True,
+                                    'is_solution': True,
+                                    'submitted_by': self.context.get('user', None),
+                                    **solution})
         return instance
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ['text']
-
-    def create(self, validated_data):
-        print(validated_data)
+        fields = ['id', 'text', 'problem', ]
+        read_only_fields = ['id', 'problem']
 
 
-class ProblemMultiChoiceSerializer(serializers.ModelSerializer):
+class MultiChoiceProblemSerializer(WidgetSerializer):
     choices = ChoiceSerializer(many=True)
-    answer = MultiChoiceAnswerSerializer()
+    solution = serializers.ListField(child=serializers.IntegerField(min_value=0), allow_empty=False, allow_null=False,
+                                     required=True, write_only=True)
 
     class Meta:
-        model = ProblemMultiChoice
-        fields = '__all__'
+        model = MultiChoiceProblem
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+                  'max_choices', 'choices', 'solution']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+    def validate(self, attrs):
+        solution = attrs.get('solution', [])
+        max_choices = attrs.get('max_choices', 1)
+        choices = attrs.get('choices', [])
+
+        if len(solution) > max_choices:
+            raise ParseError(serialize_error('4019', {'max_choices': max_choices}, is_field_error=False))
+        if len(solution) != len(set(solution)):
+            raise ParseError(serialize_error('4020', is_field_error=False))
+        for selection in solution:
+            if selection >= len(choices):
+                raise ParseError(serialize_error('4021', is_field_error=False))
+
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):
-        answer_data = validated_data.pop('answer')
-        choices_data = validated_data.pop('choices')
-        instance = ProblemMultiChoice.objects.create(**validated_data)
-        for choice_data in choices_data:
-            choice = Choice.objects.create(**choice_data)
-            choice.problem = instance
-            choice.save()
-        answer_data['answer_type'] = 'MultiChoiceAnswer'
-        answer = MultiChoiceAnswer.objects.create(**answer_data)
-        answer.problem = instance
-        answer.save()
-    
+        choices = validated_data.pop('choices')
+        solution = validated_data.pop('solution')
+        instance = super().create(validated_data)
+        choice_objects = [Choice.objects.create(**{'problem': instance, **c}) for c in choices]
+        multi_choice_solution = MultiChoiceAnswer.objects.create(**{'problem': instance,
+                                                                    'is_final_answer': True,
+                                                                    'is_solution': True,
+                                                                    'submitted_by': self.context.get('user', None),
+                                                                    'answer_type': 'MultiChoiceAnswer'})
+        choice_selections = [choice_objects[s] for s in solution]
+        multi_choice_solution.choices.add(*choice_selections)
+        multi_choice_solution.save()
         return instance
-
-    @transaction.atomic
-    def update(self, instance, validated_data):    
-        validated_data['pk'] = instance.pk
-        choices = Choice.objects.filter(problem=instance)
-        index = 0
-        for choice in choices:
-            try:
-                validated_data['choices'][index]['pk'] = choice.pk
-            except:
-                pass
-            choice.delete()
-            index+=1    
-        try:
-            answer = MultiChoiceAnswer.objects.filter(problem=instance)[0]
-            validated_data['answer']['pk'] = answer.pk
-            answer.delete()
-        except:
-            pass
-        
-        instance.delete()
-        instance = self.create(validated_data)
-        return instance
-
-
-class ProblemUploadFileAnswerSerializer(serializers.ModelSerializer):
-    # answer = UploadFileAnswerSerializer()
-
-    class Meta:
-        model = ProblemUploadFileAnswer
-        fields = '__all__'
-
-    # @transaction.atomic
-    # def create(self, validated_data):
-    #     # answer_data = validated_data.pop('answer')
-    #     instance = ProblemUploadFileAnswer.objects.create(**validated_data)
-    #     # answer_data['answer_type'] = 'UploadFileAnswer'
-    #     # answer = UploadFileAnswer.objects.create(**answer_data)
-    #     # answer.problem = instance
-    #     # answer.save()
-    #
-    #     return instance
 
     # @transaction.atomic
     # def update(self, instance, validated_data):
     #     validated_data['pk'] = instance.pk
+    #     choices = Choice.objects.filter(problem=instance)
+    #     index = 0
+    #     for choice in choices:
+    #         try:
+    #             validated_data['choices'][index]['pk'] = choice.pk
+    #         except:
+    #             pass
+    #         choice.delete()
+    #         index += 1
     #     try:
-    #         answer = UploadFileAnswer.objects.filter(problem=instance)[0]
+    #         answer = MultiChoiceAnswer.objects.filter(problem=instance)[0]
     #         validated_data['answer']['pk'] = answer.pk
     #         answer.delete()
     #     except:
     #         pass
+    #
     #     instance.delete()
     #     instance = self.create(validated_data)
     #     return instance
 
-
-class ProblemSerializer(serializers.ModelSerializer):
-
-    @classmethod
-    def get_serializer(cls, model):
-        if model == ProblemSmallAnswer:
-            return ProblemSmallAnswerSerializer
-        elif model == ProblemBigAnswer:
-            return ProblemBigAnswerSerializer
-        elif model == ProblemMultiChoice:
-            return ProblemMultiChoiceSerializer
-        elif model == ProblemUploadFileAnswer:
-            return ProblemUploadFileAnswerSerializer
+    def to_internal_value(self, data):
+        if 'editable' in self.context and self.context.get('editable') is True:
+            choices_raw = data.pop('choices')
+            choices = [{"text": c} for c in choices_raw]
+            data['choices'] = choices
+        return data
 
     def to_representation(self, instance):
-        serializer = ProblemSerializer.get_serializer(instance.__class__)
-        return serializer(instance, context=self.context).data
-
-    @transaction.atomic
-    def create(self, validated_data):
-        serializerClass = ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['widget_type']))
-        serializer = serializerClass(validated_data)
-        return serializer.create(validated_data)
-
-    @transaction.atomic
-    def update(self, instance, validated_data):    
-        serializerClass = ProblemSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['widget_type']))
-        serializer = serializerClass(validated_data)
-        return serializer.update(instance, validated_data)
+        representation = super().to_representation(instance)
+        representation['solution'] = MultiChoiceAnswerSerializer(instance.solution).to_representation(instance.solution)
+        return representation
 
 
-class WidgetSerializer(serializers.ModelSerializer):
+class UploadFileProblemSerializer(WidgetSerializer):
+    solution = UploadFileAnswerSerializer()
+
     class Meta:
-        model = Widget
-        fields = '__all__'
-    
-    @classmethod    
-    def get_serializer(cls, model):
-        if model == Game:
-            return GameSerializer
-        elif model == Video:
-            return VideoSerializer
-        elif model == Image:
-            return ImageSerializer
-        elif model == Description:
-            return DescriptionSerializer
-        elif issubclass(model, Problem):
-            return ProblemSerializer.get_serializer(model)
+        model = UploadFileProblem
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+                  'solution']
+        read_only_fields = ['id', 'paper', 'creator', 'duplication_of']
+
+
+class WidgetPolymorphicSerializer(PolymorphicSerializer):
+    model_serializer_mapping = {
+        # Widget: WidgetSerializer,
+        Description: DescriptionSerializer,
+        Image: ImageSerializer,
+        Video: VideoSerializer,
+        Game: GameSerializer,
+        # Problem: ProblemSerializer,
+        SmallAnswerProblem: SmallAnswerProblemSerializer,
+        BigAnswerProblem: BigAnswerProblemSerializer,
+        MultiChoiceProblem: MultiChoiceProblemSerializer,
+        UploadFileProblem: UploadFileProblemSerializer,
+    }
+
+    resource_type_field_name = 'widget_type'
+
+
+class PaperSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        serializerClass = WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['widget_type']))
-        serializer = serializerClass(validated_data)
-        return serializer.create(validated_data)
+        widgets = validated_data.pop('widgets', [])
+        instance = super().create(validated_data)
+        self.context['editable'] = False
+        for w in widgets:
+            serializer = WidgetPolymorphicSerializer(data=w, context=self.context)
+            if serializer.is_valid(raise_exception=True):
+                serializer.validated_data['paper'] = instance
+                serializer.save()
+        return instance
 
-    @transaction.atomic
-    def update(self, instance, validated_data):    
-        serializerClass = WidgetSerializer.get_serializer(getattr(sys.modules[__name__],\
-            validated_data['widget_type']))
-        serializer = serializerClass(validated_data)
-        return serializer.update(instance, validated_data)
-    
-    def to_representation(self, instance):
-        serializer = WidgetSerializer.get_serializer(instance.__class__)
-        return serializer(instance, context=self.context).data
+
+class RegistrationFormSerializer(PaperSerializer):
+    min_grade = serializers.IntegerField(required=False, validators=[MaxValueValidator(12), MinValueValidator(0)])
+    max_grade = serializers.IntegerField(required=False, validators=[MaxValueValidator(12), MinValueValidator(0)])
+    conditions = serializers.CharField(required=False, allow_blank=True)
+    widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
+
+    class Meta:
+        model = RegistrationForm
+        fields = ['id', 'min_grade', 'max_grade', 'conditions', 'widgets']
+        read_only_fields = ['id']
+
+
+class PaperPolymorphicSerializer(PolymorphicSerializer):
+    model_serializer_mapping = {
+        'Paper': PaperSerializer,
+        'RegistrationForm': RegistrationFormSerializer,
+
+    }
+
+    resource_type_field_name = 'paper_type'
 
 
 class SubmitedAnswerSerializer(serializers.ModelSerializer):
     xanswer = AnswerSerializer()
+
     class Meta:
         model = SubmittedAnswer
         fields = '__all__'
@@ -379,10 +371,11 @@ class SubmitedAnswerSerializer(serializers.ModelSerializer):
 
 class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
     answer = AnswerSerializer()
+
     class Meta:
         model = SubmittedAnswer
         fields = ['answer', 'problem', 'player']
-    
+
     @transaction.atomic
     def create(self, validated_data):
         answer_data = validated_data['answer']
@@ -405,14 +398,13 @@ class SubmitedAnswerPostSerializer(serializers.ModelSerializer):
 
         instance = SubmittedAnswer.objects.create(**validated_data)
 
-        serializerClass = AnswerSerializer.get_serializer(getattr(sys.modules[__name__],\
-            answer_data['answer_type']))
-        serializer = serializerClass(data=answer_data)
+        serializer_class = AnswerSerializer.get_serializer(getattr(sys.modules[__name__], answer_data['answer_type']))
+        serializer = serializer_class(data=answer_data)
         if not serializer.is_valid(raise_exception=True):
             return None
         answer = serializer.create(serializer.validated_data)
         instance.answer = answer
-        
+
         instance.publish_date = timezone.localtime()
         instance.save()
         return instance
@@ -503,6 +495,7 @@ class FSMGetSerializer(serializers.ModelSerializer):
 
 class PlayerHistorySerializer(serializers.ModelSerializer):
     answers = SubmitedAnswerSerializer(many=True)
+
     class Meta:
         model = PlayerHistory
         fields = '__all__'
@@ -557,7 +550,6 @@ class GetTeamHistorySerializer(serializers.Serializer):
     team = serializers.IntegerField()
 
 
-
 # class GetUserHistorySerializer(serializers.Serializer):
 #     team = serializers.IntegerField()
 
@@ -569,7 +561,7 @@ class SetFirstStateSerializer(serializers.Serializer):
 class TeamHistorySubmitSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlayerHistory
-        exclude = ('start_time', )
+        exclude = ('start_time',)
 
 
 class TeamHistoryGoForwardSerializer(serializers.ModelSerializer):
@@ -595,6 +587,7 @@ class GoToTeamSerializer(serializers.Serializer):
 class PlayerWorkshopSerializer(serializers.ModelSerializer):
     player = PlayerSerializer()
     current_state = CurrentStateSerializer()
+
     # id = serializers.UUIDField()
 
     class Meta:

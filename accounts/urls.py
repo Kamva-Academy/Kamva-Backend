@@ -4,7 +4,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import activate, ChangePass, UploadAnswerView, \
     PayView, VerifyPayView, UserInfo, TeamInfo, Teams, SendVerificationCode, GetTeamData, ChangePassword, \
-    RegistrationInfo, VerifyDiscount, UserViewSet, Login, InstituteViewSet, StudentshipViewSet, ProfileViewSet
+    RegistrationInfo, VerifyDiscount, UserViewSet, Login, InstituteViewSet, StudentshipViewSet, ProfileViewSet, \
+    MerchandiseViewSet
 
 urlpatterns = [
     path('accounts/verification_code/', SendVerificationCode.as_view(), name="send_verification_code"),
@@ -34,4 +35,5 @@ router.register(r'accounts', UserViewSet, basename='accounts')
 router.register(r'institutes', InstituteViewSet, basename='institutes')
 router.register(r'profile', ProfileViewSet, basename='profiles')
 router.register(r'studentship', StudentshipViewSet, basename='studentships')
+router.register(r'merchandises', MerchandiseViewSet, basename='merchandises')
 urlpatterns += router.urls

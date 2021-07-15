@@ -25,19 +25,9 @@ class FSMView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateM
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
 
-    def get_queryset(self):
-        # TODO - member uuid, hard coded event
-        current_event = Event.objects.get(name='مسافر صفر')
-        user = self.request.user
-        if user.is_mentor:
-            return FSM.objects.all()
-        return FSM.objects.filter(active=True, event=current_event)
-
     @transaction.atomic
     def get_serializer_class(self):
-        return FSMGetSerializer \
-            if self.request.method == 'GET' \
-            else FSMSerializer
+        return FSMGetSerializer if self.request.method == 'GET' else FSMSerializer
 
     def get_permissions(self):
         try:

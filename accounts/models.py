@@ -2,6 +2,7 @@ import logging
 
 import pytz
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser, Group, Permission
@@ -22,8 +23,8 @@ import logging
 import random
 import re
 
-from fsm.models import *
-from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH
+from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
+    DISCOUNT_CODE_LENGTH
 
 logger = logging.getLogger(__file__)
 
@@ -114,7 +115,7 @@ class SchoolStudentship(Studentship):
         Others = 'OTHERS'
 
     school = models.ForeignKey(School, related_name='students', on_delete=models.SET_NULL, null=True)
-    grade = models.IntegerField(null=True, blank=True)
+    grade = models.IntegerField(null=True, blank=True, validators=[MaxValueValidator(12), MinValueValidator(0)])
     major = models.CharField(max_length=25, null=True, blank=True, choices=Major.choices)
 
 
@@ -129,6 +130,157 @@ class AcademicStudentship(Studentship):
     degree = models.CharField(max_length=15, null=True, blank=True, choices=Degree.choices)
     university_major = models.CharField(max_length=30, null=True, blank=True)
 
+
+class Player(models.Model):
+
+    user = models.ForeignKey(User, related_name='workshops', on_delete=models.CASCADE)
+    fsm = models.ForeignKey('fsm.FSM', related_name='users', on_delete=models.CASCADE)
+    purchase = models.ForeignKey('accounts.Purchase', related_name='purchase', on_delete=models.SET_NULL, null=True)
+    registration_receipt = models.ForeignKey('fsm.RegistrationReceipt', on_delete=models.SET_NULL, null=True)
+    scores = models.JSONField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+
+# class OwnableMixin(models.Model):
+#     owners = models.ManyToManyField(User, related_name='owned_entities')
+#
+#     # TODO - work on its details
+#     class Meta:
+#         abstract = True
+
+
+class Merchandise(models.Model):
+    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=50, null=True, blank=True)
+    price = models.IntegerField(default=0)
+    owner = models.ForeignKey(EducationalInstitute, on_delete=models.SET_NULL, null=True, related_name='merchandises')
+
+
+# class Code(models.Model):
+#     TODO - create a 'code' class  and subclass discounts, vouchers & verification codes from it.
+#     class CodeType(models.TextChoices):
+#         DISCOUNT_CODE = 'DISCOUNT_CODE'
+#         VOUCHER = 'VOUCHER'
+#         VERIFICATION_CODE = 'VERIFICATION_CODE'
+#
+#     code_type = models.CharField(max_length=15, choices=CodeType.choices, blank=False, null=False)
+#     code = models.CharField(max_length=10, null=False, blank=False)
+
+
+class DiscountCodeManager(models.Manager):
+    @transaction.atomic
+    def create_discount_code(self, **args):
+        code = User.objects.make_random_password(length=DISCOUNT_CODE_LENGTH)
+        return super().create(**{'code': code, **args})
+
+
+# TODO - add date validators for datetime fields
+class DiscountCode(models.Model):
+    code = models.CharField(max_length=10, null=False, blank=False)
+    value = models.FloatField(null=False, blank=False)
+    expiration_date = models.DateTimeField(blank=True, null=True)
+    is_valid = models.BooleanField(default=True)
+    user = models.ForeignKey(User, related_name='discount_codes', on_delete=models.CASCADE, null=True, default=None)
+    merchandise = models.ForeignKey(Merchandise, related_name='discount_codes', on_delete=models.CASCADE, null=True,
+                                 default=None)
+
+    def __str__(self):
+        return self.code + " " + str(self.value)
+
+
+class VoucherManager(models.Manager):
+    @transaction.atomic
+    def create_voucher(self, **args):
+        code = User.objects.make_random_password(length=VOUCHER_CODE_LENGTH)
+        return super().create(**{'remaining': args.get('amount', 0), 'code': code, **args})
+
+
+class Voucher(models.Model):
+    user = models.ForeignKey(User, related_name='vouchers', on_delete=models.CASCADE, null=False)
+    code = models.CharField(max_length=10, null=False)
+    amount = models.IntegerField(null=False)
+    remaining = models.IntegerField(null=False)
+    expiration_date = models.DateTimeField(blank=True, null=True)
+    is_valid = models.BooleanField(default=True)
+
+    objects = VoucherManager()
+
+    @transaction.atomic
+    def use_on_purchase(self, purchase):
+        # TODO - work on how purchase flow is.
+        #  Eg. can users use a discount and a voucher or just one of them?
+        if self.remaining >= purchase.merchandise.price:
+            purchase.amount = max(0, purchase.amount - self.remaining)
+            self.remaining -= purchase.merchandise.price
+        else:
+            purchase.amount = purchase.merchandise.price - self.remaining
+            self.remaining = 0
+        purchase.voucher = self
+        purchase.save()
+        self.save()
+
+
+class Purchase(models.Model):
+    class Status(models.TextChoices):
+        SUCCESS = "SUCCESS"
+        REPETITIOUS = "REPETITIOUS"
+        FAILED = "FAILED"
+        STARTED = "STARTED"
+
+    ref_id = models.CharField(blank=True, max_length=100, null=True)
+    amount = models.IntegerField()
+    authority = models.CharField(blank=True, max_length=37, null=True)
+    status = models.CharField(blank=False, choices=Status.choices, max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    uniq_code = models.CharField(blank=False, max_length=100, default="")
+
+    user = models.ForeignKey(User, related_name='purchases', on_delete=models.CASCADE)
+
+    merchant = models.ForeignKey(Merchandise, related_name='purchases', on_delete=models.SET_NULL, null=True)
+    voucher = models.ForeignKey(Voucher, related_name='purchases', on_delete=models.SET_NULL, null=True, default=None)
+    discount_code = models.ForeignKey(DiscountCode, related_name='purchases', on_delete=models.SET_NULL, null=True,
+                                      default=None)
+
+    def __str__(self):
+        return self.uniq_code
+
+
+class VerificationCodeManager(models.Manager):
+    @transaction.atomic
+    def create_verification_code(self, phone_number, time_zone='Asia/Tehran'):
+        code = User.objects.make_random_password(length=SMS_CODE_LENGTH, allowed_chars='1234567890')
+        other_codes = VerificationCode.objects.filter(phone_number=phone_number, is_valid=True)
+        for c in other_codes:
+            c.is_valid = False
+            c.save()
+        verification_code = VerificationCode.objects.create(code=code, phone_number=phone_number,
+                                                            expiration_date=datetime.now(pytz.timezone(time_zone))
+                                                                            + timedelta(minutes=SMS_CODE_DELAY))
+        return verification_code
+
+
+class VerificationCode(models.Model):
+    phone_number = models.CharField(blank=True, max_length=13, null=True)
+    code = models.CharField(blank=True, max_length=10, null=True)
+    expiration_date = models.DateTimeField(blank=False, null=False)
+    is_valid = models.BooleanField(default=True)
+
+    objects = VerificationCodeManager()
+
+    def send_sms(self, code_type='verify'):
+        api = KAVENEGAR_TOKEN
+        params = {
+            'receptor': self.phone_number,
+            'template': code_type,
+            'token': str(self.code),
+            'type': 'sms'
+        }
+        api.verify_lookup(params)
+
+    def __str__(self):
+        return f'{self.phone_number}\'s code is: {self.code} {"+" if self.is_valid else "-"}'
+
+# ----------------------------------------------
 
 class MemberManager(BaseUserManager):
     pass
@@ -241,28 +393,6 @@ class Mentor(models.Model):
         msg.send()
 
 
-class Player(models.Model):
-    class PlayerType(models.TextChoices):
-        TEAM = 'TEAM'
-        PARTICIPANT = 'PARTICIPANT'
-
-    player_type = models.CharField(max_length=15, choices=PlayerType.choices)
-    score = models.IntegerField(null=True, blank=True)
-    active = models.BooleanField(default=False)
-    # uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    # workshops = models.ManyToManyField('fsm.FSM', through='fsm.PlayerWorkshop', related_name='workshop_players')
-    event = models.ForeignKey('fsm.Event', related_name='event_players',
-                              on_delete=models.CASCADE, null=True, blank=False)
-
-    def __str__(self):
-        if self.player_type == self.PlayerType.TEAM:
-            return str(self.team)
-        elif self.player_type == self.PlayerType.PARTICIPANT:
-            return str(self.participant.id) + "-" + str(self.participant)
-        else:
-            return "not working"
-
-
 class ParticipantManager(models.Manager):
 
     @transaction.atomic
@@ -305,6 +435,8 @@ class Participant(Player):
     is_paid = models.BooleanField(default=False)  # پرداخت
     is_accepted = models.BooleanField(default=False)  # برای گزینش
     is_participated = models.BooleanField(default=False)  # شرکت‌کنند‌های نهایی رویداد
+    player_type = models.CharField(max_length=10)
+    score = models.IntegerField(default=0)
 
     objects = ParticipantManager()
 
@@ -330,6 +462,8 @@ class Team(Player):
     group_name = models.CharField(max_length=200, blank=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     team_code = models.CharField(max_length=10)
+    player_type = models.CharField(max_length=10)
+    score = models.IntegerField(default=0)
 
     # current_state = models.ForeignKey('fsm.FSMState', null=True, blank=True, on_delete=models.SET_NULL, related_name='teams')
 
@@ -340,73 +474,3 @@ class Team(Player):
             s += str(p) + ", "
         s += ")"
         return s
-
-
-class Payment(models.Model):
-    STATUS_CHOICE = (
-        ("SUCCESS", "SUCCESS"),
-        ("REPETITIOUS", "REPETITIOUS"),
-        ("FAILED", "FAILED"),
-        ("STARTED", "STARTED"),
-    )
-
-    # TODO - add discount, discount from front is bS
-    participant = models.ForeignKey(Participant, related_name="participant_payment", on_delete=models.CASCADE)
-    ref_id = models.CharField(blank=True, max_length=100, null=True)
-    amount = models.IntegerField()
-    authority = models.CharField(blank=True, max_length=37, null=True)
-    status = models.CharField(blank=False, choices=STATUS_CHOICE, max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    uniq_code = models.CharField(blank=False, max_length=100, default="")
-    discount_code = models.ForeignKey('accounts.DiscountCode', related_name="payments", on_delete=models.CASCADE,
-                                      null=True)
-
-    def __str__(self):
-        return self.uniq_code
-
-
-class DiscountCode(models.Model):
-    participant = models.ForeignKey(Participant, related_name='participant_discount_code', on_delete=models.CASCADE)
-    code = models.CharField(blank=True, max_length=10, null=False)
-    value = models.FloatField(null=False, blank=False)
-    expiration_date = models.DateTimeField(blank=True, null=True)
-    is_valid = models.BooleanField(default=True)
-
-    def __str__(self):
-        return str(self.participant) + " " + self.code + " " + str(self.value)
-
-
-class VerificationCodeManager(models.Manager):
-    @transaction.atomic
-    def create_verification_code(self, phone_number, time_zone='Asia/Tehran'):
-        code = User.objects.make_random_password(length=SMS_CODE_LENGTH, allowed_chars='1234567890')
-        other_codes = VerificationCode.objects.filter(phone_number=phone_number, is_valid=True)
-        for c in other_codes:
-            c.is_valid = False
-            c.save()
-        verification_code = VerificationCode.objects.create(code=code, phone_number=phone_number,
-                                                            expiration_date=datetime.now(pytz.timezone(time_zone))
-                                                                            + timedelta(minutes=SMS_CODE_DELAY))
-        return verification_code
-
-
-class VerificationCode(models.Model):
-    phone_number = models.CharField(blank=True, max_length=13, null=True)
-    code = models.CharField(blank=True, max_length=10, null=True)
-    expiration_date = models.DateTimeField(blank=False, null=False)
-    is_valid = models.BooleanField(default=True)
-
-    objects = VerificationCodeManager()
-
-    def send_sms(self, code_type='verify'):
-        api = KAVENEGAR_TOKEN
-        params = {
-            'receptor': self.phone_number,
-            'template': code_type,
-            'token': str(self.code),
-            'type': 'sms'
-        }
-        api.verify_lookup(params)
-
-    def __str__(self):
-        return f'{self.phone_number}\'s code is: {self.code} {"+" if self.is_valid else "-"}'

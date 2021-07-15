@@ -1,6 +1,36 @@
 from django.db import models
 from model_utils.managers import InheritanceManager
+from polymorphic.models import PolymorphicModel
+
 from accounts.models import *
+
+
+class Paper(PolymorphicModel):
+    pass
+
+
+class AnswerSheet(PolymorphicModel):
+    # form = models.ForeignKey(Form, null=True, default=None, on_delete=models.SET_NULL, related_name='answer_sheets')
+    pass
+
+
+class RegistrationForm(Paper):
+    min_grade = models.IntegerField(default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
+    max_grade = models.IntegerField(default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
+
+    conditions = models.TextField(null=True, blank=True)
+
+
+class RegistrationReceipt(AnswerSheet):
+    registration_form = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True,
+                                          on_delete=models.SET_NULL)
+    user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
+    is_accepted = models.BooleanField(default=False)
+
+    def does_pass_conditions(self):
+        if exec(self.registration_form.conditions):
+            return True
+        return False
 
 
 class Event(models.Model):
@@ -10,15 +40,17 @@ class Event(models.Model):
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
-    active = models.BooleanField(default=False)
-    event_cost = models.IntegerField(default=0)
-    event_team_cost = models.IntegerField(default=0)
+    cover_page = models.ImageField(upload_to='events/', null=True, blank=True)
+    is_active = models.BooleanField(default=False)
     event_type = models.CharField(max_length=40, default=EventType.individual,
                                   choices=EventType.choices)
-    has_selection = models.BooleanField(default=False)
     team_size = models.IntegerField(default=3)
     maximum_participant = models.IntegerField(null=True, blank=True)
+
+    merchandise = models.OneToOneField('accounts.Merchandise', related_name='event', on_delete=models.SET_NULL,
+                                       null=True)
+    registration_form = models.OneToOneField(RegistrationForm, related_name='event', on_delete=models.SET_NULL,
+                                             null=True)
 
     def __str__(self):
         return self.name
@@ -26,32 +58,37 @@ class Event(models.Model):
 
 class FSM(models.Model):
     class FSMLearningType(models.TextChoices):
-        withMentor = 'withMentor'
-        noMentor = 'noMentor'
+        withMentor = 'WITH_MENTOR'
+        noMentor = 'NO_MENTOR'
 
     class FSMPType(models.TextChoices):
-        team = 'team'
-        individual = 'individual'
-        hybrid = 'hybrid'
+        team = 'TEAM'
+        individual = 'INDIVIDUAL'
+        hybrid = 'HYBRID'
+
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, default=None, null=True, blank=True)
+    merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True)
+    registration_form = models.OneToOneField(RegistrationForm, related_name='fsm', on_delete=models.SET_NULL, null=True)
+
+    scores = models.JSONField(null=True, blank=True)
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
-    active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     first_state = models.OneToOneField('MainState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
     fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.noMentor,
                                          choices=FSMLearningType.choices)
-    fsm_p_type = models.CharField(max_length=40, default=FSMPType.individual,
-                                  choices=FSMPType.choices)
+    fsm_p_type = models.CharField(max_length=40, default=FSMPType.individual, choices=FSMPType.choices)
     lock = models.CharField(max_length=10, null=True, blank=True)
-    event = models.ForeignKey(Event, on_delete=models.SET_NULL, default=None,
-                              null=True, blank=True)
+
+    # TODO - make locks as mixins
 
     def __str__(self):
         return self.name
 
 
-class FSMState(models.Model):
+class FSMState(Paper):
     name = models.CharField(max_length=150)
 
     def __str__(self):
@@ -63,14 +100,14 @@ class FSMState(models.Model):
         except:
             try:
                 help = self.helpstate
-                if help.state:
-                    return '%s: %s' % (help.state.name, help.name)
+                if help.form:
+                    return '%s: %s' % (help.form.name, help.name)
                 return self.name
             except:
                 return self.name
 
     def widgets(self):
-        return Widget.objects.filter(state=self).select_subclasses()
+        return Widget.objects.filter(state=self)
 
 
 class MainState(FSMState):
@@ -81,7 +118,7 @@ class HelpState(FSMState):
     state = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='help_states')
 
 
-class Article(FSMState):
+class Article(Paper):
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     active = models.BooleanField(default=False)
@@ -109,7 +146,7 @@ class FSMEdge(models.Model):
                 return
             output = output and ability.is_valid(value)
         return self.head if output else None
-    
+
     def __str__(self):
         return f'از {self.tail.name} به {self.head.name}'
 
@@ -128,24 +165,29 @@ class Ability(models.Model):
         return self.value == value
 
     def widgets(self):
-        return Widget.objects.filter(state=self).select_subclasses()
+        return Widget.objects.filter(state=self)
 
 
-class Widget(models.Model):
+class Widget(PolymorphicModel):
     class WidgetTypes(models.TextChoices):
         Game = 'Game'
         Video = 'Video'
         Image = 'Image'
         Description = 'Description'
-        ProblemSmallAnswer = 'ProblemSmallAnswer'
-        ProblemBigAnswer = 'ProblemBigAnswer'
-        ProblemMultiChoice = 'ProblemMultiChoice'
-        ProblemUploadFileAnswer = 'ProblemUploadFileAnswer'
+        SmallAnswerProblem = 'SmallAnswerProblem'
+        BigAnswerProblem = 'BigAnswerProblem'
+        MultiChoiceProblem = 'MultiChoiceProblem'
+        UploadFileProblem = 'UploadFileProblem'
 
-    state = models.ForeignKey(FSMState, null=True, on_delete=models.CASCADE, related_name='%(class)s')
-    priority = models.IntegerField(default=1, null=True, blank=True)
+    name = models.CharField(max_length=100, null=True)
+    paper = models.ForeignKey(Paper, null=True, on_delete=models.CASCADE, related_name='widgets')
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices)
-    objects = InheritanceManager()
+    creator = models.ForeignKey('accounts.User', null=True, on_delete=models.SET_NULL)
+    duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
+                                       on_delete=models.SET_NULL, related_name='duplications')
+
+    class Meta:
+        order_with_respect_to = 'paper'
 
 
 class Description(Widget):
@@ -153,7 +195,6 @@ class Description(Widget):
 
 
 class Game(Widget):
-    name = models.CharField(max_length=100, null=True)
     link = models.TextField()
 
     def __str__(self):
@@ -161,7 +202,6 @@ class Game(Widget):
 
 
 class Video(Widget):
-    name = models.CharField(max_length=100, null=True)
     link = models.TextField()
 
     def __str__(self):
@@ -169,7 +209,6 @@ class Video(Widget):
 
 
 class Image(Widget):
-    name = models.CharField(max_length=100, null=True)
     link = models.TextField()
 
     def __str__(self):
@@ -177,62 +216,94 @@ class Image(Widget):
 
 
 class Problem(Widget):
-    name = models.CharField(max_length=100, null=True)
     text = models.TextField(null=True, blank=True)
+    help_text = models.TextField(null=True, blank=True)
     max_score = models.FloatField(null=True, blank=True)
-    objects = InheritanceManager()
+
+    @property
+    def solution(self):
+        return self.answers.filter(is_solution=True).first()
 
 
-class ProblemSmallAnswer(Problem):
+class SmallAnswerProblem(Problem):
     pass
 
 
-class ProblemBigAnswer(Problem):
+class BigAnswerProblem(Problem):
     pass
 
 
-class ProblemMultiChoice(Problem):
-    pass
+class MultiChoiceProblem(Problem):
+    max_choices = models.IntegerField(validators=[MinValueValidator(0)], default=1)
 
 
-class ProblemUploadFileAnswer(Problem):
+class UploadFileProblem(Problem):
     pass
 
 
 class Choice(models.Model):
-    problem = models.ForeignKey(ProblemMultiChoice, null=True, on_delete=models.CASCADE, related_name='choices')
+    problem = models.ForeignKey(MultiChoiceProblem, null=True, on_delete=models.CASCADE, related_name='choices')
     text = models.TextField()
 
     def __str__(self):
         return self.text
 
 
-class Answer(models.Model):
-    answer_type = models.CharField(max_length=20, default="Answer")
-    objects = InheritanceManager()
+class AnswerManager(InheritanceManager):
+    # TODO - update for polymorphic models
+    @transaction.atomic
+    def create_answer(self, **args):
+        user = args.get('user', None)
+        problem = args.get('problem', None)
+        old_answers = Answer.objects.filter(user=user).filter(problem=problem)
+        for old_answer in old_answers:
+            old_answer.is_final_answer = False
+            old_answer.save()
+        return super().create(**{'is_active': True, **{args}})
+
+
+# TODO - add default answer type on answer managers
+class Answer(PolymorphicModel):
+    class AnswerTypes(models.TextChoices):
+        SmallAnswer = 'SmallAnswer'
+        BigAnswer = 'BigAnswer'
+        MultiChoiceAnswer = 'MultiChoiceAnswer'
+        UploadFileAnswer = 'UploadFileAnswer'
+
+    answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices, null=False, blank=False)
+    answer_sheet = models.ForeignKey(AnswerSheet, null=True, on_delete=models.SET_NULL)
+    submitted_by = models.ForeignKey('accounts.User', null=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(null=True, blank=True)
+    is_final_answer = models.BooleanField(default=False)
+    is_solution = models.BooleanField(default=False)
 
 
 class SmallAnswer(Answer):
-    problem = models.OneToOneField('ProblemSmallAnswer', null=True, on_delete=models.CASCADE, unique=True,
-                                   related_name='answer')
+    problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True, on_delete=models.CASCADE,
+                                related_name='answers')
     text = models.TextField()
 
 
 class BigAnswer(Answer):
-    problem = models.OneToOneField('ProblemBigAnswer', null=True, on_delete=models.CASCADE, unique=True,
-                                   related_name='answer')
+    problem = models.ForeignKey('fsm.BigAnswerProblem', null=True, on_delete=models.CASCADE,
+                                related_name='answers')
     text = models.TextField()
 
 
+class ChoiceSelection(models.Model):
+    multi_choice_answer = models.ForeignKey('MultiChoiceAnswer', on_delete=models.CASCADE)
+    choice = models.ForeignKey(Choice, on_delete=models.CASCADE, related_name='selections')
+
+
 class MultiChoiceAnswer(Answer):
-    problem = models.OneToOneField('ProblemMultiChoice', null=True, on_delete=models.CASCADE, unique=True,
-                                   related_name='answer')
-    text = models.IntegerField()
+    problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, on_delete=models.CASCADE,
+                                related_name='answers')
+    choices = models.ManyToManyField(Choice, through=ChoiceSelection)
 
 
 class UploadFileAnswer(Answer):
-    problem = models.OneToOneField('ProblemUploadFileAnswer', null=True, on_delete=models.CASCADE, unique=True,
-                                   related_name='answer')
+    problem = models.ForeignKey('fsm.UploadFileProblem', null=True, on_delete=models.CASCADE,
+                                related_name='answers')
     answer_file = models.FileField(upload_to='AnswerFile', max_length=4000, blank=False)
     file_name = models.CharField(max_length=50)
 
@@ -246,7 +317,7 @@ class SubmittedAnswer(models.Model):
 
     def xanswer(self):
         try:
-            return Answer.objects.filter(id=self.answer.id).select_subclasses()[0]
+            return Answer.objects.filter(id=self.answer.id).first()
         except:
             return None
 

@@ -19,6 +19,7 @@ def find_user(data):
 
     return get_object_or_404(User, username=username)
 
+
 def get_user_json_info(user):
     response = {
         "first_name": user.first_name,

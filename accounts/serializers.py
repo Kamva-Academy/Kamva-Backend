@@ -12,8 +12,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from errors.error_codes import serialize_error
 from workshop_backend.settings.base import SMS_CODE_LENGTH
 from .models import Member, Participant, Team, User, VerificationCode, EducationalInstitute, School, University, \
-    SchoolStudentship, Studentship, AcademicStudentship
-from .validators import phone_number_validator, grade_validator
+    SchoolStudentship, Studentship, AcademicStudentship, Merchandise
+from .validators import phone_number_validator, grade_validator, price_validator
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,6 @@ class AccountSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
     password = serializers.CharField(write_only=True, required=False)
     username = serializers.CharField(required=False)
-    id = serializers.ReadOnlyField()
 
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data.get('password'))
@@ -85,23 +84,18 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'phone_number', 'first_name', 'last_name', 'password', 'username', 'email', 'uuid']
+        read_only_fields = ['id']
 
 
 class UserSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
     username = serializers.CharField(required=False)
-    id = serializers.ReadOnlyField()
 
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'username', 'email', 'uuid', 'gender', 'national_code', 'birth_date',
-                  'country', 'address', 'province', 'city', 'postal_code', 'profile_picture']
-
-
-class UserUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['email', 'phone_number']
+        fields = ['id', 'phone_number', 'first_name', 'last_name', 'username', 'email', 'uuid', 'gender', 'birth_date',
+                  'national_code', 'country', 'address', 'province', 'city', 'postal_code', 'profile_picture']
+        read_only_fields = ['id']
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -200,6 +194,7 @@ class StudentshipSerializer(serializers.ModelSerializer):
         read_only_fields = ['is_document_verified', 'user', ]
 
 
+# TODO - think about the AIC problem of data leak when retrieving list of profiles
 class ProfileSerializer(serializers.ModelSerializer):
     studentships = StudentshipSerializer(many=True)
 
@@ -209,6 +204,16 @@ class ProfileSerializer(serializers.ModelSerializer):
                   'country', 'address', 'province', 'city', 'postal_code', 'profile_picture', 'bio',
                   'studentships']
 
+
+class MerchandiseSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=50, required=False)
+    price = serializers.IntegerField(required=True, validators=[price_validator])
+    owner = serializers.PrimaryKeyRelatedField(many=False, required=False, queryset=EducationalInstitute.objects.all())
+
+    class Meta:
+        model = Merchandise
+        fields = ['id', 'name', 'price', 'owner']
+        read_only_fields = ['id']
 
 #
 # class MemberSerializer(serializers.ModelSerializer):

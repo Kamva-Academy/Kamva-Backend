@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 from fsm.models import *
 from rest_framework import permissions
 from fsm.views import permissions as customPermissions
-from fsm.serializers import ProblemSmallAnswerSerializer
+from fsm.serializers import SmallAnswerProblemSerializer
 
 import sys
 
@@ -17,5 +17,5 @@ class SmallView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.Creat
                    mixins.UpdateModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission, ]
 
-    queryset = ProblemSmallAnswer.objects.all()
-    serializer_class = ProblemSmallAnswerSerializer
+    queryset = SmallAnswerProblem.objects.all()
+    serializer_class = SmallAnswerProblemSerializer
