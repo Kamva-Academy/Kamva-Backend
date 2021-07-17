@@ -44,6 +44,8 @@ registration_form_creation_test_case_response = {
     "min_grade": 0,
     "max_grade": 0,
     "conditions": "string",
+    "event": 1,
+    "paper_type": "RegistrationForm",
     "widgets": [
         {
             "id": 98,
@@ -51,10 +53,10 @@ registration_form_creation_test_case_response = {
             "paper": 37,
             "widget_type": "MultiChoiceProblem",
             "creator": 2,
-            "duplication_of": null,
+            "duplication_of": None,
             "text": "mcp1",
-            "help_text": null,
-            "max_score": null,
+            "help_text": None,
+            "max_score": None,
             "max_choices": 2,
             "choices": [
                 {
@@ -81,11 +83,11 @@ registration_form_creation_test_case_response = {
             "solution": {
                 "id": 61,
                 "answer_type": "MultiChoiceAnswer",
-                "answer_sheet": null,
+                "answer_sheet": None,
                 "submitted_by": 2,
-                "created_at": null,
-                "is_final_answer": true,
-                "is_solution": true,
+                "created_at": None,
+                "is_final_answer": True,
+                "is_solution": True,
                 "problem": 98,
                 "choices": [
                     101,
@@ -99,18 +101,18 @@ registration_form_creation_test_case_response = {
             "paper": 37,
             "widget_type": "SmallAnswerProblem",
             "creator": 2,
-            "duplication_of": null,
+            "duplication_of": None,
             "text": "text1",
-            "help_text": null,
-            "max_score": null,
+            "help_text": None,
+            "max_score": None,
             "solution": {
                 "id": 62,
                 "answer_type": "SmallAnswer",
-                "answer_sheet": null,
+                "answer_sheet": None,
                 "submitted_by": 2,
-                "created_at": null,
-                "is_final_answer": true,
-                "is_solution": true,
+                "created_at": None,
+                "is_final_answer": True,
+                "is_solution": True,
                 "problem": 99,
                 "text": "abc"
             }
@@ -121,7 +123,7 @@ registration_form_creation_test_case_response = {
             "paper": 37,
             "widget_type": "Description",
             "creator": 2,
-            "duplication_of": null,
+            "duplication_of": None,
             "text": "text2"
         }
     ]

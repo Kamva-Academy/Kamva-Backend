@@ -25,7 +25,11 @@ errors_dict = {'4000': 'phone number must be digit',
                         'params': 1},
                '4020': 'selected choices can\'t have repetitions',
                '4021': 'selected choices should be indices of choices',
-
+               '4022': 'a registration form must belong only to an event or fsm not both',
+               '4023': 'event already has a registration form',
+               '4024': 'fsm already has a registration form',
+               '4025': 'registration form must belong to an event or fsm, neither is provided',
+               '4026': 'you can\'t edit this entity you are not one of it\'s modifiers',
 
                '5000': 'sending SMS failed'}
 

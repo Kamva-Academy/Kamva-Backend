@@ -6,7 +6,12 @@ from accounts.models import *
 
 
 class Paper(PolymorphicModel):
-    pass
+    class PaperType(models.TextChoices):
+        RegistrationForm = "RegistrationForm"
+        Article = "Article"
+
+    paper_type = models.CharField(max_length=25, blank=False, choices=PaperType.choices)
+    creator = models.ForeignKey('accounts.User', related_name='papers', on_delete=models.SET_NULL, null=True)
 
 
 class AnswerSheet(PolymorphicModel):
@@ -35,40 +40,59 @@ class RegistrationReceipt(AnswerSheet):
 
 class Event(models.Model):
     class EventType(models.TextChoices):
-        team = 'team'
-        individual = 'individual'
+        Team = 'Team'
+        Individual = 'Individual'
+
+    merchandise = models.OneToOneField('accounts.Merchandise', related_name='event', on_delete=models.SET_NULL,
+                                       null=True, blank=True)
+    registration_form = models.OneToOneField(RegistrationForm, related_name='event', on_delete=models.SET_NULL,
+                                             null=True, blank=True)
+    creator = models.ForeignKey('accounts.User', related_name='events', on_delete=models.SET_NULL, null=True,
+                                blank=True)
+    holder = models.ForeignKey('accounts.EducationalInstitute', related_name='events', on_delete=models.SET_NULL,
+                               null=True, blank=True)
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='events/', null=True, blank=True)
     is_active = models.BooleanField(default=False)
-    event_type = models.CharField(max_length=40, default=EventType.individual,
-                                  choices=EventType.choices)
+    event_type = models.CharField(max_length=40, default=EventType.Individual, choices=EventType.choices)
     team_size = models.IntegerField(default=3)
     maximum_participant = models.IntegerField(null=True, blank=True)
-
-    merchandise = models.OneToOneField('accounts.Merchandise', related_name='event', on_delete=models.SET_NULL,
-                                       null=True)
-    registration_form = models.OneToOneField(RegistrationForm, related_name='event', on_delete=models.SET_NULL,
-                                             null=True)
 
     def __str__(self):
         return self.name
 
+    def delete(self, using=None, keep_parents=False):
+        self.registration_form.delete() if self.registration_form is not None else None
+        self.merchandise.delete() if self.merchandise is not None else None
+        return super(Event, self).delete(using, keep_parents)
+
+    @property
+    def modifiers(self):
+        modifiers = {self.creator} if self.creator is not None else set()
+        modifiers |= set(self.holder.admins.all()) if self.holder is not None else set()
+        return modifiers
+
 
 class FSM(models.Model):
     class FSMLearningType(models.TextChoices):
-        withMentor = 'WITH_MENTOR'
-        noMentor = 'NO_MENTOR'
+        Supervised = 'Supervised'
+        Unsupervised = 'Unsupervised'
 
     class FSMPType(models.TextChoices):
-        team = 'TEAM'
-        individual = 'INDIVIDUAL'
-        hybrid = 'HYBRID'
+        Team = 'Team'
+        Individual = 'Individual'
+        Hybrid = 'Hybrid'
 
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, default=None, null=True, blank=True)
-    merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True)
-    registration_form = models.OneToOneField(RegistrationForm, related_name='fsm', on_delete=models.SET_NULL, null=True)
+    merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True,
+                                       blank=True)
+    registration_form = models.OneToOneField(RegistrationForm, related_name='fsm', on_delete=models.SET_NULL, null=True,
+                                             blank=True)
+    creator = models.ForeignKey('accounts.User', related_name='fsms', on_delete=models.SET_NULL, null=True, blank=True)
+    holder = models.ForeignKey('accounts.EducationalInstitute', related_name='fsms', on_delete=models.SET_NULL,
+                               null=True, blank=True)
 
     scores = models.JSONField(null=True, blank=True)
 
@@ -77,15 +101,21 @@ class FSM(models.Model):
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     first_state = models.OneToOneField('MainState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
-    fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.noMentor,
+    fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
                                          choices=FSMLearningType.choices)
-    fsm_p_type = models.CharField(max_length=40, default=FSMPType.individual, choices=FSMPType.choices)
+    fsm_p_type = models.CharField(max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
     lock = models.CharField(max_length=10, null=True, blank=True)
 
     # TODO - make locks as mixins
 
     def __str__(self):
         return self.name
+
+    @property
+    def modifiers(self):
+        modifiers = {self.creator} if self.creator is not None else set()
+        modifiers |= set(self.holder.admins.all()) if self.holder is not None else set()
+        return modifiers
 
 
 class FSMState(Paper):
@@ -182,7 +212,7 @@ class Widget(PolymorphicModel):
     name = models.CharField(max_length=100, null=True)
     paper = models.ForeignKey(Paper, null=True, on_delete=models.CASCADE, related_name='widgets')
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices)
-    creator = models.ForeignKey('accounts.User', null=True, on_delete=models.SET_NULL)
+    creator = models.ForeignKey('accounts.User', related_name='widgets', null=True, on_delete=models.SET_NULL)
     duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name='duplications')
 

@@ -1,11 +1,12 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .views.event_view import EventViewSet
 from .views.fsmview import *
 from .views.fsmstateview import *
 from .views.fsmedgeview import *
 from .views.abilityview import *
-from .views.registration_view import RegistrationFormViewSet
+from .views.registration_view import RegistrationViewSet
 from .views.widgetview import *
 from .views.teamhistoryview import *
 from .views.teamview import *
@@ -72,6 +73,7 @@ urlpatterns = [
      # path('mentorgetplayerstate/', mentor_get_workshop_player, name="mentor_get_workshop_player"),
 ]
 
-router.register(r'registration', RegistrationFormViewSet, basename='registrations')
+router.register(r'registration', RegistrationViewSet, basename='registration')
+router.register(r'event', EventViewSet, basename='events')
 
 urlpatterns += router.urls

@@ -14,7 +14,7 @@ class IsInstituteOwner(permissions.BasePermission):
     """
     Permission for updating or deleting or adding owners to institutes
     """
-    message = 'You are not this institutes owner'
+    message = 'You are not this institut\'s owner'
 
     def has_object_permission(self, request, view, obj):
         return request.user in obj.owners

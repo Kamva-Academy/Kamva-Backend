@@ -68,9 +68,9 @@ class EducationalInstitute(models.Model):
 
     date_added = models.DateField(null=True, blank=True)
     is_approved = models.BooleanField(null=True, blank=True)
-    creator = models.ForeignKey(User, related_name='created_institutes', on_delete=models.SET_NULL, null=True,
+    owner = models.ForeignKey(User, related_name='owned_institutes', on_delete=models.SET_NULL, null=True,
                                 blank=True)
-    owners = models.ManyToManyField(User, related_name='owned_institutes', blank=True)
+    admins = models.ManyToManyField(User, related_name='institutes', blank=True)
 
     def __str__(self):
         return self.name
@@ -78,9 +78,9 @@ class EducationalInstitute(models.Model):
 
 class School(EducationalInstitute):
     class SchoolType(models.Choices):
-        Elementary = 'ELEMENTARY'
-        Junior_High = 'JUNIOR_HIGH'
-        High = 'HIGH'
+        Elementary = 'Elementary'
+        JuniorHigh = 'JuniorHigh'
+        High = 'High'
 
     principle_name = models.CharField(max_length=30, null=True, blank=True)
     principle_phone = models.CharField(max_length=15, null=True, blank=True, unique=True)
@@ -93,8 +93,8 @@ class University(EducationalInstitute):
 
 class Studentship(models.Model):
     class StudentshipType(models.Choices):
-        School = 'SCHOOL'
-        Academic = 'ACADEMIC'
+        School = 'School'
+        Academic = 'Academic'
 
     studentship_type = models.CharField(max_length=10, null=False, blank=False, choices=StudentshipType.choices)
     start_date = models.DateField(null=True, blank=True)
@@ -107,12 +107,12 @@ class Studentship(models.Model):
 
 class SchoolStudentship(Studentship):
     class Major(models.TextChoices):
-        Math = 'MATH'
-        Biology = 'BIOLOGY'
-        Literature = 'LITERATURE'
-        IslamicStudies = 'ISLAMIC_STUDIES'
-        TechnicalTraining = 'TECHNICAL_TRAINING'
-        Others = 'OTHERS'
+        Math = 'Math'
+        Biology = 'Biology'
+        Literature = 'Literature'
+        IslamicStudies = 'IslamicStudies'
+        TechnicalTraining = 'TechnicalTraining'
+        Others = 'Others'
 
     school = models.ForeignKey(School, related_name='students', on_delete=models.SET_NULL, null=True)
     grade = models.IntegerField(null=True, blank=True, validators=[MaxValueValidator(12), MinValueValidator(0)])
@@ -124,7 +124,7 @@ class AcademicStudentship(Studentship):
         BA = 'BA'
         MA = 'MA'
         PHD = 'PHD'
-        Postdoc = 'POSTDOC'
+        Postdoc = 'Postdoc'
 
     university = models.ForeignKey(University, related_name='academic_students', on_delete=models.SET_NULL, null=True)
     degree = models.CharField(max_length=15, null=True, blank=True, choices=Degree.choices)
@@ -132,7 +132,6 @@ class AcademicStudentship(Studentship):
 
 
 class Player(models.Model):
-
     user = models.ForeignKey(User, related_name='workshops', on_delete=models.CASCADE)
     fsm = models.ForeignKey('fsm.FSM', related_name='users', on_delete=models.CASCADE)
     purchase = models.ForeignKey('accounts.Purchase', related_name='purchase', on_delete=models.SET_NULL, null=True)
@@ -182,7 +181,7 @@ class DiscountCode(models.Model):
     is_valid = models.BooleanField(default=True)
     user = models.ForeignKey(User, related_name='discount_codes', on_delete=models.CASCADE, null=True, default=None)
     merchandise = models.ForeignKey(Merchandise, related_name='discount_codes', on_delete=models.CASCADE, null=True,
-                                 default=None)
+                                    default=None)
 
     def __str__(self):
         return self.code + " " + str(self.value)
@@ -222,15 +221,15 @@ class Voucher(models.Model):
 
 class Purchase(models.Model):
     class Status(models.TextChoices):
-        SUCCESS = "SUCCESS"
-        REPETITIOUS = "REPETITIOUS"
-        FAILED = "FAILED"
-        STARTED = "STARTED"
+        Success = "Success"
+        Repetitious = "Repetitious"
+        Failed = "Failed"
+        Started = "Started"
 
     ref_id = models.CharField(blank=True, max_length=100, null=True)
     amount = models.IntegerField()
     authority = models.CharField(blank=True, max_length=37, null=True)
-    status = models.CharField(blank=False, choices=Status.choices, max_length=100)
+    status = models.CharField(blank=False, choices=Status.choices, max_length=25)
     created_at = models.DateTimeField(auto_now_add=True)
     uniq_code = models.CharField(blank=False, max_length=100, default="")
 
@@ -279,6 +278,7 @@ class VerificationCode(models.Model):
 
     def __str__(self):
         return f'{self.phone_number}\'s code is: {self.code} {"+" if self.is_valid else "-"}'
+
 
 # ----------------------------------------------
 

@@ -131,7 +131,7 @@ class InstituteSerializer(serializers.ModelSerializer):
     principal_name = serializers.CharField(max_length=30, required=False)
     principal_phone = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
     phone_number = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
-    institute_type = serializers.ChoiceField(choices=['SCHOOL', 'UNIVERSITY', 'OTHER'])
+    institute_type = serializers.ChoiceField(choices=EducationalInstitute.InstituteType.choices)
     is_approved = serializers.BooleanField(required=False, read_only=True)
     creator = serializers.PrimaryKeyRelatedField(many=False, required=False, read_only=True)
     owners = serializers.PrimaryKeyRelatedField(many=True, required=False, read_only=True)
@@ -155,13 +155,12 @@ class InstituteSerializer(serializers.ModelSerializer):
 
 class StudentshipSerializer(serializers.ModelSerializer):
     university = serializers.PrimaryKeyRelatedField(many=False, queryset=University.objects.all(), required=False)
-    degree = serializers.ChoiceField(choices=['BA', 'MA', 'PHD', 'POSTDOC'], required=False)
+    degree = serializers.ChoiceField(choices=AcademicStudentship.Degree.choices, required=False)
     university_major = serializers.CharField(max_length=30, required=False)
 
     school = serializers.PrimaryKeyRelatedField(many=False, queryset=School.objects.all(), required=False)
     grade = serializers.IntegerField(required=False, validators=[grade_validator])
-    major = serializers.ChoiceField(choices=[
-        'MATH', 'BIOLOGY', 'LITERATURE', 'ISLAMIC_STUDIES', 'TECHNICAL_TRAINING', 'OTHERS'], required=False)
+    major = serializers.ChoiceField(choices=SchoolStudentship.Major.choices, required=False)
 
     def create(self, validated_data):
         studentship_type = validated_data.get('studentship_type', None)
