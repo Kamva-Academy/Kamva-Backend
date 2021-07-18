@@ -1,13 +1,15 @@
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from fsm.serializers.paper_serializer import PaperPolymorphicSerializer, RegistrationFormSerializer, \
-    ChangeOrderSerializer
-from fsm.models import RegistrationForm, transaction
+from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer
+from fsm.serializers.paper_serializers import PaperPolymorphicSerializer, RegistrationFormSerializer, \
+    ChangeWidgetOrderSerializer
+from fsm.models import RegistrationForm, transaction, AnswerSheet
 from fsm.views.permissions import IsCreatorOrReadOnly
 
 
@@ -31,10 +33,23 @@ class RegistrationViewSet(ModelViewSet):
 
     @swagger_auto_schema(responses={200: RegistrationFormSerializer})
     @transaction.atomic
-    @action(detail=True, methods=['post'], serializer_class=ChangeOrderSerializer)
+    @action(detail=True, methods=['post'], serializer_class=ChangeWidgetOrderSerializer)
     def change_order(self, request, pk=None):
-        serializer = ChangeOrderSerializer(data=request.data)
+        serializer = ChangeWidgetOrderSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             self.get_object().set_widget_order(serializer.validated_data.get('order'))
         return Response(data=RegistrationFormSerializer(self.get_object()).data)
 
+    # @swagger_auto_schema(responses={201: RegistrationReceiptSerializer})
+    @transaction.atomic
+    @action(detail=True, methods=['post'], serializer_class=RegistrationReceiptSerializer)
+    def register(self, request, pk=None):
+        context = self.get_serializer_context()
+        context['answer_sheet_of'] = self.get_object()
+        serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt',
+                                                         **request.data}, context=context)
+        if serializer.is_valid(raise_exception=True):
+            serializer.validated_data['answer_sheet_of'] = self.get_object()
+            registration_receipt = serializer.save()
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

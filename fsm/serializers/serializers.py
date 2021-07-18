@@ -5,8 +5,8 @@ from fsm.models import *
 import sys
 from django.utils import timezone
 
-from fsm.serializers.answer_serializer import AnswerSerializer
-from fsm.serializers.widget_serializer import WidgetSerializer
+from fsm.serializers.answer_serializers import AnswerSerializer
+from fsm.serializers.widget_serializers import WidgetSerializer
 
 
 class AbilitySerializer(serializers.ModelSerializer):

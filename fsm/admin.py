@@ -1,3 +1,5 @@
+import os
+
 from django.contrib import admin
 from import_export.admin import ExportActionMixin
 
@@ -85,11 +87,21 @@ class DescriptionAdmin(admin.ModelAdmin):
         return name
 
 
+def delete_registration_receipts(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.delete()
+
+
+class RegistrationReceiptsAdmin(admin.ModelAdmin):
+    list_display = ['user', 'answer_sheet_of']
+    actions = [delete_registration_receipts]
+
 
 admin.site.register(Paper)
 admin.site.register(RegistrationForm)
 admin.site.register(Problem)
-
+admin.site.register(AnswerSheet)
+admin.site.register(RegistrationReceipt, RegistrationReceiptsAdmin)
 
 admin.site.register(FSM)
 admin.site.register(FSMEdge, EdgeAdmin)

@@ -3,7 +3,7 @@ from rest_framework import mixins
 
 from fsm.models import *
 from rest_framework import permissions
-from fsm.serializers.widget_serializer import WidgetSerializer
+from fsm.serializers.widget_serializers import WidgetSerializer
 
 import sys
 

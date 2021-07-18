@@ -2,7 +2,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 
 from fsm.models import Event
-from fsm.serializers.fsm_serializer import EventSerializer
+from fsm.serializers.fsm_serializers import EventSerializer
 
 
 class EventViewSet(ModelViewSet):

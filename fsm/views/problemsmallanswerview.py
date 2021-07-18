@@ -4,7 +4,7 @@ from rest_framework import mixins
 from fsm.models import *
 from rest_framework import permissions
 from fsm.views import permissions as customPermissions
-from fsm.serializers.widget_serializer import SmallAnswerProblemSerializer
+from fsm.serializers.widget_serializers import SmallAnswerProblemSerializer
 
 
 class SmallView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,

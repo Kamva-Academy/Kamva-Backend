@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from model_utils.managers import InheritanceManager
 from polymorphic.models import PolymorphicModel
 
@@ -11,12 +13,21 @@ class Paper(PolymorphicModel):
         Article = "Article"
 
     paper_type = models.CharField(max_length=25, blank=False, choices=PaperType.choices)
-    creator = models.ForeignKey('accounts.User', related_name='papers', on_delete=models.SET_NULL, null=True)
+    creator = models.ForeignKey('accounts.User', related_name='papers', null=True, blank=True,
+                                on_delete=models.SET_NULL)
 
 
 class AnswerSheet(PolymorphicModel):
+    class AnswerSheetType(models.TextChoices):
+        RegistrationReceipt = "RegistrationReceipt"
+        FsmStateAnswerSheet = "FsmStateAnswerSheet"
+
     # form = models.ForeignKey(Form, null=True, default=None, on_delete=models.SET_NULL, related_name='answer_sheets')
-    pass
+    answer_sheet_type = models.CharField(max_length=25, blank=False, choices=AnswerSheetType.choices)
+
+    def delete(self):
+        self.answers.clear()
+        return super(AnswerSheet, self).delete()
 
 
 class RegistrationForm(Paper):
@@ -27,10 +38,15 @@ class RegistrationForm(Paper):
 
 
 class RegistrationReceipt(AnswerSheet):
-    registration_form = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True,
-                                          on_delete=models.SET_NULL)
-    user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
+    # should be in every answer sheet child
+    answer_sheet_of = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True, blank=True,
+                                        on_delete=models.SET_NULL)
+    user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
+                             null=True, blank=True)
     is_accepted = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('answer_sheet_of', 'user',)
 
     def does_pass_conditions(self):
         if exec(self.registration_form.conditions):
@@ -210,9 +226,10 @@ class Widget(PolymorphicModel):
         UploadFileProblem = 'UploadFileProblem'
 
     name = models.CharField(max_length=100, null=True)
-    paper = models.ForeignKey(Paper, null=True, on_delete=models.CASCADE, related_name='widgets')
+    paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='widgets')
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices)
-    creator = models.ForeignKey('accounts.User', related_name='widgets', null=True, on_delete=models.SET_NULL)
+    creator = models.ForeignKey('accounts.User', related_name='widgets', null=True, blank=True,
+                                on_delete=models.SET_NULL)
     duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name='duplications')
 
@@ -249,6 +266,7 @@ class Problem(Widget):
     text = models.TextField(null=True, blank=True)
     help_text = models.TextField(null=True, blank=True)
     max_score = models.FloatField(null=True, blank=True)
+    required = models.BooleanField(default=False)
 
     @property
     def solution(self):
@@ -272,7 +290,8 @@ class UploadFileProblem(Problem):
 
 
 class Choice(models.Model):
-    problem = models.ForeignKey(MultiChoiceProblem, null=True, on_delete=models.CASCADE, related_name='choices')
+    problem = models.ForeignKey(MultiChoiceProblem, null=True, blank=True, on_delete=models.CASCADE,
+                                related_name='choices')
     text = models.TextField()
 
     def __str__(self):
@@ -301,17 +320,21 @@ class Answer(PolymorphicModel):
         UploadFileAnswer = 'UploadFileAnswer'
 
     answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices, null=False, blank=False)
-    answer_sheet = models.ForeignKey(AnswerSheet, null=True, on_delete=models.SET_NULL)
-    submitted_by = models.ForeignKey('accounts.User', null=True, on_delete=models.SET_NULL)
+    answer_sheet = models.ForeignKey(AnswerSheet, related_name='answers', null=True, blank=True,
+                                     on_delete=models.SET_NULL)
+    submitted_by = models.ForeignKey('accounts.User', null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(null=True, blank=True)
     is_final_answer = models.BooleanField(default=False)
     is_solution = models.BooleanField(default=False)
 
 
 class SmallAnswer(Answer):
-    problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
     text = models.TextField()
+
+    def __str__(self):
+        return self.text
 
 
 class BigAnswer(Answer):

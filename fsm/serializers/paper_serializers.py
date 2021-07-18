@@ -6,7 +6,7 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from fsm.models import *
-from fsm.serializers.widget_serializer import WidgetPolymorphicSerializer, WidgetSerializer
+from fsm.serializers.widget_serializers import WidgetPolymorphicSerializer, WidgetSerializer
 
 
 class PaperSerializer(serializers.ModelSerializer):
@@ -17,13 +17,13 @@ class PaperSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         widgets = validated_data.pop('widgets', [])
-
-        instance = super().create(validated_data)
+        print(len(widgets))
+        instance = super().create({'creator': self.context.get('user', None), **validated_data})
         self.context['editable'] = False
         for w in widgets:
-            serializer = WidgetPolymorphicSerializer(data={'paper': instance, **w}, context=self.context)
+            serializer = WidgetPolymorphicSerializer(data=w, context=self.context)
             if serializer.is_valid(raise_exception=True):
-                # serializer.validated_data['paper'] = instance
+                serializer.validated_data['paper'] = instance
                 serializer.save()
         return instance
 
@@ -31,7 +31,6 @@ class PaperSerializer(serializers.ModelSerializer):
 class RegistrationFormSerializer(PaperSerializer):
     min_grade = serializers.IntegerField(required=False, validators=[MaxValueValidator(12), MinValueValidator(0)])
     max_grade = serializers.IntegerField(required=False, validators=[MaxValueValidator(12), MinValueValidator(0)])
-    conditions = serializers.CharField(required=False, allow_blank=True)
     event = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all(), required=False, allow_null=True)
     fsm = serializers.PrimaryKeyRelatedField(queryset=FSM.objects.all(), required=False, allow_null=True)
     widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
@@ -39,8 +38,7 @@ class RegistrationFormSerializer(PaperSerializer):
     def create(self, validated_data):
         event = validated_data.get('event', None)
         fsm = validated_data.get('fsm', None)
-        instance = super(RegistrationFormSerializer, self).create({'creator': self.context.get('user', None),
-                                                                   **validated_data})
+        instance = super(RegistrationFormSerializer, self).create(validated_data)
         if event is not None:
             event.registration_form = instance
             event.save()
@@ -101,5 +99,5 @@ class PaperPolymorphicSerializer(PolymorphicSerializer):
     resource_type_field_name = 'paper_type'
 
 
-class ChangeOrderSerializer(serializers.Serializer):
+class ChangeWidgetOrderSerializer(serializers.Serializer):
     order = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=True)

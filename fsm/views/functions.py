@@ -4,8 +4,8 @@ from fsm.models import *
 from django.utils import timezone
 
 from fsm.serializers.serializers import PlayerStateGetSerializer
-from fsm.serializers.widget_serializer import WidgetSerializer
-from fsm.serializers.answer_serializer import AnswerSerializer
+from fsm.serializers.widget_serializers import WidgetSerializer
+from fsm.serializers.answer_serializers import AnswerSerializer
 from fsm.serializers.serializers import FSMEdgeSerializer
 from scoring.models import ScoreTransaction
 

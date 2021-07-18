@@ -6,6 +6,8 @@ registration_form_creation_test_case = {
     "min_grade": 0,
     "max_grade": 0,
     "conditions": "string",
+    "event": 4,
+    "paper_type": "RegistrationForm",
     "widgets": [
         {
             "name": "p0",
@@ -40,17 +42,15 @@ registration_form_creation_test_case = {
     ]
 }
 registration_form_creation_test_case_response = {
-    "id": 37,
+    "id": 51,
     "min_grade": 0,
     "max_grade": 0,
     "conditions": "string",
-    "event": 1,
-    "paper_type": "RegistrationForm",
     "widgets": [
         {
-            "id": 98,
+            "id": 140,
             "name": "p0",
-            "paper": 37,
+            "paper": 51,
             "widget_type": "MultiChoiceProblem",
             "creator": 2,
             "duplication_of": None,
@@ -60,73 +60,75 @@ registration_form_creation_test_case_response = {
             "max_choices": 2,
             "choices": [
                 {
-                    "id": 101,
+                    "id": 157,
                     "text": "1",
-                    "problem": 98
+                    "problem": 140
                 },
                 {
-                    "id": 102,
+                    "id": 158,
                     "text": "2",
-                    "problem": 98
+                    "problem": 140
                 },
                 {
-                    "id": 103,
+                    "id": 159,
                     "text": "3",
-                    "problem": 98
+                    "problem": 140
                 },
                 {
-                    "id": 104,
+                    "id": 160,
                     "text": "4",
-                    "problem": 98
+                    "problem": 140
                 }
             ],
             "solution": {
-                "id": 61,
+                "id": 89,
                 "answer_type": "MultiChoiceAnswer",
                 "answer_sheet": None,
                 "submitted_by": 2,
                 "created_at": None,
                 "is_final_answer": True,
                 "is_solution": True,
-                "problem": 98,
+                "problem": 140,
                 "choices": [
-                    101,
-                    102
+                    157,
+                    158
                 ]
             }
-        },
-        {
-            "id": 99,
-            "name": "p1",
-            "paper": 37,
-            "widget_type": "SmallAnswerProblem",
-            "creator": 2,
-            "duplication_of": None,
-            "text": "text1",
-            "help_text": None,
-            "max_score": None,
-            "solution": {
-                "id": 62,
-                "answer_type": "SmallAnswer",
-                "answer_sheet": None,
-                "submitted_by": 2,
-                "created_at": None,
-                "is_final_answer": True,
-                "is_solution": True,
-                "problem": 99,
-                "text": "abc"
-            }
-        },
-        {
-            "id": 100,
-            "name": "name2",
-            "paper": 37,
-            "widget_type": "Description",
-            "creator": 2,
-            "duplication_of": None,
-            "text": "text2"
         }
+    ],
+    "event": 4,
+    "fsm": None,
+    "paper_type": "RegistrationForm",
+    "creator": 2
+}
+
+register_test_case = {
+    "answer_sheet_type": "RegistrationReceipt",
+    "answers": [
+        {"answer_type": "SmallAnswer",
+         "text": "far",
+         "problem": 175}
     ]
+}
+register_test_case_response = {
+    "id": 12,
+    "user": 2,
+    "answer_sheet_type": "RegistrationReceipt",
+    "answer_sheet_of": 62,
+    "answers": [
+        {
+            "id": 123,
+            "answer_type": "SmallAnswer",
+            "answer_sheet": 12,
+            "submitted_by": 2,
+            "created_at": None,
+            "is_final_answer": False,
+            "is_solution": False,
+            "problem": 175,
+            "text": "far"
+        }
+    ],
+    "is_accepted": False
 }
 
 factory = APIRequestFactory()

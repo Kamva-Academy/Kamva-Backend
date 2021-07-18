@@ -6,7 +6,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4001': 'phone number must have at least 10 digits',
                '4002': f'valid verification code must have {SMS_CODE_LENGTH} digits',
                '4003': 'invalid verification code or phone number',
-               '4004': {'msg': 'a user already submitted with this phone number', 'params': 1},
+               '4004': 'a user already submitted with this phone number',
                '4005': 'verification code expired',
                '4006': 'user not submitted with given credentials',
                '4007': 'no credentials were provided',
@@ -21,8 +21,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4016': 'given condition has syntax error',
                '4017': 'given number was not a positive integer',
                '4018': 'price must be a multiple of 500 Tomans',
-               '4019': {'msg': 'number of selected choices can\'t be bigger than max choices for this problem',
-                        'params': 1},
+               '4019': 'number of selected choices can\'t be bigger than max choices for this problem',
                '4020': 'selected choices can\'t have repetitions',
                '4021': 'selected choices should be indices of choices',
                '4022': 'a registration form must belong only to an event or fsm not both',
@@ -30,6 +29,10 @@ errors_dict = {'4000': 'phone number must be digit',
                '4024': 'fsm already has a registration form',
                '4025': 'registration form must belong to an event or fsm, neither is provided',
                '4026': 'you can\'t edit this entity you are not one of it\'s modifiers',
+               '4027': 'provided answer is to a problem not present in this paper',
+               '4028': 'this user already has answered this registration form',
+               '4029': 'a required problem is unanswered',
+               '4030': 'selected choices should be from corresponding problems',
 
                '5000': 'sending SMS failed'}
 
@@ -37,9 +40,7 @@ errors_dict = {'4000': 'phone number must be digit',
 def serialize_error(code, params=dict(), is_field_error=True):
     msg = errors_dict.get(code, None)
     if type(msg) == str:
-        returned = {'code': code, 'detail': msg}
-    elif type(msg) == dict:
-        returned = {'code': code, 'detail': msg['msg'], **params}
+        returned = {'code': code, 'detail': msg, **params}
     else:
         returned = {'code': code, 'detail': ''}
 

@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'notice',
     'scoring',
     'polymorphic',
+    'django_extensions',
 ]
 
 # SITE_ID=1
