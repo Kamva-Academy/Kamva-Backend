@@ -11,7 +11,6 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, ListModelMixin
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -37,7 +36,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 
-from .permissions import IsHimself, IsInstituteOwner
+from .permissions import IsHimself, IsInstituteOwner, IsInstituteAdmin
 from .utils import *
 from .serializers import MyTokenObtainPairSerializer, PhoneNumberSerializer, VerificationCodeSerializer, \
     AccountSerializer, UserSerializer, InstituteSerializer, StudentshipSerializer, ProfileSerializer, \
@@ -170,7 +169,7 @@ class InstituteViewSet(ModelViewSet):
     queryset = EducationalInstitute.objects.all()
     serializer_class = InstituteSerializer
     serializer_action_classes = {
-        'add_owners': AccountSerializer
+        'add_admin': AccountSerializer
     }
     my_tags = ['institutes']
 
@@ -181,10 +180,12 @@ class InstituteViewSet(ModelViewSet):
             return super().get_serializer_class()
 
     def get_permissions(self):
-        if self.action == 'update' or self.action == 'partial_update' or self.action == 'delete':
+        if self.action == 'create' or self.action == 'retrieve' or self.action == 'list':
+            permission_classes = [permissions.IsAuthenticated]
+        elif self.action == 'add_admin' or self.action == 'delete':
             permission_classes = [IsInstituteOwner]
         else:
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [IsInstituteAdmin]
         return [permission() for permission in permission_classes]
 
     @transaction.atomic
@@ -194,23 +195,22 @@ class InstituteViewSet(ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             user = request.user
             serializer.validated_data['creator'] = user
-            serializer.validated_data['date_added'] = timezone.now().date()
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            instance = serializer.save()
+            return Response(InstituteSerializer(instance).data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(responses={200: InstituteSerializer,
                                     400: "error code 4010 for institute not being approved"
                                     })
     @transaction.atomic
     @action(detail=True, methods=['post'], permission_classes=[IsInstituteOwner, ])
-    def add_owners(self, request, pk=None):
+    def add_admin(self, request, pk=None):
         data = request.data
         institute = self.get_object()
         if institute.is_approved:
-            serializer = AccountSerializer(data=data)
+            serializer = AccountSerializer(many=False, data=data)
             if serializer.is_valid(raise_exception=True):
-                new_owner = find_user(serializer.validated_data)
-                institute.owners.add(new_owner)
+                new_admin = find_user(serializer.validated_data)
+                institute.admins.add(new_admin)
                 return Response(InstituteSerializer(institute).data, status=status.HTTP_200_OK)
         else:
             raise PermissionDenied(serialize_error("4010"))
@@ -218,7 +218,7 @@ class InstituteViewSet(ModelViewSet):
 
 class StudentshipViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, ]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = StudentshipSerializer
     my_tags = ['studentship', 'accounts']
 
@@ -247,7 +247,7 @@ class StudentshipViewSet(ModelViewSet):
 
 class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
     parser_classes = [MultiPartParser]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = ProfileSerializer
     my_tags = ['accounts']
 
@@ -260,7 +260,7 @@ class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
 
 
 class MerchandiseViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = MerchandiseSerializer
     queryset = Merchandise.objects.all()
     my_tags = ['merchandises']

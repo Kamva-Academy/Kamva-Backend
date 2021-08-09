@@ -33,6 +33,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4028': 'this user already has answered this registration form',
                '4029': 'a required problem is unanswered',
                '4030': 'selected choices should be from corresponding problems',
+               '4031': 'only institutes\'s admins can create events',
 
                '5000': 'sending SMS failed'}
 

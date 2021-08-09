@@ -131,17 +131,17 @@ class InstituteSerializer(serializers.ModelSerializer):
     principal_name = serializers.CharField(max_length=30, required=False)
     principal_phone = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
     phone_number = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
-    institute_type = serializers.ChoiceField(choices=EducationalInstitute.InstituteType.choices)
-    is_approved = serializers.BooleanField(required=False, read_only=True)
+
+    is_approved = serializers.BooleanField(read_only=True)
     creator = serializers.PrimaryKeyRelatedField(many=False, required=False, read_only=True)
-    owners = serializers.PrimaryKeyRelatedField(many=True, required=False, read_only=True)
-    date_added = serializers.DateField(required=False, read_only=True)
+    owner = serializers.PrimaryKeyRelatedField(many=False, required=False, read_only=True)
+    admins = serializers.PrimaryKeyRelatedField(many=True, required=False, read_only=True)
 
     def create(self, validated_data):
         institute_type = validated_data.get('institute_type', None)
-        if institute_type == 'SCHOOL':
+        if institute_type == 'School':
             return School.objects.create(**validated_data)
-        elif institute_type == 'UNIVERSITY':
+        elif institute_type == 'University':
             return University.objects.create(**validated_data)
         else:
             return super().create(validated_data)
@@ -149,8 +149,8 @@ class InstituteSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationalInstitute
         fields = ['id', 'name', 'institute_type', 'address', 'province', 'city', 'postal_code', 'phone_number',
-                  'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved', 'creator',
-                  'owners', 'date_added', 'created_at']
+                  'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved', 'created_at',
+                  'owner', 'admins', 'date_added', 'creator']
 
 
 class StudentshipSerializer(serializers.ModelSerializer):
@@ -213,6 +213,7 @@ class MerchandiseSerializer(serializers.ModelSerializer):
         model = Merchandise
         fields = ['id', 'name', 'price', 'owner']
         read_only_fields = ['id']
+
 
 #
 # class MemberSerializer(serializers.ModelSerializer):

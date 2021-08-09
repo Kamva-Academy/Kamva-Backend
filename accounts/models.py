@@ -2,6 +2,7 @@ import logging
 
 import pytz
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db import models, transaction
@@ -14,6 +15,10 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags, strip_spaces_between_tags
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+from guardian.shortcuts import assign_perm
+from polymorphic.managers import PolymorphicManager
+from polymorphic.models import PolymorphicModel
+
 from accounts.tokens import account_activation_token
 import uuid
 
@@ -49,11 +54,25 @@ class User(AbstractUser):
     postal_code = models.CharField(max_length=10, null=True, blank=True)
 
 
-class EducationalInstitute(models.Model):
+class InstituteManager(PolymorphicManager):
+    @transaction.atomic
+    def create(self, **args):
+        institute = super().create(**args)
+        institute.owner = institute.creator
+        institute.admins.add(institute.creator)
+        institute.date_added = timezone.now().date()
+        # ct = ContentType.objects.get_for_model(institute)
+        # assign_perm(Permission.objects.filter(codename='add_admin', content_type=ct).first(), institute.owner, institute)
+        # these permission settings worked correctly but were too messy
+        institute.save()
+        return institute
+
+
+class EducationalInstitute(PolymorphicModel):
     class InstituteType(models.TextChoices):
-        School = 'SCHOOL'
-        University = 'UNIVERSITY'
-        Other = 'OTHER'
+        School = 'School'
+        University = 'University'
+        Other = 'Other'
 
     name = models.CharField(max_length=30, null=False, blank=False)
     institute_type = models.CharField(max_length=10, null=False, blank=False, choices=InstituteType.choices)
@@ -66,11 +85,18 @@ class EducationalInstitute(models.Model):
     description = models.TextField(null=True, blank=True)
     created_at = models.DateField(null=True, blank=True)
 
-    date_added = models.DateField(null=True, blank=True)
     is_approved = models.BooleanField(null=True, blank=True)
-    owner = models.ForeignKey(User, related_name='owned_institutes', on_delete=models.SET_NULL, null=True,
-                                blank=True)
+    date_added = models.DateField(null=True, blank=True)
+    owner = models.ForeignKey(User, related_name='owned_institutes', on_delete=models.SET_NULL, null=True, blank=True)
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     admins = models.ManyToManyField(User, related_name='institutes', blank=True)
+
+    objects = InstituteManager()
+
+    class Meta:
+        permissions = [
+            ('add_admin', 'Can add new admins to educational institute')
+        ]
 
     def __str__(self):
         return self.name
@@ -82,8 +108,8 @@ class School(EducationalInstitute):
         JuniorHigh = 'JuniorHigh'
         High = 'High'
 
-    principle_name = models.CharField(max_length=30, null=True, blank=True)
-    principle_phone = models.CharField(max_length=15, null=True, blank=True, unique=True)
+    principal_name = models.CharField(max_length=30, null=True, blank=True)
+    principal_phone = models.CharField(max_length=15, null=True, blank=True)
     school_type = models.CharField(max_length=15, null=True, blank=True, choices=SchoolType.choices)
 
 
@@ -91,7 +117,7 @@ class University(EducationalInstitute):
     pass
 
 
-class Studentship(models.Model):
+class Studentship(PolymorphicModel):
     class StudentshipType(models.Choices):
         School = 'School'
         Academic = 'Academic'

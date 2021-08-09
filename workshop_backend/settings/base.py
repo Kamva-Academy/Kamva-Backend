@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'scoring',
     'polymorphic',
     'django_extensions',
+    'guardian'
 ]
 
 # SITE_ID=1
@@ -197,6 +198,14 @@ REST_FRAMEWORK = {
     ),
 }
 
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
+)
+
+GUARDIAN_RAISE_403 = True
+ANONYMOUS_USER_NAME = None
 
 SWAGGER_SETTINGS = {
     'LOGIN_URL': '/api/auth/accounts/login/',

@@ -102,6 +102,7 @@ admin.site.register(RegistrationForm)
 admin.site.register(Problem)
 admin.site.register(AnswerSheet)
 admin.site.register(RegistrationReceipt, RegistrationReceiptsAdmin)
+admin.site.register(ChoiceSelection)
 
 admin.site.register(FSM)
 admin.site.register(FSMEdge, EdgeAdmin)
@@ -127,3 +128,4 @@ admin.site.register(SubmittedAnswer, SubmittedAnswerAdmin)
 
 admin.site.register(PlayerHistory, PlayerHistoryAdmin)
 admin.site.register(PlayerWorkshop, PlayerWorkshopAdmin)
+

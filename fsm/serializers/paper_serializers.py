@@ -17,7 +17,6 @@ class PaperSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         widgets = validated_data.pop('widgets', [])
-        print(len(widgets))
         instance = super().create({'creator': self.context.get('user', None), **validated_data})
         self.context['editable'] = False
         for w in widgets:

@@ -2,6 +2,16 @@ from rest_framework import permissions
 from accounts.models import Member, Team, Participant
 
 
+class IsEventModifier(permissions.BasePermission):
+    """
+    Permission for event's admin to update event
+    """
+    message = 'You are not this event\'s modifier'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.modifiers
+
+
 class MentorPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):

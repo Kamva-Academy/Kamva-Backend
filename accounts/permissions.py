@@ -12,12 +12,22 @@ class IsHimself(permissions.BasePermission):
 
 class IsInstituteOwner(permissions.BasePermission):
     """
-    Permission for updating or deleting or adding owners to institutes
+    Permission for updating or deleting or adding admin to institutes
     """
-    message = 'You are not this institut\'s owner'
+    message = 'You are not this institute\'s owner'
 
     def has_object_permission(self, request, view, obj):
-        return request.user in obj.owners
+        return request.user == obj.owner
+
+
+class IsInstituteAdmin(permissions.BasePermission):
+    """
+    Permission for institute's admin to update institute
+    """
+    message = 'You are not this institute\'s admin'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.admins.all()
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
