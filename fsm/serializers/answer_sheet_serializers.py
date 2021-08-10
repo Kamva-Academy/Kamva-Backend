@@ -46,8 +46,8 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
 
     class Meta:
         model = RegistrationReceipt
-        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'answers', 'is_accepted']
-        read_only_fields = ['id', 'user', 'is_accepted', 'answer_sheet_of']
+        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'answers', 'status']
+        read_only_fields = ['id', 'user', 'status', 'answer_sheet_of']
 
     def create(self, validated_data):
         return super(RegistrationReceiptSerializer, self).create({'user': self.context.get('user', None),

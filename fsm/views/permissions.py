@@ -12,6 +12,18 @@ class IsEventModifier(permissions.BasePermission):
         return request.user in obj.modifiers
 
 
+class IsRegistrationFormModifier(permissions.BasePermission):
+    """
+    Permission for event's admin to update event
+    """
+    message = 'You are not this registration_form\'s modifier'
+
+    def has_object_permission(self, request, view, obj):
+        return (obj.event is not None and request.user in obj.event.modifiers) \
+               or (obj.fsm is not None and request.user in obj.fsm.modifiers) \
+               or request.user == obj.creator
+
+
 class MentorPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):

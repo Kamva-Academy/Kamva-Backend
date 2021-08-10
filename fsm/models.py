@@ -38,12 +38,17 @@ class RegistrationForm(Paper):
 
 
 class RegistrationReceipt(AnswerSheet):
+    class RegistrationStatus(models.TextChoices):
+        Accepted = "Accepted"
+        Rejected = "Rejected"
+        Waiting = "Waiting"
+
     # should be in every answer sheet child
     answer_sheet_of = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True, blank=True,
                                         on_delete=models.SET_NULL)
     user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
                              null=True, blank=True)
-    is_accepted = models.BooleanField(default=False)
+    status = models.CharField(max_length=25, blank=False, default='Waiting', choices=RegistrationStatus.choices)
 
     class Meta:
         unique_together = ('answer_sheet_of', 'user',)

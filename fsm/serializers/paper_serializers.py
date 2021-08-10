@@ -34,6 +34,8 @@ class RegistrationFormSerializer(PaperSerializer):
     fsm = serializers.PrimaryKeyRelatedField(queryset=FSM.objects.all(), required=False, allow_null=True)
     widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
 
+# TODO - check if update works or not
+
     def create(self, validated_data):
         event = validated_data.get('event', None)
         fsm = validated_data.get('fsm', None)

@@ -2,19 +2,19 @@ from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from accounts import permissions
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer
 from fsm.serializers.paper_serializers import PaperPolymorphicSerializer, RegistrationFormSerializer, \
     ChangeWidgetOrderSerializer
 from fsm.models import RegistrationForm, transaction, AnswerSheet
-from fsm.views.permissions import IsCreatorOrReadOnly
+from fsm.views.permissions import IsRegistrationFormModifier
 
 
 class RegistrationViewSet(ModelViewSet):
-    permission_classes = [IsCreatorOrReadOnly]
     serializer_class = RegistrationFormSerializer
     queryset = RegistrationForm.objects.all()
     my_tags = ['registration']
@@ -30,6 +30,13 @@ class RegistrationViewSet(ModelViewSet):
         context.update({'user': self.request.user})
         context.update({'editable': True})
         return context
+
+    def get_permissions(self):
+        if self.action == 'create' or self.action == 'register' or self.action == 'retrieve' or self.action == 'list':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsRegistrationFormModifier]
+        return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(responses={200: RegistrationFormSerializer})
     @transaction.atomic

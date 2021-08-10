@@ -17,8 +17,10 @@ class EventViewSet(ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action == 'create' or self.action == 'retrieve' or self.action == 'list':
+        if self.action == 'create':
             permission_classes = [permissions.IsAuthenticated]
+        elif self.action == 'retrieve' or self.action == 'list':
+            permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [IsEventModifier]
         return [permission() for permission in permission_classes]
