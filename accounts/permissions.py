@@ -28,6 +28,16 @@ class IsInstituteAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user in obj.admins.all()
+    
+
+class IsPurchaseOwner(permissions.BasePermission):
+    """
+    Permission for institute's admin to update institute
+    """
+    message = 'You are not this institute\'s admin'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user == obj.user
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):

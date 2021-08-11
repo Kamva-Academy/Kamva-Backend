@@ -36,11 +36,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 
-from .permissions import IsHimself, IsInstituteOwner, IsInstituteAdmin
+from .permissions import IsHimself, IsInstituteOwner, IsInstituteAdmin, IsPurchaseOwner
 from .utils import *
 from .serializers import MyTokenObtainPairSerializer, PhoneNumberSerializer, VerificationCodeSerializer, \
     AccountSerializer, UserSerializer, InstituteSerializer, StudentshipSerializer, ProfileSerializer, \
-    MerchandiseSerializer
+    MerchandiseSerializer, DiscountCodeSerializer, PurchaseSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class SendVerificationCode(GenericAPIView):
 
 
 class UserViewSet(ModelViewSet):
-    parser_classes = (MultiPartParser, )
+    parser_classes = (MultiPartParser,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
     serializer_action_classes = {
@@ -259,11 +259,51 @@ class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
             return User.objects.filter(id=user.id)
 
 
-class MerchandiseViewSet(ModelViewSet):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    serializer_class = MerchandiseSerializer
-    queryset = Merchandise.objects.all()
-    my_tags = ['merchandises']
+class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
+    my_tags = ['payments']
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except(KeyError, AttributeError):
+            return super().get_serializer_class()
+
+    def get_permissions(self):
+        if self.action == 'verify_discount' or self.action == 'purchase':
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsPurchaseOwner]
+        return [permission() for permission in permission_classes]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'user': self.request.user})
+        return context
+
+    def get_queryset(self):
+        if self.action == 'verify_discount' or self.action == 'purchase' or self.action == 'retrieve':
+            return Merchandise.objects.all()
+        else:
+            return Purchase.objects.all()
+
+    @transaction.atomic
+    @action(detail=False, methods=['post'], serializer_class=DiscountCodeSerializer)
+    def verify_discount(self, request, pk=None):
+        serializer = DiscountCodeSerializer(data=request.data, context=self.get_serializer_context())
+
+        if serializer.is_valid(raise_exception=True):
+            code = serializer.data.get('code', None)
+            merch_id = serializer.data.get('merchandise', None)
+            discount_code = get_object_or_404(DiscountCode, code=code)
+            merchandise = get_object_or_404(Merchandise, id=merch_id)
+            new_price = DiscountCode.calculate_discount(discount_code.value, merchandise.price)
+            return Response({'new_price': new_price, **serializer.to_representation(discount_code)},
+                            status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    @action(detail=True, methods=['post'], serializer_class=PurchaseSerializer)
+    def purchase(self, request, pk=None):
+        pass
 
 
 # class CreateAccount(GenericAPIView):
@@ -693,15 +733,15 @@ class PayView(APIView):
             c.save()
             logger.info(f'new amount:{amount}, discount{c.value}')
             payment = Purchase.objects.create(participant=participant,
-                                             amount=amount,
-                                             discount_code=c,
-                                             status="STARTED",
-                                             uniq_code=random_s)
+                                              amount=amount,
+                                              discount_code=c,
+                                              status="STARTED",
+                                              uniq_code=random_s)
         else:
             payment = Purchase.objects.create(participant=participant,
-                                             amount=amount,
-                                             status="STARTED",
-                                             uniq_code=random_s)
+                                              amount=amount,
+                                              status="STARTED",
+                                              uniq_code=random_s)
         response = dict()
         status_r = int()
         if participant.is_accepted and not participant.is_paid:

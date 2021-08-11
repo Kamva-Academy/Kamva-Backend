@@ -19,7 +19,7 @@ def grade_validator(grade):
 
 def price_validator(price):
     if positive_integer_validator(price) == price:
-        if price % 500 == 0:
+        if price % 1000 == 0:
             return price
         raise serializers.ValidationError(serialize_error('4018'))
 
@@ -29,6 +29,13 @@ def positive_integer_validator(integer):
         return integer
     else:
         raise serializers.ValidationError(serialize_error('4017'))
+
+
+def percentage_validator(number):
+    if 0. <= number <= 1.:
+        return number
+    else:
+        raise serializers.ValidationError(serialize_error('4037'))
 
 
 def condition_validator(condition):

@@ -11,7 +11,7 @@ from django.utils.safestring import mark_safe
 from django.conf import settings
 
 from .models import Member, Participant, Team, Purchase, Mentor, Player, DiscountCode, User, VerificationCode, \
-    University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship
+    University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship, Merchandise
 
 from import_export.admin import ExportActionMixin
 from import_export.fields import Field
@@ -495,3 +495,4 @@ admin.site.register(Purchase)
 admin.site.register(Player)
 admin.site.register(SchoolStudentship)
 admin.site.register(AcademicStudentship)
+admin.site.register(Merchandise)

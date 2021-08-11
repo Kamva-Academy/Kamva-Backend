@@ -10,9 +10,9 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from errors.error_codes import serialize_error
-from workshop_backend.settings.base import SMS_CODE_LENGTH
+from workshop_backend.settings.base import SMS_CODE_LENGTH, DISCOUNT_CODE_LENGTH
 from .models import Member, Participant, Team, User, VerificationCode, EducationalInstitute, School, University, \
-    SchoolStudentship, Studentship, AcademicStudentship, Merchandise
+    SchoolStudentship, Studentship, AcademicStudentship, Merchandise, DiscountCode, Purchase
 from .validators import phone_number_validator, grade_validator, price_validator
 
 logger = logging.getLogger(__name__)
@@ -205,14 +205,62 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class MerchandiseSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(max_length=50, required=False)
     price = serializers.IntegerField(required=True, validators=[price_validator])
-    owner = serializers.PrimaryKeyRelatedField(many=False, required=False, queryset=EducationalInstitute.objects.all())
+    discounted_price = serializers.IntegerField(required=False, validators=[price_validator])
 
     class Meta:
         model = Merchandise
-        fields = ['id', 'name', 'price', 'owner']
+        fields = '__all__'
         read_only_fields = ['id']
+
+
+class DiscountCodeSerializer(serializers.ModelSerializer):
+    merchandise = serializers.PrimaryKeyRelatedField(required=True, queryset=Merchandise.objects.all())
+
+    def validate(self, attrs):
+        code = attrs.get('code', None)
+
+        discount_code = get_object_or_404(DiscountCode, code=code)
+
+        if discount_code.user:
+            user = self.context.get('user', None)
+            if discount_code.user != user:
+                raise NotFound(serialize_error('4038'))
+
+        if discount_code.merchandise:
+            merchandise = attrs.get('merchandise', None)
+            if not merchandise:
+                raise ParseError(serialize_error('4039'))
+            elif merchandise != discount_code.merchandise:
+                raise ParseError(serialize_error('4040'))
+
+        if discount_code.expiration_date and discount_code.expiration_date < datetime.now(discount_code.expiration_date.tzinfo):
+            raise ParseError(serialize_error('4041'))
+
+        if not discount_code.is_valid:
+            raise ParseError(serialize_error('4042'))
+
+        return attrs
+
+    def validate_code(self, code):
+        return code
+
+    class Meta:
+        model = DiscountCode
+        fields = '__all__'
+        read_only_fields = ['id', 'value', 'expiration_date', 'is_valid', 'user']
+        extra_kwargs = {
+            'code': {'validators': []}
+        }
+
+
+class PurchaseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Purchase
+        fields = '__all__'
+        read_only_fields = ['id']
+
 
 
 #

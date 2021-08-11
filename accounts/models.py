@@ -28,6 +28,7 @@ import logging
 import random
 import re
 
+from accounts.validators import percentage_validator
 from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
     DISCOUNT_CODE_LENGTH
 
@@ -180,7 +181,7 @@ class Merchandise(models.Model):
     id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50, null=True, blank=True)
     price = models.IntegerField(default=0)
-    owner = models.ForeignKey(EducationalInstitute, on_delete=models.SET_NULL, null=True, related_name='merchandises')
+    discounted_price = models.IntegerField(default=None, null=True)
 
 
 # class Code(models.Model):
@@ -203,8 +204,8 @@ class DiscountCodeManager(models.Manager):
 
 # TODO - add date validators for datetime fields
 class DiscountCode(models.Model):
-    code = models.CharField(max_length=10, null=False, blank=False)
-    value = models.FloatField(null=False, blank=False)
+    code = models.CharField(max_length=10, unique=True, null=False, blank=False)
+    value = models.FloatField(null=False, blank=False, validators=[percentage_validator])
     expiration_date = models.DateTimeField(blank=True, null=True)
     is_valid = models.BooleanField(default=True)
     user = models.ForeignKey(User, related_name='discount_codes', on_delete=models.CASCADE, null=True, default=None)
@@ -213,6 +214,10 @@ class DiscountCode(models.Model):
 
     def __str__(self):
         return self.code + " " + str(self.value)
+
+    @staticmethod
+    def calculate_discount(value, price):
+        return (price * (1 - value) // 100) * 100
 
 
 class VoucherManager(models.Manager):
@@ -257,7 +262,7 @@ class Purchase(models.Model):
     ref_id = models.CharField(blank=True, max_length=100, null=True)
     amount = models.IntegerField()
     authority = models.CharField(blank=True, max_length=37, null=True)
-    status = models.CharField(blank=False, choices=Status.choices, max_length=25)
+    status = models.CharField(blank=False, default=Status.Started, choices=Status.choices, max_length=25)
     created_at = models.DateTimeField(auto_now_add=True)
     uniq_code = models.CharField(blank=False, max_length=100, default="")
 

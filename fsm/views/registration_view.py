@@ -47,7 +47,7 @@ class RegistrationViewSet(ModelViewSet):
         serializer = ChangeWidgetOrderSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             self.get_object().set_widget_order(serializer.validated_data.get('order'))
-        return Response(data=RegistrationFormSerializer(self.get_object()).data)
+        return Response(data=RegistrationFormSerializer(self.get_object()).data, status=status.HTTP_200_OK)
 
     # @swagger_auto_schema(responses={201: RegistrationReceiptSerializer})
     @transaction.atomic
