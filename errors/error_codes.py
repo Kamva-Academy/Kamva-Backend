@@ -34,6 +34,14 @@ errors_dict = {'4000': 'phone number must be digit',
                '4029': 'a required problem is unanswered',
                '4030': 'selected choices should be from corresponding problems',
                '4031': 'only institutes\'s admins can create events',
+               '4032': 'your grade doesn\'t fit registration criteria',
+               '4033': 'you must provide your grade in your profile',
+               '4034': 'you must have an active school studentship to register',
+               '4035': 'event is full',
+               '4036': 'deadline for registration is missed',
+
+
+
 
                '5000': 'sending SMS failed'}
 

@@ -130,6 +130,8 @@ class Studentship(PolymorphicModel):
     is_document_verified = models.BooleanField(default=False)
     user = models.ForeignKey(User, related_name='studentships', on_delete=models.CASCADE, null=False)
 
+    # TODO - make sure only one is_currently_studying be true per each user
+
 
 class SchoolStudentship(Studentship):
     class Major(models.TextChoices):
@@ -279,8 +281,8 @@ class VerificationCodeManager(models.Manager):
             c.is_valid = False
             c.save()
         verification_code = VerificationCode.objects.create(code=code, phone_number=phone_number,
-                                                            expiration_date=datetime.now(pytz.timezone(time_zone))
-                                                                            + timedelta(minutes=SMS_CODE_DELAY))
+                                                            expiration_date=datetime.now(pytz.timezone(time_zone)) +
+                                                                            timedelta(minutes=SMS_CODE_DELAY))
         return verification_code
 
 

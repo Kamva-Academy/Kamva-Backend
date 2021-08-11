@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 from rest_polymorphic.serializers import PolymorphicSerializer
@@ -61,6 +63,8 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
         if user is not None and answer_sheet_of is not None:
             if len(RegistrationReceipt.objects.filter(answer_sheet_of=answer_sheet_of, user=user)) > 0:
                 raise ParseError(serialize_error('4028'))
+        if answer_sheet_of.deadline and datetime.now(answer_sheet_of.deadline.tzinfo) > answer_sheet_of.deadline:
+            raise ParseError(serialize_error('4036'))
         return attrs
 
 

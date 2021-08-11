@@ -164,9 +164,9 @@ class StudentshipSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         studentship_type = validated_data.get('studentship_type', None)
-        if studentship_type == 'SCHOOL':
+        if studentship_type == Studentship.StudentshipType.School.value:
             return SchoolStudentship.objects.create(**validated_data)
-        elif studentship_type == 'ACADEMIC':
+        elif studentship_type == Studentship.StudentshipType.Academic.value:
             return AcademicStudentship.objects.create(**validated_data)
 
     def validate(self, attrs):

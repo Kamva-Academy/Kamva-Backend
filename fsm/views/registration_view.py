@@ -2,15 +2,17 @@ from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ParseError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from accounts import permissions
+from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer
 from fsm.serializers.paper_serializers import PaperPolymorphicSerializer, RegistrationFormSerializer, \
     ChangeWidgetOrderSerializer
-from fsm.models import RegistrationForm, transaction, AnswerSheet
+from fsm.models import RegistrationForm, transaction, AnswerSheet, RegistrationReceipt
 from fsm.views.permissions import IsRegistrationFormModifier
 
 
@@ -58,5 +60,22 @@ class RegistrationViewSet(ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             serializer.validated_data['answer_sheet_of'] = self.get_object()
             registration_receipt = serializer.save()
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            if registration_receipt.does_pass_conditions():
+                form = registration_receipt.answer_sheet_of
+                event = form.event
+                # TODO - handle fsm sign up
+                if event:
+                    if len(event.participants) < event.maximum_participant:
+                        if form.accepting_status == RegistrationForm.AcceptingStatus.AutoAccept:
+                            registration_receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+                            registration_receipt.save()
+                        elif form.accepting_status == RegistrationForm.AcceptingStatus.CorrectAccept:
+                            if registration_receipt.correction_status() == RegistrationReceipt.CorrectionStatus.Correct:
+                                registration_receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+                                registration_receipt.save()
+                    else:
+                        registration_receipt.status = RegistrationReceipt.RegistrationStatus.Rejected
+                        registration_receipt.save()
+                        raise ParseError(serialize_error('4035'))
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)

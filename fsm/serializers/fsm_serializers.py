@@ -22,9 +22,11 @@ class EventSerializer(serializers.ModelSerializer):
         # todo - add purchase information too
         representation['user_registration_status'] = registration.status if registration else 'NotRegistered'
         representation['user_purchase_status'] = 'NotPurchased'
+        representation['participants_size'] = len(instance.participants)
         return representation
 
     class Meta:
         model = Event
         fields = '__all__'
-        read_only_fields = ['id', 'creator', 'user_registration_status', 'user_purchase_status']
+        read_only_fields = ['id', 'creator', 'is_approved', 'participants_size', 'user_registration_status',
+                            'user_purchase_status', 'registration_formpyt']

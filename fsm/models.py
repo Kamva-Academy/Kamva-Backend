@@ -1,10 +1,13 @@
 from django.db import models
+from django.db.models import QuerySet
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from model_utils.managers import InheritanceManager
 from polymorphic.models import PolymorphicModel
+from rest_framework.exceptions import PermissionDenied, ParseError
 
 from accounts.models import *
+from errors.error_codes import serialize_error
 
 
 class Paper(PolymorphicModel):
@@ -31,10 +34,20 @@ class AnswerSheet(PolymorphicModel):
 
 
 class RegistrationForm(Paper):
+    class AcceptingStatus(models.TextChoices):
+        AutoAccept = 'AutoAccept'
+        CorrectAccept = 'CorrectAccept'
+        Manual = 'Manual'
+
     min_grade = models.IntegerField(default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
     max_grade = models.IntegerField(default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
+    deadline = models.DateTimeField(null=True)
+
+    # TODO - add filter for audience type
 
     conditions = models.TextField(null=True, blank=True)
+
+    accepting_status = models.CharField(max_length=15, default='AutoAccept', choices=AcceptingStatus.choices)
 
 
 class RegistrationReceipt(AnswerSheet):
@@ -42,6 +55,14 @@ class RegistrationReceipt(AnswerSheet):
         Accepted = "Accepted"
         Rejected = "Rejected"
         Waiting = "Waiting"
+
+    class CorrectionStatus(models.TextChoices):
+        Correct = "Correct"
+        Wrong = "Wrong"
+        ManualCorrectionRequired = "ManualCorrectionRequired"
+        NoCorrectionRequired = "NoCorrectionRequired"
+        NoSolutionAvailable = "NoSolutionAvailable"
+        Other = "Other"
 
     # should be in every answer sheet child
     answer_sheet_of = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True, blank=True,
@@ -53,10 +74,33 @@ class RegistrationReceipt(AnswerSheet):
     class Meta:
         unique_together = ('answer_sheet_of', 'user',)
 
+    def correction_status(self):
+        for a in self.answers.all():
+            if isinstance(a, (SmallAnswer, MultiChoiceAnswer)):
+                correction_status = a.correction_status()
+                if correction_status == self.CorrectionStatus.Wrong:
+                    return self.CorrectionStatus.Wrong
+                elif correction_status != self.CorrectionStatus.Correct:
+                    return self.CorrectionStatus.NoCorrectionRequired
+            else:
+                return self.CorrectionStatus.ManualCorrectionRequired
+        return self.CorrectionStatus.Correct
+
     def does_pass_conditions(self):
-        if exec(self.registration_form.conditions):
-            return True
-        return False
+        # if exec(self.answer_sheet_of.conditions):
+        #     return True
+        form = self.answer_sheet_of
+        studentship = self.user.studentships.filter(is_currently_studying=True).last()
+        if isinstance(studentship, SchoolStudentship):
+            if studentship.grade:
+                if form.min_grade <= studentship.grade <= form.max_grade:
+                    return True
+                else:
+                    raise PermissionDenied(serialize_error('4032'))
+            else:
+                raise ParseError(serialize_error('4033'))
+        else:
+            raise ParseError(serialize_error('4034'))
 
 
 class Event(models.Model):
@@ -76,7 +120,10 @@ class Event(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='events/', null=True, blank=True)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_approved = models.BooleanField(default=False)
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
     event_type = models.CharField(max_length=40, default=EventType.Individual, choices=EventType.choices)
     team_size = models.IntegerField(default=3)
     maximum_participant = models.IntegerField(null=True, blank=True)
@@ -84,16 +131,23 @@ class Event(models.Model):
     def __str__(self):
         return self.name
 
-    def delete(self, using=None, keep_parents=False):
-        self.registration_form.delete() if self.registration_form is not None else None
-        self.merchandise.delete() if self.merchandise is not None else None
-        return super(Event, self).delete(using, keep_parents)
-
     @property
     def modifiers(self):
         modifiers = {self.creator} if self.creator is not None else set()
         modifiers |= set(self.holder.admins.all()) if self.holder is not None else set()
         return modifiers
+
+    @property
+    def participants(self):
+        if self.registration_form:
+            return self.registration_form.registration_receipts.filter(
+                status=RegistrationReceipt.RegistrationStatus.Accepted)
+        return RegistrationReceipt.objects.none()
+
+    def delete(self, using=None, keep_parents=False):
+        self.registration_form.delete() if self.registration_form is not None else None
+        self.merchandise.delete() if self.merchandise is not None else None
+        return super(Event, self).delete(using, keep_parents)
 
 
 class FSM(models.Model):
@@ -338,6 +392,14 @@ class SmallAnswer(Answer):
                                 related_name='answers')
     text = models.TextField()
 
+    def correction_status(self):
+        if self.problem.solution:
+            if self.text.strip() == self.problem.solution.text.strip():
+                # TODO - check for semi-correct answers too
+                return RegistrationReceipt.CorrectionStatus.Correct
+            return RegistrationReceipt.CorrectionStatus.Wrong
+        return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
+
     def __str__(self):
         return self.text
 
@@ -357,6 +419,26 @@ class MultiChoiceAnswer(Answer):
     problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, on_delete=models.CASCADE,
                                 related_name='answers')
     choices = models.ManyToManyField(Choice, through=ChoiceSelection)
+
+    def correction_status(self):
+        solution = self.problem.solution
+        if solution:
+            correct_choices = solution.choices.values_list(['choice'])
+            for c in self.choices.values_list(['choice']):
+                if c not in correct_choices:
+                    return RegistrationReceipt.CorrectionStatus.Wrong
+            return RegistrationReceipt.CorrectionStatus.Correct
+        return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
+
+    def get_correct_choices(self):
+        if self.problem.solution:
+            correct_choices = set()
+            for c in self.choices.values_list(['choice']):
+                if c in ChoiceSelection.objects.filter(multi_choice_answer=self.problem.solution).values_list(
+                        ['choice']):
+                    correct_choices.add(c)
+            return correct_choices
+        return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
 
 class UploadFileAnswer(Answer):

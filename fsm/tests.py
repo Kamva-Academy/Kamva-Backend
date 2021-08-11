@@ -7,6 +7,8 @@ registration_form_creation_test_case = {
     "max_grade": 0,
     "conditions": "string",
     "event": 4,
+    "deadline": "2022-08-11T23:14:07.934000+04:30",
+    "accepting_status": "CorrectAccept",
     "paper_type": "RegistrationForm",
     "widgets": [
         {
