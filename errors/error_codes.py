@@ -2,7 +2,6 @@ from rest_framework.exceptions import ValidationError
 
 from workshop_backend.settings.base import SMS_CODE_LENGTH
 
-
 errors_dict = {'4000': 'phone number must be digit',
                '4001': 'phone number must have at least 10 digits',
                '4002': f'valid verification code must have {SMS_CODE_LENGTH} digits',
@@ -46,11 +45,17 @@ errors_dict = {'4000': 'phone number must be digit',
                '4040': 'this discount code is not for this merchandise',
                '4041': 'given code is expired',
                '4042': 'given code is not valid, (maybe used)',
+               '4043': 'given merchandise is not active',
+               '4044': 'you haven\'t registered for this event/fsm',
+               '4045': 'you registration has not been accepted yet for this event/fsm',
+               '4046': 'you have already purchased this merchandise successfully',
 
+               '5000': 'sending SMS failed',
+               '5001': 'zarinpal request failed, contact with support',
+               '5002': 'given registration form is illegal, a form must either associate with an event or a fsm',
+               '5003': 'given merchandise is illegal, a merch must be either for an event or a fsm',
+               '5004': 'each event/fsm must have a registration form, given one doesn\'t'}
 
-
-
-               '5000': 'sending SMS failed'}
 
 def serialize_error(code, params=dict(), is_field_error=True):
     msg = errors_dict.get(code, None)

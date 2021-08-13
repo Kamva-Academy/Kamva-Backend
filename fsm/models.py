@@ -8,6 +8,7 @@ from rest_framework.exceptions import PermissionDenied, ParseError
 
 from accounts.models import *
 from errors.error_codes import serialize_error
+from errors.exceptions import ServiceUnavailable
 
 
 class Paper(PolymorphicModel):
@@ -49,6 +50,18 @@ class RegistrationForm(Paper):
 
     accepting_status = models.CharField(max_length=15, default='AutoAccept', choices=AcceptingStatus.choices)
 
+    @property
+    def event_or_fsm(self):
+        try:
+            if self.event:
+                return self.event
+        except:
+            try:
+                if self.fsm:
+                    return self.fsm
+            except:
+                raise InternalServerError(serialize_error('5002'))
+
 
 class RegistrationReceipt(AnswerSheet):
     class RegistrationStatus(models.TextChoices):
@@ -70,6 +83,14 @@ class RegistrationReceipt(AnswerSheet):
     user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
                              null=True, blank=True)
     status = models.CharField(max_length=25, blank=False, default='Waiting', choices=RegistrationStatus.choices)
+
+    @property
+    def purchases(self):
+        return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
+
+    @property
+    def is_paid(self):
+        return len(self.purchases.filter(status=Purchase.Status.Success)) > 0
 
     class Meta:
         unique_together = ('answer_sheet_of', 'user',)

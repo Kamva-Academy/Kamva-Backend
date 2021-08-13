@@ -29,8 +29,10 @@ import random
 import re
 
 from accounts.validators import percentage_validator
+from errors.error_codes import serialize_error
+from errors.exceptions import ServiceUnavailable, InternalServerError
 from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
-    DISCOUNT_CODE_LENGTH
+    DISCOUNT_CODE_LENGTH, PURCHASE_UNIQ_CODE_LENGTH
 
 logger = logging.getLogger(__file__)
 
@@ -182,6 +184,19 @@ class Merchandise(models.Model):
     name = models.CharField(max_length=50, null=True, blank=True)
     price = models.IntegerField(default=0)
     discounted_price = models.IntegerField(default=None, null=True)
+    is_active = models.BooleanField(default=True)
+
+    @property
+    def event_or_fsm(self):
+        try:
+            if self.event:
+                return self.event
+        except:
+            try:
+                if self.fsm:
+                    return self.fsm
+            except:
+                raise InternalServerError(serialize_error('5003'))
 
 
 # class Code(models.Model):
@@ -252,6 +267,13 @@ class Voucher(models.Model):
         self.save()
 
 
+class PurchaseManager(models.Manager):
+    @transaction.atomic
+    def create_purchase(self, **args):
+        uniq_code = User.objects.make_random_password(length=PURCHASE_UNIQ_CODE_LENGTH)
+        return super(PurchaseManager, self).create(**{'uniq_code': uniq_code, **args})
+
+
 class Purchase(models.Model):
     class Status(models.TextChoices):
         Success = "Success"
@@ -268,13 +290,19 @@ class Purchase(models.Model):
 
     user = models.ForeignKey(User, related_name='purchases', on_delete=models.CASCADE)
 
-    merchant = models.ForeignKey(Merchandise, related_name='purchases', on_delete=models.SET_NULL, null=True)
+    merchandise = models.ForeignKey(Merchandise, related_name='purchases', on_delete=models.SET_NULL, null=True)
     voucher = models.ForeignKey(Voucher, related_name='purchases', on_delete=models.SET_NULL, null=True, default=None)
     discount_code = models.ForeignKey(DiscountCode, related_name='purchases', on_delete=models.SET_NULL, null=True,
                                       default=None)
 
+    objects = PurchaseManager()
+
+    @property
+    def registration_form(self):
+        return self.merchandise.event_or_fsm.registration_form.registration_receipts.filter(user=self.user).last()
+
     def __str__(self):
-        return self.uniq_code
+        return f'{self.uniq_code}-{self.merchandise}-{self.amount}-{self.status}'
 
 
 class VerificationCodeManager(models.Manager):

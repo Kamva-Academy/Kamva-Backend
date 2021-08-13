@@ -216,34 +216,36 @@ class MerchandiseSerializer(serializers.ModelSerializer):
 
 class DiscountCodeSerializer(serializers.ModelSerializer):
     merchandise = serializers.PrimaryKeyRelatedField(required=True, queryset=Merchandise.objects.all())
+    code = serializers.CharField(max_length=DISCOUNT_CODE_LENGTH, required=False)
 
     def validate(self, attrs):
         code = attrs.get('code', None)
+        merchandise = attrs.get('merchandise', None)
 
-        discount_code = get_object_or_404(DiscountCode, code=code)
+        if not merchandise:
+            raise ParseError(serialize_error('4039'))
+        elif not merchandise.is_active:
+            raise ParseError(serialize_error('4043'))
 
-        if discount_code.user:
-            user = self.context.get('user', None)
-            if discount_code.user != user:
-                raise NotFound(serialize_error('4038'))
+        if code:
+            discount_code = get_object_or_404(DiscountCode, code=code)
 
-        if discount_code.merchandise:
-            merchandise = attrs.get('merchandise', None)
-            if not merchandise:
-                raise ParseError(serialize_error('4039'))
-            elif merchandise != discount_code.merchandise:
-                raise ParseError(serialize_error('4040'))
+            if discount_code.user:
+                user = self.context.get('user', None)
+                if discount_code.user != user:
+                    raise NotFound(serialize_error('4038'))
 
-        if discount_code.expiration_date and discount_code.expiration_date < datetime.now(discount_code.expiration_date.tzinfo):
-            raise ParseError(serialize_error('4041'))
+            if discount_code.merchandise:
+                if merchandise != discount_code.merchandise:
+                    raise ParseError(serialize_error('4040'))
 
-        if not discount_code.is_valid:
-            raise ParseError(serialize_error('4042'))
+            if discount_code.expiration_date and discount_code.expiration_date < datetime.now(discount_code.expiration_date.tzinfo):
+                raise ParseError(serialize_error('4041'))
+
+            if not discount_code.is_valid:
+                raise ParseError(serialize_error('4042'))
 
         return attrs
-
-    def validate_code(self, code):
-        return code
 
     class Meta:
         model = DiscountCode

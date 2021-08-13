@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.sites.shortcuts import get_current_site
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
@@ -15,7 +16,8 @@ from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from errors.error_codes import serialize_error
-from fsm.models import Event
+from errors.exceptions import ServiceUnavailable
+from fsm.models import Event, RegistrationReceipt
 from .models import *
 import random
 from django.db import transaction
@@ -48,13 +50,9 @@ logger = logging.getLogger(__name__)
 class SendVerificationCode(GenericAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = PhoneNumberSerializer
-
-    def __init__(self):
-        super()
-        print(self.schema)
+    my_tags = ['accounts']
 
     @swagger_auto_schema(operation_description="Sends verification code to verify phone number or change password",
-                         tags=['accounts'],
                          responses={200: "Verification code sent successfully",
                                     400: "error code 4000 for not being digits & 4001 for phone length less than 10",
                                     404: "error code 4008 for not finding user to change password",
@@ -64,13 +62,12 @@ class SendVerificationCode(GenericAPIView):
     def post(self, request):
         serializer = PhoneNumberSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            verification_code = VerificationCode.objects.create_verification_code(
-                phone_number=serializer.validated_data.get('phone_number', None))
+            phone_number = serializer.validated_data.get('phone_number', None)
+            verification_code = VerificationCode.objects.create_verification_code(phone_number=phone_number)
             # try:
             #     verification_code.send_sms(serializer.validated_data.get('code_type', None))
             # except:
-            #     return Response(serialize_error('5000'),
-            #                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            #     raise ServiceUnavailable(serialize_error('5000'))
             return Response({'detail': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
 
 
@@ -261,6 +258,10 @@ class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
 
 class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
     my_tags = ['payments']
+    serializer_action_classes = {
+        'verify_discount': DiscountCodeSerializer,
+        'purchase': DiscountCodeSerializer,
+    }
 
     def get_serializer_class(self):
         try:
@@ -271,6 +272,8 @@ class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
     def get_permissions(self):
         if self.action == 'verify_discount' or self.action == 'purchase':
             permission_classes = [permissions.IsAuthenticated]
+        elif self.action == 'verify_payment':
+            permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [IsPurchaseOwner]
         return [permission() for permission in permission_classes]
@@ -300,10 +303,64 @@ class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
             return Response({'new_price': new_price, **serializer.to_representation(discount_code)},
                             status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(responses={200: PurchaseSerializer})
     @transaction.atomic
-    @action(detail=True, methods=['post'], serializer_class=PurchaseSerializer)
+    @action(detail=False, methods=['post'], serializer_class=DiscountCodeSerializer)
     def purchase(self, request, pk=None):
-        pass
+        serializer = DiscountCodeSerializer(data=request.data, context=self.get_serializer_context())
+
+        if serializer.is_valid(raise_exception=True):
+            code = serializer.data.get('code', None)
+            merch_id = serializer.data.get('merchandise', None)
+            discount_code = get_object_or_404(DiscountCode, code=code) if code else None
+            merchandise = get_object_or_404(Merchandise, id=merch_id)
+            registration_form = merchandise.event_or_fsm.registration_form
+            if not registration_form:
+                raise InternalServerError(serialize_error('5004'))
+            user_registration = registration_form.registration_receipts.filter(user=request.user).last()
+            if user_registration:
+                if user_registration.status == RegistrationReceipt.RegistrationStatus.Accepted:
+                    if len(merchandise.purchases.filter(user=self.request.user, status=Purchase.Status.Success)) > 0:
+                        raise ParseError(serialize_error('4046'))
+                    if discount_code:
+                        price = DiscountCode.calculate_discount(discount_code.value, merchandise.price)
+                        discount_code.is_valid = False
+                        discount_code.save()
+                    else:
+                        price = merchandise.price
+                    purchase = Purchase.objects.create_purchase(merchandise=merchandise, user=self.request.user,
+                                                                amount=price, discount_code=discount_code)
+                    callback_url = f'{self.reverse_action(self.verify_payment.url_name)}?uuid={request.user.uuid}&uniq_code={purchase.uniq_code}'
+                    response = zarinpal.send_request(amount=price, description=merchandise.name,
+                                                     callback_url=callback_url)
+
+                    return Response({'payment_link': response, **PurchaseSerializer().to_representation(purchase)},
+                                    status=status.HTTP_200_OK)
+                else:
+                    raise ParseError(serialize_error('4045'))
+            else:
+                raise ParseError(serialize_error('4044'))
+
+    @transaction.atomic
+    @action(detail=False, methods=['get'])
+    def verify_payment(self, request):
+        user = get_object_or_404(User, uuid=request.GET.get('uuid', None))
+        purchase = get_object_or_404(Purchase, uniq_code=request.GET.get('uniq_code'), status=Purchase.Status.Started)
+        logger.warning(f'Zarinpal callback: {request.GET}')
+        res = zarinpal.verify(status=request.GET.get('Status', None),
+                              authority=request.GET.get('Authority', None),
+                              amount=purchase.amount)
+        if 200 <= int(res["status"]) <= 299:
+            purchase.ref_id = str(res['ref_id'])
+            purchase.authority = request.GET.get('Authority', None)
+            purchase.status = Purchase.Status.Success if res['status'] == 200 else Purchase.Status.Repetitious
+            purchase.save()
+            return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}{purchase.uniq_code}')
+        else:
+            purchase.authority = request.GET.get('Authority')
+            purchase.status = Purchase.Status.Failed
+            purchase.save()
+            return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}{purchase.uniq_code}')
 
 
 # class CreateAccount(GenericAPIView):
@@ -699,132 +756,98 @@ class UploadAnswerView(APIView):
 
         return Response({'success': True}, status=status.HTTP_201_CREATED)
 
-
-class PayView(APIView):
-    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
-
-    def __random_string(self, length=10):
-        """Generate a random string of fixed length """
-        letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
-        return ''.join(random.choice(letters) for _ in range(length))
-
-    @transaction.atomic
-    def post(self, request, *args, **kwargs):
-        try:
-            participant = Participant.objects.get(id=int(request.data['participant_id']))
-        except Event.DoesNotExist:
-            return Response(
-                {'success': False, 'error': "کاربر برای ثبت‌نام در این رویداد اقدام نکرده است."},
-                status=status.HTTP_400_BAD_REQUEST)
-        event = participant.event
-        random_s = self.__random_string()
-        price = event.event_cost if len(
-            participant.event_team.team_participants.all()) < event.team_size else event.event_team_cost
-        amount = price
-        if request.data.get('code', None):
-            code = request.data['code']
-            discount_codes = DiscountCode.objects.filter(participant=participant, code=code, is_valid=True)
-            if len(discount_codes) <= 0:
-                return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
-                                status=status.HTTP_400_BAD_REQUEST)
-            c = discount_codes[0]
-            amount = price * (1 - c.value)
-            c.is_valid = False
-            c.save()
-            logger.info(f'new amount:{amount}, discount{c.value}')
-            payment = Purchase.objects.create(participant=participant,
-                                              amount=amount,
-                                              discount_code=c,
-                                              status="STARTED",
-                                              uniq_code=random_s)
-        else:
-            payment = Purchase.objects.create(participant=participant,
-                                              amount=amount,
-                                              status="STARTED",
-                                              uniq_code=random_s)
-        response = dict()
-        status_r = int()
-        if participant.is_accepted and not participant.is_paid:
-            res = zarinpal.send_request(amount=amount,
-                                        call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={participant.member.uuid}&uniq_code={payment.uniq_code}')
-            status_r = res["status"]
-            if status_r == 201:
-                response = {
-                    "message": res["message"],
-                    "amount": amount,
-                }
-            else:
-                response = {"message": res["message"]}
-        elif not participant.is_accepted:
-            response = {
-                "message": "رستایی عزیز، شما در این رویداد پذیرفته نشده‌اید.",
-            }
-            status_r = 403
-        elif participant.is_paid:
-            response = {
-                "message": "رستایی عزیز، هزینه ثبت نام قبلا پرداخت شده است.",
-            }
-            status_r = 403
-        return Response(response, status=status_r)
+# class PayView(APIView):
+#     ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+#
+#     @transaction.atomic
+#     def post(self, request, *args, **kwargs):
+#         event = participant.event
+#         price = event.event_cost if len(
+#             participant.event_team.team_participants.all()) < event.team_size else event.event_team_cost
+#         amount = price
+#         if request.data.get('code', None):
+#             code = request.data['code']
+#             discount_codes = DiscountCode.objects.filter(participant=participant, code=code, is_valid=True)
+#             if len(discount_codes) <= 0:
+#                 return Response({'success': False, 'error': "کد اعتبارسنجی وارد شده اشتباه است."},
+#                                 status=status.HTTP_400_BAD_REQUEST)
+#             c = discount_codes[0]
+#             amount = price * (1 - c.value)
+#             c.is_valid = False
+#             c.save()
+#             payment = Purchase.objects.create(participant=participant,
+#                                               amount=amount,
+#                                               discount_code=c)
+#         else:
+#             payment = Purchase.objects.create(participant=participant,
+#                                               amount=amount)
+#         if participant.is_accepted and not participant.is_paid:
+#             res = zarinpal.send_request(amount=amount,
+#                                         call_back_url=f'{request.build_absolute_uri("verify-payment")}?uuid={participant.member.uuid}&uniq_code={payment.uniq_code}')
+#             return Response({'message': res, 'amount': amount,}, status=status.HTTP_200_OK)
+#         elif not participant.is_accepted:
+#             raise ParseError('رستایی عزیز، شما در این رویداد پذیرفته نشده‌اید.')
+#         else:
+#             raise ParseError('رستایی عزیز، هزینه ثبت نام قبلا پرداخت شده است.')
 
 
-class VerifyPayView(APIView):
-    ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
-    permission_classes = (permissions.AllowAny,)
-
-    # def __random_string(self, length=10):
-    #     """Generate a random string of fixed length """
-    #     letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
-    #     return ''.join(random.choice(letters) for _ in range(length))
-
-    @transaction.atomic
-    def get(self, request, *args, **kwargs):
-        try:
-            # TODO - member uuid, hard coded event
-            current_event = Event.objects.get(name='مسافر صفر')
-            participant = Participant.objects.get(member__uuid=request.GET.get('uuid'), event=current_event)
-        except Member.DoesNotExist or Participant.DoesNotExist or Event.DoesNotExist:
-            return Response(
-                {'success': False, 'error': "کاربر موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
-        logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
-        logger.warning(request.META.get('REMOTE_ADDR'))
-        if participant:
-            try:
-                payment = Purchase.objects.get(uniq_code=request.GET.get('uniq_code'), status="STARTED")
-            except Purchase.DoesNotExist:
-                return Response(
-                    {'success': False, 'error': "پرداخت موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
-            logger.warning(f'Zarinpal callback: {request.GET}')
-            res = zarinpal.verify(status=request.GET.get('Status'),
-                                  authority=request.GET.get('Authority'),
-                                  amount=payment.amount)
-            logger.warning(f'response: {res}')
-            if 200 <= int(res["status"]) <= 299:
-                # if user.team:
-                #     team = Participant.objects.filter(team=user.team)
-                #     # Update is_activated for member of a group
-                #     for participant in team:
-                #         participant.is_activated = True
-                #     Participant.objects.bulk_update(team, ['is_activated'])
-                # else:
-                #     user.is_activated = True
-                #     user.save()
-                participant.is_paid = True
-                participant.save()
-                payment.ref_id = str(res['ref_id'])
-                payment.authority = request.GET.get('Authority')
-                payment.status = "SUCCESS" if res["status"] == 200 else "REPETITIOUS"
-                payment.save()
-                return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}{payment.uniq_code}')
-            else:
-                payment.authority = request.GET.get('Authority')
-                payment.status = "FAILED"
-                payment.save()
-                return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}{payment.uniq_code}')
-        else:
-            return Response(
-                {"message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است"},
-                status=403)
+# class VerifyPayView(APIView):
+#     ZARINPAL_CONFIG = settings.ZARINPAL_CONFIG
+#     permission_classes = (permissions.AllowAny,)
+#
+#     # def __random_string(self, length=10):
+#     #     """Generate a random string of fixed length """
+#     #     letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
+#     #     return ''.join(random.choice(letters) for _ in range(length))
+#
+#     @transaction.atomic
+#     def get(self, request, *args, **kwargs):
+#         try:
+#             # TODO - member uuid, hard coded event
+#             current_event = Event.objects.get(name='مسافر صفر')
+#             participant = Participant.objects.get(member__uuid=request.GET.get('uuid'), event=current_event)
+#         except Member.DoesNotExist or Participant.DoesNotExist or Event.DoesNotExist:
+#             return Response(
+#                 {'success': False, 'error': "کاربر موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+#         logger.warning(request.META.get('HTTP_X_FORWARDED_FOR'))
+#         logger.warning(request.META.get('REMOTE_ADDR'))
+#         if participant:
+#             try:
+#                 payment = Purchase.objects.get(uniq_code=request.GET.get('uniq_code'), status="STARTED")
+#             except Purchase.DoesNotExist:
+#                 return Response(
+#                     {'success': False, 'error': "پرداخت موردنظر یافت نشد."}, status=status.HTTP_400_BAD_REQUEST)
+#             logger.warning(f'Zarinpal callback: {request.GET}')
+#             res = zarinpal.verify(status=request.GET.get('Status'),
+#                                   authority=request.GET.get('Authority'),
+#                                   amount=payment.amount)
+#             logger.warning(f'response: {res}')
+#             if 200 <= int(res["status"]) <= 299:
+#                 # if user.team:
+#                 #     team = Participant.objects.filter(team=user.team)
+#                 #     # Update is_activated for member of a group
+#                 #     for participant in team:
+#                 #         participant.is_activated = True
+#                 #     Participant.objects.bulk_update(team, ['is_activated'])
+#                 # else:
+#                 #     user.is_activated = True
+#                 #     user.save()
+#                 participant.is_paid = True
+#                 participant.save()
+#                 payment.ref_id = str(res['ref_id'])
+#                 payment.authority = request.GET.get('Authority')
+#                 payment.status = "SUCCESS" if res["status"] == 200 else "REPETITIOUS"
+#                 payment.save()
+#                 return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}{payment.uniq_code}')
+#             else:
+#                 payment.authority = request.GET.get('Authority')
+#                 payment.status = "FAILED"
+#                 payment.save()
+#                 return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}{payment.uniq_code}')
+#         else:
+#             return Response(
+#                 {"message": "حساب کاربری شما به عنوان شرکت کننده ثبت نشده است"},
+#                 status=403)
 
 # class GroupSignup(APIView):
 #     # We Are Not Using This Method
