@@ -27,7 +27,7 @@ class StudentshipViewSet(ModelViewSet):
         elif user.is_staff or user.is_superuser:
             return Studentship.objects.all()
         else:
-            return Studentship.objects.filter(user=user.id)
+            return Studentship.objects.filter(id=user.id)
 
     @swagger_auto_schema(responses={200: InstituteSerializer,
                                     403: "error code 4011 for already associating a studentship to user"
