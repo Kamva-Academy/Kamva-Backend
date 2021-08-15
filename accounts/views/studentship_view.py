@@ -21,15 +21,6 @@ class StudentshipViewSet(ModelViewSet):
     queryset = Studentship.objects.all()
     my_tags = ['studentship']
 
-    def get_queryset(self):
-        user = self.request.user
-        if isinstance(user, AnonymousUser):
-            return Studentship.objects.none()
-        elif user.is_staff or user.is_superuser:
-            return Studentship.objects.all()
-        else:
-            return Studentship.objects.filter(user=user.id)
-
     @swagger_auto_schema(responses={200: InstituteSerializer,
                                     403: "error code 4011 for already associating a studentship to user"
                                     })
