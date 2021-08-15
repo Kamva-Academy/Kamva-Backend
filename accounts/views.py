@@ -93,6 +93,15 @@ class UserViewSet(ModelViewSet):
             permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
+    def get_queryset(self):
+        user = self.request.user
+        if isinstance(user, AnonymousUser):
+            return User.objects.none()
+        elif user.is_staff or user.is_superuser:
+            return User.objects.all()
+        else:
+            return User.objects.filter(user=user.id)
+
     @swagger_auto_schema(responses={201: AccountSerializer,
                                     400: "error code 4002 for len(code) < 5, 4003 for invalid code, "
                                          "4004 for previously submitted users & 4005 for expired code",
@@ -110,9 +119,11 @@ class UserViewSet(ModelViewSet):
             serializer = AccountSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
                 user = serializer.save()
-                token = MyTokenObtainPairSerializer.get_token(user)
-                return Response({"account": serializer.data, "access": str(token)},
-                                status=status.HTTP_201_CREATED)
+                token_serializer = MyTokenObtainPairSerializer(
+                    data={'password': request.data.get('password'), 'username': user.username})
+                if token_serializer.is_valid(raise_exception=True):
+                    return Response({'account': serializer.data, **token_serializer.validated_data},
+                                    status=status.HTTP_201_CREATED)
 
 
 class Login(TokenObtainPairView):
@@ -215,7 +226,7 @@ class StudentshipViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, ]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = StudentshipSerializer
-    my_tags = ['studentship', 'accounts']
+    my_tags = ['studentship']
 
     def get_queryset(self):
         user = self.request.user
@@ -224,7 +235,7 @@ class StudentshipViewSet(ModelViewSet):
         elif user.is_staff or user.is_superuser:
             return Studentship.objects.all()
         else:
-            return Studentship.objects.filter(user=user)
+            return Studentship.objects.filter(user=user.id)
 
     @swagger_auto_schema(responses={200: InstituteSerializer,
                                     403: "error code 4011 for already associating a studentship to user"
@@ -234,8 +245,7 @@ class StudentshipViewSet(ModelViewSet):
         data = request.data
         serializer = StudentshipSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
-            user = request.user
-            serializer.validated_data['user'] = user
+            serializer.validated_data['user'] = request.user
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -330,7 +340,7 @@ class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
                         price = merchandise.price
                     purchase = Purchase.objects.create_purchase(merchandise=merchandise, user=self.request.user,
                                                                 amount=price, discount_code=discount_code)
-                    callback_url = f'{self.reverse_action(self.verify_payment.url_name)}?uuid={request.user.uuid}&uniq_code={purchase.uniq_code}'
+                    callback_url = f'{self.reverse_action(self.verify_payment.url_name)}?id={request.user.id}&uniq_code={purchase.uniq_code}'
                     response = zarinpal.send_request(amount=price, description=merchandise.name,
                                                      callback_url=callback_url)
 
@@ -344,7 +354,7 @@ class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
     @transaction.atomic
     @action(detail=False, methods=['get'])
     def verify_payment(self, request):
-        user = get_object_or_404(User, uuid=request.GET.get('uuid', None))
+        user = get_object_or_404(User, id=request.GET.get('id', None))
         purchase = get_object_or_404(Purchase, uniq_code=request.GET.get('uniq_code'), status=Purchase.Status.Started)
         logger.warning(f'Zarinpal callback: {request.GET}')
         res = zarinpal.verify(status=request.GET.get('Status', None),

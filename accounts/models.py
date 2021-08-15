@@ -46,7 +46,7 @@ class User(AbstractUser):
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     bio = models.CharField(max_length=300, blank=True, null=True)
     gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     national_code = models.CharField(max_length=10, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
@@ -128,12 +128,8 @@ class Studentship(PolymorphicModel):
     studentship_type = models.CharField(max_length=10, null=False, blank=False, choices=StudentshipType.choices)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
-    is_currently_studying = models.BooleanField(default=False)
     document = models.FileField(upload_to='studentship_documents/', null=True, blank=True)
     is_document_verified = models.BooleanField(default=False)
-    user = models.ForeignKey(User, related_name='studentships', on_delete=models.CASCADE, null=False)
-
-    # TODO - make sure only one is_currently_studying be true per each user
 
 
 class SchoolStudentship(Studentship):
@@ -148,6 +144,7 @@ class SchoolStudentship(Studentship):
     school = models.ForeignKey(School, related_name='students', on_delete=models.SET_NULL, null=True)
     grade = models.IntegerField(null=True, blank=True, validators=[MaxValueValidator(12), MinValueValidator(0)])
     major = models.CharField(max_length=25, null=True, blank=True, choices=Major.choices)
+    user = models.OneToOneField(User, related_name='school_studentship', on_delete=models.CASCADE, null=False)
 
 
 class AcademicStudentship(Studentship):
@@ -160,6 +157,7 @@ class AcademicStudentship(Studentship):
     university = models.ForeignKey(University, related_name='academic_students', on_delete=models.SET_NULL, null=True)
     degree = models.CharField(max_length=15, null=True, blank=True, choices=Degree.choices)
     university_major = models.CharField(max_length=30, null=True, blank=True)
+    user = models.OneToOneField(User, related_name='academic_studentship', on_delete=models.CASCADE, null=False)
 
 
 class Player(models.Model):

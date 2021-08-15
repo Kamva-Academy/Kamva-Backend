@@ -73,7 +73,10 @@ class AccountSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data.get('password'))
         validated_data['username'] = validated_data.get('phone_number')
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+        SchoolStudentship.objects.create(user=instance, studentship_type=Studentship.StudentshipType.School)
+        AcademicStudentship.objects.create(user=instance, studentship_type=Studentship.StudentshipType.Academic)
+        return instance
 
     def update(self, instance, validated_data):
         validated_data['password'] = make_password(validated_data.get('password'))
@@ -83,7 +86,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'first_name', 'last_name', 'password', 'username', 'email', 'uuid']
+        fields = ['id', 'phone_number', 'first_name', 'last_name', 'password', 'username', 'email']
         read_only_fields = ['id']
 
 
@@ -93,7 +96,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'first_name', 'last_name', 'username', 'email', 'uuid', 'gender', 'birth_date',
+        fields = ['id', 'phone_number', 'first_name', 'last_name', 'username', 'email', 'gender', 'birth_date',
                   'national_code', 'country', 'address', 'province', 'city', 'postal_code', 'profile_picture']
         read_only_fields = ['id']
 
@@ -107,16 +110,16 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token['uuid'] = str(user.uuid)
+        token['id'] = str(user.id)
         return token
 
     def validate(self, attrs):
         credentials = {
-            'password': attrs.get("password")
+            'password': attrs.get('password')
         }
-        user = User.objects.filter(email=attrs.get("email")).first() \
-               or User.objects.filter(username=attrs.get("username")).first() \
-               or User.objects.filter(phone_number=attrs.get("phone_number")).first()
+        user = User.objects.filter(email=attrs.get('email')).first() \
+               or User.objects.filter(username=attrs.get('username')).first() \
+               or User.objects.filter(phone_number=attrs.get('phone_number')).first()
         if user:
             credentials['username'] = user.username
             try:
@@ -151,6 +154,7 @@ class InstituteSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'institute_type', 'address', 'province', 'city', 'postal_code', 'phone_number',
                   'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved', 'created_at',
                   'owner', 'admins', 'date_added', 'creator']
+        read_only_fields = ['id']
 
 
 class StudentshipSerializer(serializers.ModelSerializer):
@@ -188,9 +192,8 @@ class StudentshipSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Studentship
-        fields = ['id', 'user', 'studentship_type', 'start_date', 'end_date', 'is_currently_studying', 'document',
-                  'is_document_verified', 'university', 'degree', 'university_major', 'school', 'grade', 'major']
-        read_only_fields = ['is_document_verified', 'user', ]
+        fields = '__all__'
+        read_only_fields = ['id', 'is_document_verified', ]
 
 
 # TODO - think about the AIC problem of data leak when retrieving list of profiles

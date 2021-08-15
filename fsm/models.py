@@ -110,9 +110,10 @@ class RegistrationReceipt(AnswerSheet):
     def does_pass_conditions(self):
         # if exec(self.answer_sheet_of.conditions):
         #     return True
+        # TODO - handle for academic studentship too
         form = self.answer_sheet_of
-        studentship = self.user.studentships.filter(is_currently_studying=True).last()
-        if isinstance(studentship, SchoolStudentship):
+        studentship = self.user.school_studentship
+        if studentship:
             if studentship.grade:
                 if form.min_grade <= studentship.grade <= form.max_grade:
                     return True
