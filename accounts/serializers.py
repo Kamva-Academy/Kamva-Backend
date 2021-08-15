@@ -190,6 +190,11 @@ class StudentshipSerializer(serializers.ModelSerializer):
                 raise ParseError(serialize_error('4015'))
         return attrs
 
+    def to_representation(self, instance):
+        representation = super(StudentshipSerializer, self).to_representation(instance)
+        del representation['polymorphic_ctype']
+        return representation
+
     class Meta:
         model = Studentship
         fields = '__all__'
