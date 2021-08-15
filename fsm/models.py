@@ -84,6 +84,8 @@ class RegistrationReceipt(AnswerSheet):
                              null=True, blank=True)
     status = models.CharField(max_length=25, blank=False, default='Waiting', choices=RegistrationStatus.choices)
 
+    is_participating = models.BooleanField(default=False)
+
     @property
     def purchases(self):
         return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
@@ -162,8 +164,7 @@ class Event(models.Model):
     @property
     def participants(self):
         if self.registration_form:
-            return self.registration_form.registration_receipts.filter(
-                status=RegistrationReceipt.RegistrationStatus.Accepted)
+            return self.registration_form.registration_receipts.filter(is_participating=True)
         return RegistrationReceipt.objects.none()
 
     def delete(self, using=None, keep_parents=False):

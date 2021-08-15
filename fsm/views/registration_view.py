@@ -68,10 +68,14 @@ class RegistrationViewSet(ModelViewSet):
                     if len(event.participants) < event.maximum_participant:
                         if form.accepting_status == RegistrationForm.AcceptingStatus.AutoAccept:
                             registration_receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+                            if not event.merchandise:
+                                registration_receipt.is_participating = True
                             registration_receipt.save()
                         elif form.accepting_status == RegistrationForm.AcceptingStatus.CorrectAccept:
                             if registration_receipt.correction_status() == RegistrationReceipt.CorrectionStatus.Correct:
                                 registration_receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+                                if not event.merchandise:
+                                    registration_receipt.is_participating = True
                                 registration_receipt.save()
                     else:
                         registration_receipt.status = RegistrationReceipt.RegistrationStatus.Rejected

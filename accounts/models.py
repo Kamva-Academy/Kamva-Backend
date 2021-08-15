@@ -163,7 +163,7 @@ class AcademicStudentship(Studentship):
 class Player(models.Model):
     user = models.ForeignKey(User, related_name='workshops', on_delete=models.CASCADE)
     fsm = models.ForeignKey('fsm.FSM', related_name='users', on_delete=models.CASCADE)
-    purchase = models.ForeignKey('accounts.Purchase', related_name='purchase', on_delete=models.SET_NULL, null=True)
+    # purchase = models.ForeignKey('accounts.Purchase', related_name='purchase', on_delete=models.SET_NULL, null=True)
     # registration_receipt = models.ForeignKey('fsm.RegistrationReceipt', on_delete=models.SET_NULL, null=True, blank=True)
     scores = models.JSONField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -296,7 +296,7 @@ class Purchase(models.Model):
     objects = PurchaseManager()
 
     @property
-    def registration_form(self):
+    def registration_receipt(self):
         return self.merchandise.event_or_fsm.registration_form.registration_receipts.filter(user=self.user).last()
 
     def __str__(self):

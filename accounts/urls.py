@@ -2,9 +2,11 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import activate, ChangePass, UploadAnswerView, UserInfo, TeamInfo, SendVerificationCode, GetTeamData, \
-    ChangePassword, RegistrationInfo, VerifyDiscount, UserViewSet, Login, InstituteViewSet, StudentshipViewSet, \
-    ProfileViewSet, PaymentViewSet
+from accounts.views.accounting_view import SendVerificationCode, UserViewSet, Login, ChangePassword
+from accounts.views.studentship_view import StudentshipViewSet
+from accounts.views.institute_view import InstituteViewSet
+from accounts.views.payment_view import PaymentViewSet
+from accounts.views.profile_view import ProfileViewSet
 
 urlpatterns = [
     path('accounts/verification_code/', SendVerificationCode.as_view(), name="send_verification_code"),

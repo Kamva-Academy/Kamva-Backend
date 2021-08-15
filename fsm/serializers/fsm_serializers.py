@@ -35,6 +35,7 @@ class EventSerializer(serializers.ModelSerializer):
         # todo - add purchase information too
         representation['user_registration_status'] = registration.status if registration else 'NotRegistered'
         representation['is_paid'] = registration.is_paid if registration else False
+        representation['is_user_participating'] = registration.is_participating if registration else False
         representation['participants_size'] = len(instance.participants)
         representation['registration_receipt'] = registration.id if registration else None
         return representation
