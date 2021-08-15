@@ -36,10 +36,11 @@ class EventSerializer(serializers.ModelSerializer):
         representation['user_registration_status'] = registration.status if registration else 'NotRegistered'
         representation['is_paid'] = registration.is_paid if registration else False
         representation['participants_size'] = len(instance.participants)
+        representation['registration_receipt'] = registration.id if registration else None
         return representation
 
     class Meta:
         model = Event
         fields = '__all__'
         read_only_fields = ['id', 'creator', 'is_approved', 'participants_size', 'user_registration_status',
-                            'user_purchase_status', 'registration_form']
+                            'is_paid', 'registration_form']

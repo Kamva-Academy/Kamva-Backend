@@ -6,6 +6,7 @@ from .views.fsmview import *
 from .views.fsmstateview import *
 from .views.fsmedgeview import *
 from .views.abilityview import *
+from .views.registration_receipt_view import RegistrationReceiptViewSet
 from .views.registration_view import RegistrationViewSet
 from .views.widgetview import *
 from .views.teamhistoryview import *
@@ -75,5 +76,6 @@ urlpatterns = [
 
 router.register(r'registration', RegistrationViewSet, basename='registration')
 router.register(r'event', EventViewSet, basename='events')
+router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
 
 urlpatterns += router.urls

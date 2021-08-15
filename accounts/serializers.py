@@ -195,13 +195,16 @@ class StudentshipSerializer(serializers.ModelSerializer):
 
 # TODO - think about the AIC problem of data leak when retrieving list of profiles
 class ProfileSerializer(serializers.ModelSerializer):
-    studentships = StudentshipSerializer(many=True)
+
+    def to_representation(self, instance):
+        representation = super(ProfileSerializer, self).to_representation(instance)
+        del representation['password']
+        return representation
 
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'username', 'email', 'uuid', 'gender', 'national_code', 'birth_date',
-                  'country', 'address', 'province', 'city', 'postal_code', 'profile_picture', 'bio',
-                  'studentships']
+        fields = '__all__'
+        read_only_fields = ['id', 'studentships', 'username', 'phone_number', 'password']
 
 
 class MerchandiseSerializer(serializers.ModelSerializer):

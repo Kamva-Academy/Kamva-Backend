@@ -24,3 +24,5 @@ class EventViewSet(ModelViewSet):
         else:
             permission_classes = [IsEventModifier]
         return [permission() for permission in permission_classes]
+
+    # TODO - add list retrieve of all registration receipts

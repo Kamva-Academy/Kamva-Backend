@@ -161,7 +161,7 @@ class Event(models.Model):
     @property
     def participants(self):
         if self.registration_form:
-            return self.registration_form.registration_receipts.filter(is_paid=True,
+            return self.registration_form.registration_receipts.filter(
                 status=RegistrationReceipt.RegistrationStatus.Accepted)
         return RegistrationReceipt.objects.none()
 

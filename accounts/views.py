@@ -220,8 +220,8 @@ class StudentshipViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if isinstance(user, AnonymousUser):
-            return []
-        if user.is_staff or user.is_superuser:
+            return Studentship.objects.none()
+        elif user.is_staff or user.is_superuser:
             return Studentship.objects.all()
         else:
             return Studentship.objects.filter(user=user)
@@ -240,15 +240,16 @@ class StudentshipViewSet(ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
-    parser_classes = [MultiPartParser]
+class ProfileViewSet(ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = ProfileSerializer
     my_tags = ['accounts']
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff or user.is_superuser:
+        if isinstance(user, AnonymousUser):
+            return User.objects.none()
+        elif user.is_staff or user.is_superuser:
             return User.objects.all()
         else:
             return User.objects.filter(id=user.id)
@@ -256,6 +257,7 @@ class ProfileViewSet(GenericViewSet, RetrieveModelMixin, ListModelMixin):
 
 class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
     my_tags = ['payments']
+    serializer_class = DiscountCodeSerializer
     serializer_action_classes = {
         'verify_discount': DiscountCodeSerializer,
         'purchase': DiscountCodeSerializer,
