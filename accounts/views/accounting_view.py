@@ -77,7 +77,7 @@ class UserViewSet(ModelViewSet):
         elif user.is_staff or user.is_superuser:
             return User.objects.all()
         else:
-            return User.objects.filter(user=user.id)
+            return User.objects.filter(id=user.id)
 
     @swagger_auto_schema(responses={201: AccountSerializer,
                                     400: "error code 4002 for len(code) < 5, 4003 for invalid code, "
