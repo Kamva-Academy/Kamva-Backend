@@ -18,6 +18,7 @@ from accounts.serializers import PhoneNumberSerializer, UserSerializer, Verifica
     MyTokenObtainPairSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
+from errors.exceptions import ServiceUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +40,10 @@ class SendVerificationCode(GenericAPIView):
         if serializer.is_valid(raise_exception=True):
             phone_number = serializer.validated_data.get('phone_number', None)
             verification_code = VerificationCode.objects.create_verification_code(phone_number=phone_number)
-            # try:
-            #     verification_code.send_sms(serializer.validated_data.get('code_type', None))
-            # except:
-            #     raise ServiceUnavailable(serialize_error('5000'))
+            try:
+                verification_code.send_sms(serializer.validated_data.get('code_type', None))
+            except:
+                raise ServiceUnavailable(serialize_error('5000'))
             return Response({'detail': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
 
 
