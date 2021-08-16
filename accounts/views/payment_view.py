@@ -123,8 +123,9 @@ class PaymentViewSet(GenericViewSet, RetrieveModelMixin):
             purchase.authority = request.GET.get('Authority', None)
             if res['status'] == 200:
                 purchase.status = Purchase.Status.Success
-                purchase.registration_receipt.is_participating = True
-                purchase.registration_receipt.save()
+                receipt = purchase.registration_receipt
+                receipt.is_participating = True
+                receipt.save()
             else:
                 purchase.status = Purchase.Status.Repetitious
             purchase.save()

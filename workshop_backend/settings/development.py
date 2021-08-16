@@ -97,6 +97,6 @@ ZARINPAL_CONFIG = {
     'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: مسافر صفر» به صورت آزمایشی'  # Required
 }
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://dev.rastaiha.ir/payment/success/',
-    'FRONT_HOST_FAILURE': 'https://dev.rastaiha.ir/payment/failure/',
+    'FRONT_HOST_SUCCESS': 'academy.rastaiha.ir/message/payment/success',
+    'FRONT_HOST_FAILURE': 'academy.rastaiha.ir/message/payment/success',
 }

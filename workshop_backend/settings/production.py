@@ -106,8 +106,8 @@ ZARINPAL_CONFIG = {
 }
 
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://zero.rastaiha.ir/payment/success/',
-    'FRONT_HOST_FAILURE': 'https://zero.rastaiha.ir/payment/failure/'
+    'FRONT_HOST_SUCCESS': 'academy.rastaiha.ir/message/payment/success',
+    'FRONT_HOST_FAILURE': 'academy.rastaiha.ir/message/payment/success'
 }
 
 REDIS_URL = get_environment_var('REDIS_URL', 'redis://localhost:6379')
