@@ -86,10 +86,10 @@ registration_form_creation_test_case_response = {
                 "id": 89,
                 "answer_type": "MultiChoiceAnswer",
                 "answer_sheet": None,
-                "submitted_by": 2,
-                "created_at": None,
+                # "submitted_by": 2,
+                # "created_at": None,
                 "is_final_answer": True,
-                "is_solution": True,
+                # "is_solution": True,
                 "problem": 140,
                 "choices": [
                     157,
@@ -107,9 +107,30 @@ registration_form_creation_test_case_response = {
 register_test_case = {
     "answer_sheet_type": "RegistrationReceipt",
     "answers": [
-        {"answer_type": "SmallAnswer",
-         "text": "far",
-         "problem": 175}
+        {
+            "answer_type": "SmallAnswer",
+            "text": "far",
+            "problem": 175
+        },
+        {
+            "answer_type": "BigAnswer",
+            "text": "far",
+            "problem": 176
+        },
+        # {
+        #     "answer_type": "FileAnswer",
+        #     "link": "far",
+        #     "problem": 177
+        # },
+        {
+            "answer_type": "MultiChoiceAnswer",
+            "choices": [
+                1,
+                2,
+                3,
+            ],
+            "problem": 178
+        },
     ]
 }
 register_test_case_response = {
