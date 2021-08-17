@@ -428,7 +428,7 @@ class SmallAnswer(Answer):
 
 
 class BigAnswer(Answer):
-    problem = models.ForeignKey('fsm.BigAnswerProblem', null=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey('fsm.BigAnswerProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
     text = models.TextField()
 
@@ -439,7 +439,7 @@ class ChoiceSelection(models.Model):
 
 
 class MultiChoiceAnswer(Answer):
-    problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
     choices = models.ManyToManyField(Choice, through=ChoiceSelection)
 
@@ -465,10 +465,9 @@ class MultiChoiceAnswer(Answer):
 
 
 class UploadFileAnswer(Answer):
-    problem = models.ForeignKey('fsm.UploadFileProblem', null=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey('fsm.UploadFileProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
-    answer_file = models.FileField(upload_to='AnswerFile', max_length=4000, blank=False)
-    file_name = models.CharField(max_length=50)
+    answer_file = models.FileField(upload_to='answers', max_length=4000, blank=False)
 
 
 class SubmittedAnswer(models.Model):

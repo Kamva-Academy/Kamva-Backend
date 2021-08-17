@@ -21,11 +21,11 @@ class EventSerializer(serializers.ModelSerializer):
 
         if merchandise and merchandise.get('name', None) is None:
             merchandise['name'] = validated_data.get('name', 'unnamed_event')
-        serializer = MerchandiseSerializer(data=merchandise)
-        if serializer.is_valid(raise_exception=True):
-            merchandise_instance = serializer.save()
-            instance.merchandise = merchandise_instance
-            instance.save()
+            serializer = MerchandiseSerializer(data=merchandise)
+            if serializer.is_valid(raise_exception=True):
+                merchandise_instance = serializer.save()
+                instance.merchandise = merchandise_instance
+                instance.save()
         return instance
 
     def to_representation(self, instance):

@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .views.answer_view import UploadAnswerViewSet
 from .views.event_view import EventViewSet
 from .views.fsmview import *
 from .views.fsmstateview import *
@@ -38,44 +39,44 @@ router = DefaultRouter()
 # router.register('small', SmallView)
 # router.register('small/<int:pk>', SmallView)
 urlpatterns = [
-     path('getcurrentstate/', get_player_current_state),
-     # path('getstatepage/', get_state_),
-     path('gethistory/', get_history),
-     path('sendanswer/', send_answer),
-     path('editedges/', edit_edges),
-     # TODO check if fsm is team or individual
-     path('getteamhistory/', get_team_history),
-     # path('getteamfsmhistory/', get_team_fsm_history),
-     # TODO for individual fsm
-     path('getteamoutwardedges/', get_team_outward_edges),
-     path('usergetteamoutwardedges/', user_get_team_outward_edges),
-     # path('set_first_current_page/', set_first_current_state),
-     path('movetonextstate/', move_to_next_state),
-     path('submitteam/', submit_team),
-     # path('goforward/', team_go_forward),
-     # path('gobackto/', team_go_back_to_state),
-     path('visitteam/', go_to_team),
-     path('requestmentor/', request_mentor),
-     path('get_team/', get_team, name="get_team"),
-
-     # new ones
-     path('userworkshops/', user_workshops, name="user_workshops"),
-     path('getworkshopsdescription/', user_workshops_description, name="user_workshops_description"),
-     path('workshopplayers/', workshop_players, name="workshop_players"),
-     path('goforward/', player_go_forward_on_edge, name="player_go_forward_on_edge"),
-     path('gobackward/', player_go_backward_on_edge, name="player_go_backward_on_edge"),
-     path('startWorkshop/', start_workshop, name="start_workshop"),
-     path('mentorgetplayerstate/', mentor_get_player_state, name="mentor_get_player_state"),
-     path('pargetplayerstate/', participant_get_player_state, name="participant_get_player_state"),
-     path('getscores/', get_scores, name="get_scores"),
-     path('getproblems/', mentor_get_all_problems, name="mentor_get_all_problems"),
-     path('getsubmissions/', mentor_get_submissions, name="mentor_get_submissions"),
-     path('marksubmission/', mentor_mark_submission, name="mentor_mark_submission"),
+     # path('getcurrentstate/', get_player_current_state),
+     # # path('getstatepage/', get_state_),
+     # path('gethistory/', get_history),
+     # path('sendanswer/', send_answer),
+     # path('editedges/', edit_edges),
+     # # TODO check if fsm is team or individual
+     # path('getteamhistory/', get_team_history),
+     # # path('getteamfsmhistory/', get_team_fsm_history),
+     # # TODO for individual fsm
+     # path('getteamoutwardedges/', get_team_outward_edges),
+     # path('usergetteamoutwardedges/', user_get_team_outward_edges),
+     # # path('set_first_current_page/', set_first_current_state),
+     # path('movetonextstate/', move_to_next_state),
+     # path('submitteam/', submit_team),
+     # # path('goforward/', team_go_forward),
+     # # path('gobackto/', team_go_back_to_state),
+     # path('visitteam/', go_to_team),
+     # path('requestmentor/', request_mentor),
+     # path('get_team/', get_team, name="get_team"),
+     #
+     # # new ones
+     # path('userworkshops/', user_workshops, name="user_workshops"),
+     # path('getworkshopsdescription/', user_workshops_description, name="user_workshops_description"),
+     # path('workshopplayers/', workshop_players, name="workshop_players"),
+     # path('goforward/', player_go_forward_on_edge, name="player_go_forward_on_edge"),
+     # path('gobackward/', player_go_backward_on_edge, name="player_go_backward_on_edge"),
+     # path('startWorkshop/', start_workshop, name="start_workshop"),
+     # path('mentorgetplayerstate/', mentor_get_player_state, name="mentor_get_player_state"),
+     # path('pargetplayerstate/', participant_get_player_state, name="participant_get_player_state"),
+     # path('getscores/', get_scores, name="get_scores"),
+     # path('getproblems/', mentor_get_all_problems, name="mentor_get_all_problems"),
+     # path('getsubmissions/', mentor_get_submissions, name="mentor_get_submissions"),
+     # path('marksubmission/', mentor_mark_submission, name="mentor_mark_submission"),
      # path('mentorgetplayerstate/', mentor_get_workshop_player, name="mentor_get_workshop_player"),
 ]
 
 router.register(r'registration', RegistrationViewSet, basename='registration')
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
-
+router.register(r'upload_answer', UploadAnswerViewSet, basename='upload_answer')
 urlpatterns += router.urls

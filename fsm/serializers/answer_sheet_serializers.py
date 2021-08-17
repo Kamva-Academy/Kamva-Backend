@@ -27,6 +27,7 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
             if serializer.is_valid(raise_exception=True):
                 serializer.validated_data['answer_sheet'] = instance
                 serializer.save()
+                print(serializer.data)
 
         return instance
 

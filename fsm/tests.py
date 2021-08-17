@@ -40,7 +40,13 @@ registration_form_creation_test_case = {
             "name": "name2",
             "text": "text2",
             "widget_type": "Description"
-        }
+        },
+        {
+            "name": "p1",
+            "text": "text1",
+            "widget_type": "UploadFileProblem",
+            "solution": 15
+        },
     ]
 }
 registration_form_creation_test_case_response = {
@@ -117,11 +123,11 @@ register_test_case = {
             "text": "far",
             "problem": 176
         },
-        # {
-        #     "answer_type": "FileAnswer",
-        #     "link": "far",
-        #     "problem": 177
-        # },
+        {
+            "answer_type": "UploadFileAnswer",
+            "upload_file_answer": 17,
+            "problem": 7
+        },
         {
             "answer_type": "MultiChoiceAnswer",
             "choices": [

@@ -65,7 +65,7 @@ class RegistrationViewSet(ModelViewSet):
                 event = form.event
                 # TODO - handle fsm sign up
                 if event:
-                    if len(event.participants) < event.maximum_participant:
+                    if event.maximum_participant is None or len(event.participants) < event.maximum_participant:
                         if form.accepting_status == RegistrationForm.AcceptingStatus.AutoAccept:
                             registration_receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
                             if not event.merchandise:

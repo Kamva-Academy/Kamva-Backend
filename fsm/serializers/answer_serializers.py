@@ -3,7 +3,7 @@ from rest_framework.exceptions import ParseError
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
-from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem
+from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
 from fsm.serializers.validators import multi_choice_answer_validator
 
 
@@ -32,7 +32,7 @@ class SmallAnswerSerializer(AnswerSerializer):
         model = SmallAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'text']
-        read_only_fields = ['id', 'submitted_by']
+        read_only_fields = ['id', 'submitted_by', 'is_solution']
 
 
 class BigAnswerSerializer(AnswerSerializer):
@@ -40,7 +40,7 @@ class BigAnswerSerializer(AnswerSerializer):
         model = BigAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'text']
-        read_only_fields = ['id', 'submitted_by']
+        read_only_fields = ['id', 'submitted_by', 'is_solution']
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -58,7 +58,7 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
         model = MultiChoiceAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by']
+        read_only_fields = ['id', 'submitted_by', 'is_solution']
 
     def create(self, validated_data):
         choices = validated_data.pop('choices')
@@ -96,12 +96,67 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
         return representation
 
 
+class FileAnswerSerializer(AnswerSerializer):
+    upload_file_answer = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=True)
+
+    def validate_upload_file_answer(self, upload_file_answer):
+        if upload_file_answer.submitted_by != self.context.get('user', None):
+            raise ParseError(serialize_error('4049'))
+        return upload_file_answer
+    
+    def validate(self, attrs):
+        upload_file_answer = attrs.get('upload_file_answer', None)
+        problem = attrs.get('problem', None)
+        if problem:
+            if upload_file_answer.problem and problem != upload_file_answer.problem:
+                raise ParseError(serialize_error('4047'))
+        else:
+            attrs['problem'] = upload_file_answer.problem
+        return super(FileAnswerSerializer, self).validate(attrs)
+
+    def create(self, validated_data):
+        problem = validated_data.get('problem', None)
+        upload_file_answer = validated_data.pop('upload_file_answer', None)
+        answer_sheet = validated_data.get('answer_sheet', None)
+        if problem and not upload_file_answer.problem:
+            upload_file_answer.problem = problem
+        if answer_sheet and not upload_file_answer.answer_sheet:
+            upload_file_answer.answer_sheet = answer_sheet
+        upload_file_answer.save()
+        return upload_file_answer
+
+    def to_representation(self, instance):
+        return UploadFileAnswerSerializer().to_representation(instance)
+
+    class Meta:
+        model = UploadFileAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+                  'problem', 'answer_file', 'upload_file_answer']
+        read_only_fields = ['id', 'submitted_by', 'is_solution', 'answer_file']
+        write_only_fields = ['upload_file_answer',]
+
+
 class UploadFileAnswerSerializer(AnswerSerializer):
+    file_name = serializers.CharField(max_length=50, required=False, write_only=True)
+
+    def create(self, validated_data):
+        answer_file = validated_data.get('answer_file', None)
+        file_name = validated_data.pop('file_name', None)
+        suffix = answer_file.name[answer_file.name.rfind('.'):]
+        user = self.context.get('user', None)
+        if file_name:
+            answer_file.name = f'{file_name}-{user.username}{suffix}'
+        else:
+            problem = validated_data.get('problem', None)
+            answer_file.name = f'Q{problem.id}-{user.username}{suffix}' if problem else f'{answer_file.name}-{user.username}{suffix}'
+        return super(UploadFileAnswerSerializer, self).create(validated_data)
+
     class Meta:
         model = UploadFileAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'answer_file', 'file_name']
-        read_only_fields = ['id', 'submitted_by']
+        read_only_fields = ['id', 'submitted_by', 'is_solution']
+        write_only_fields = ['file_name']
 
 
 class AnswerPolymorphicSerializer(PolymorphicSerializer):
@@ -110,7 +165,7 @@ class AnswerPolymorphicSerializer(PolymorphicSerializer):
         SmallAnswer: SmallAnswerSerializer,
         BigAnswer: BigAnswerSerializer,
         MultiChoiceAnswer: MultiChoiceAnswerSerializer,
-        UploadFileAnswer: UploadFileAnswerSerializer
+        UploadFileAnswer: FileAnswerSerializer
     }
 
     resource_type_field_name = 'answer_type'

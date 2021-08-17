@@ -5,7 +5,7 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from fsm.models import Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
-    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem
+    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
 from fsm.serializers.validators import multi_choice_answer_validator
@@ -180,13 +180,34 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
 
 class UploadFileProblemSerializer(WidgetSerializer):
-    solution = UploadFileAnswerSerializer()
+    solution = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=False)
 
     class Meta:
         model = UploadFileProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
                   'required', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
+
+    def validate_solution(self, solution):
+        if solution.problem is not None:
+            raise ParseError(serialize_error('4047'))
+        elif solution.submitted_by != self.context.get('user', None):
+            raise ParseError(serialize_error('4048'))
+        return solution
+
+    @transaction.atomic
+    def create(self, validated_data):
+        solution = validated_data.pop('solution')
+        instance = super().create(validated_data)
+        solution.problem = instance
+        solution.is_solution = True
+        solution.save()
+        return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['solution'] = UploadFileAnswerSerializer().to_representation(instance.solution)
+        return representation
 
 
 class WidgetPolymorphicSerializer(PolymorphicSerializer):
