@@ -32,7 +32,6 @@ class EventSerializer(serializers.ModelSerializer):
         representation = super(EventSerializer, self).to_representation(instance)
         user = self.context.get('user', None)
         registration = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
-        # todo - add purchase information too
         representation['user_registration_status'] = registration.status if registration else 'NotRegistered'
         representation['is_paid'] = registration.is_paid if registration else False
         representation['is_user_participating'] = registration.is_participating if registration else False
