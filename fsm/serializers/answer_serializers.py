@@ -159,7 +159,7 @@ class UploadFileAnswerSerializer(AnswerSerializer):
         else:
             problem = validated_data.get('problem', None)
             answer_file.name = f'Q{problem.id}-{user.username}{suffix}' if problem else f'{answer_file.name}-{user.username}{suffix}'
-        return super(UploadFileAnswerSerializer, self).create(validated_data)
+        return super(UploadFileAnswerSerializer, self).create({'answer_type': 'UploadFileAnswer', **validated_data})
 
     class Meta:
         model = UploadFileAnswer
