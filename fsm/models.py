@@ -380,20 +380,6 @@ class Choice(models.Model):
         return self.text
 
 
-class AnswerManager(InheritanceManager):
-    # TODO - update for polymorphic models
-    @transaction.atomic
-    def create_answer(self, **args):
-        user = args.get('user', None)
-        problem = args.get('problem', None)
-        old_answers = Answer.objects.filter(user=user).filter(problem=problem)
-        for old_answer in old_answers:
-            old_answer.is_final_answer = False
-            old_answer.save()
-        return super().create(**{'is_active': True, **{args}})
-
-
-# TODO - add default answer type on answer managers
 class Answer(PolymorphicModel):
     class AnswerTypes(models.TextChoices):
         SmallAnswer = 'SmallAnswer'
@@ -405,7 +391,7 @@ class Answer(PolymorphicModel):
     answer_sheet = models.ForeignKey(AnswerSheet, related_name='answers', null=True, blank=True,
                                      on_delete=models.SET_NULL)
     submitted_by = models.ForeignKey('accounts.User', null=True, blank=True, on_delete=models.SET_NULL)
-    created_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     is_final_answer = models.BooleanField(default=False)
     is_solution = models.BooleanField(default=False)
 

@@ -1,7 +1,8 @@
+from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 from rest_polymorphic.serializers import PolymorphicSerializer
-
+from datetime import datetime
 from errors.error_codes import serialize_error
 from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
 from fsm.serializers.validators import multi_choice_answer_validator
@@ -10,6 +11,15 @@ from fsm.serializers.validators import multi_choice_answer_validator
 class AnswerSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
+        user = self.context.get('user', None)
+        problem = validated_data.get('problem', None)
+        answer_sheet = validated_data.get('answer_sheet', None)
+        previous_answers = Answer.objects.filter(submitted_by=user, answer_sheet=answer_sheet).filter(
+            Q(SmallAnswer___problem__id=problem.id) | Q(BigAnswer___problem__id=problem.id) | Q(
+                UploadFileAnswer___problem__id=problem.id) | Q(MultiChoiceAnswer___problem__id=problem.id))
+        for a in previous_answers:
+            a.is_final_answer = False
+            a.save()
         return super().create({'submitted_by': self.context.get('user', None), **validated_data})
 
     def validate(self, attrs):
@@ -32,7 +42,7 @@ class SmallAnswerSerializer(AnswerSerializer):
         model = SmallAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'text']
-        read_only_fields = ['id', 'submitted_by', 'is_solution']
+        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution']
 
 
 class BigAnswerSerializer(AnswerSerializer):
@@ -40,7 +50,7 @@ class BigAnswerSerializer(AnswerSerializer):
         model = BigAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'text']
-        read_only_fields = ['id', 'submitted_by', 'is_solution']
+        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution']
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -58,7 +68,7 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
         model = MultiChoiceAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by', 'is_solution']
+        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution']
 
     def create(self, validated_data):
         choices = validated_data.pop('choices')
@@ -99,11 +109,18 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
 class FileAnswerSerializer(AnswerSerializer):
     upload_file_answer = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=True)
 
+    class Meta:
+        model = UploadFileAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+                  'problem', 'answer_file', 'upload_file_answer']
+        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution', 'answer_file']
+        write_only_fields = ['upload_file_answer']
+
     def validate_upload_file_answer(self, upload_file_answer):
         if upload_file_answer.submitted_by != self.context.get('user', None):
             raise ParseError(serialize_error('4049'))
         return upload_file_answer
-    
+
     def validate(self, attrs):
         upload_file_answer = attrs.get('upload_file_answer', None)
         problem = attrs.get('problem', None)
@@ -128,13 +145,6 @@ class FileAnswerSerializer(AnswerSerializer):
     def to_representation(self, instance):
         return UploadFileAnswerSerializer().to_representation(instance)
 
-    class Meta:
-        model = UploadFileAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
-                  'problem', 'answer_file', 'upload_file_answer']
-        read_only_fields = ['id', 'submitted_by', 'is_solution', 'answer_file']
-        write_only_fields = ['upload_file_answer',]
-
 
 class UploadFileAnswerSerializer(AnswerSerializer):
     file_name = serializers.CharField(max_length=50, required=False, write_only=True)
@@ -155,7 +165,7 @@ class UploadFileAnswerSerializer(AnswerSerializer):
         model = UploadFileAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'answer_file', 'file_name']
-        read_only_fields = ['id', 'submitted_by', 'is_solution']
+        read_only_fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_solution']
         write_only_fields = ['file_name']
 
 

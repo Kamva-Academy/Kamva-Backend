@@ -63,7 +63,6 @@ class InstituteManager(PolymorphicManager):
         institute = super().create(**args)
         institute.owner = institute.creator
         institute.admins.add(institute.creator)
-        institute.date_added = timezone.now().date()
         # ct = ContentType.objects.get_for_model(institute)
         # assign_perm(Permission.objects.filter(codename='add_admin', content_type=ct).first(), institute.owner, institute)
         # these permission settings worked correctly but were too messy
@@ -89,7 +88,7 @@ class EducationalInstitute(PolymorphicModel):
     created_at = models.DateField(null=True, blank=True)
 
     is_approved = models.BooleanField(null=True, blank=True)
-    date_added = models.DateField(null=True, blank=True)
+    date_added = models.DateField(auto_now_add=True)
     owner = models.ForeignKey(User, related_name='owned_institutes', on_delete=models.SET_NULL, null=True, blank=True)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     admins = models.ManyToManyField(User, related_name='institutes', blank=True)

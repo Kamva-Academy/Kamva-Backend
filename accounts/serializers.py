@@ -154,7 +154,7 @@ class InstituteSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'institute_type', 'address', 'province', 'city', 'postal_code', 'phone_number',
                   'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved', 'created_at',
                   'owner', 'admins', 'date_added', 'creator']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'date_added']
 
 
 class StudentshipSerializer(serializers.ModelSerializer):
