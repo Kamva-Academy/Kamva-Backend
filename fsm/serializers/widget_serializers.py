@@ -174,8 +174,9 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['solution'] = MultiChoiceSolutionSerializer(instance.solution).to_representation(
-            instance.solution)
+        if instance.solution:
+            representation['solution'] = MultiChoiceSolutionSerializer(instance.solution).to_representation(
+                instance.solution)
         return representation
 
 
@@ -206,7 +207,8 @@ class UploadFileProblemSerializer(WidgetSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['solution'] = UploadFileAnswerSerializer().to_representation(instance.solution)
+        if instance.solution:
+            representation['solution'] = UploadFileAnswerSerializer().to_representation(instance.solution)
         return representation
 
 
