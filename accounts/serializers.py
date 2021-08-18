@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=True, validators=[phone_number_validator])
-    code_type = serializers.ChoiceField(choices=['change_pass', 'verify'])
+    code_type = serializers.ChoiceField(choices=['changePass', 'verify'])
 
     def validate(self, attrs):
         if User.objects.filter(phone_number__exact=attrs.get('phone_number')).count() <= 0:
