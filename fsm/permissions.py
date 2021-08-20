@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from accounts.models import Member, Team, Participant
+from accounts.models import Member, Teamm, Participant
 
 
 class IsEventModifier(permissions.BasePermission):
@@ -19,9 +19,25 @@ class IsRegistrationFormModifier(permissions.BasePermission):
     message = 'You are not this registration_form\'s modifier'
 
     def has_object_permission(self, request, view, obj):
-        return (obj.event is not None and request.user in obj.event.modifiers) \
-               or (obj.fsm is not None and request.user in obj.fsm.modifiers) \
-               or request.user == obj.creator
+        return (obj.event_or_fsm and request.user in obj.event_or_fsm.modifiers) or request.user == obj.creator
+
+
+class IsTeamHead(permissions.BasePermission):
+    """
+    Permission for team's head
+    """
+    message = 'You are not this team\'s head'
+
+    def has_object_permission(self, request, view, obj):
+        return obj.team_head.user == request.user
+
+
+class IsTeamMember(permissions.BasePermission):
+    """
+    Permission for team's members
+    """
+    pass
+# -------------
 
 
 class MentorPermission(permissions.BasePermission):

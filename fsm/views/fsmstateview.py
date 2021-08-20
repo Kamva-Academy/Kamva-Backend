@@ -12,7 +12,7 @@ from fsm.serializers.serializers import MainStateSerializer, MainStateGetSeriali
 from fsm.serializers.paper_serializers import ArticleSerializer
 
 from rest_framework import permissions
-from fsm.views import permissions as customPermissions
+from fsm import permissions as customPermissions
 
 
 class MainStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,

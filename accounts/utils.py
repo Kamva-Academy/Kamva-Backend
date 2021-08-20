@@ -3,6 +3,7 @@ from rest_framework.exceptions import ParseError
 
 from accounts.models import User
 from errors.error_codes import serialize_error
+from fsm.models import RegistrationReceipt
 from fsm.views.participantviews import get_last_state_in_fsm
 
 
@@ -18,6 +19,10 @@ def find_user(data):
             raise ParseError(serialize_error('4007'))
 
     return get_object_or_404(User, username=username)
+
+
+def find_registration_receipt(user, registration_form):
+    return RegistrationReceipt.objects.filter(user=user, answer_sheet_of=registration_form).first()
 
 
 def get_user_json_info(user):

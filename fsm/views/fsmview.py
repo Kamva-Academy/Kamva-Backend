@@ -6,7 +6,7 @@ from rest_framework import mixins
 from rest_framework import permissions
 
 from fsm.models import FSM, MainState
-from fsm.views import permissions as customPermissions
+from fsm import permissions as customPermissions
 from fsm.serializers.serializers import FSMSerializer, FSMGetSerializer
 
 

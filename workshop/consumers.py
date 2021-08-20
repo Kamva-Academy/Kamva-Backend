@@ -1,6 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .models import Message
-from accounts.models import Member, Participant, Team
+from accounts.models import Member, Participant, Teamm
 from .views import get_last_10_messages, get_user_contact, get_current_chat, get_message_by_id
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
@@ -23,7 +23,7 @@ def get_name(team_uuid, person_uuid):
             elif member[0].is_participant:
                 participant = Participant.objects.get(member=member[0])
                 try:
-                    team = Team.objects.get(uuid=team_uuid)
+                    team = Teamm.objects.get(uuid=team_uuid)
                 except:
                     return False
                 if participant in team.team_members.all():

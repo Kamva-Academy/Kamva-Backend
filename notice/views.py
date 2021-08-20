@@ -1,5 +1,3 @@
-from django.shortcuts import render
-
 # Create your views here.
 from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
@@ -10,7 +8,7 @@ from .pagination import pagination_result
 from rest_framework import permissions
 from .exception import BadRequest
 from django.shortcuts import get_object_or_404
-from fsm.views import permissions as customPermissions
+from fsm import permissions as customPermissions
 from .service import PushNotificationService
 
 

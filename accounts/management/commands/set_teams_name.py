@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from accounts.models import Participant, Member, Event, Team
+from accounts.models import Participant, Member, Event, Teamm
 import os
 import logging
 from .users import users
@@ -11,7 +11,7 @@ class Command(BaseCommand):
     help = 'set team names'
 
     def handle(self, *args, **options):
-        for team in Team.objects.all():
+        for team in Teamm.objects.all():
             team.group_name = str(team)
             team.save()
 

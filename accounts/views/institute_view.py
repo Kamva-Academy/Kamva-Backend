@@ -16,6 +16,7 @@ from errors.error_codes import serialize_error
 
 logger = logging.getLogger(__name__)
 
+
 class InstituteViewSet(ModelViewSet):
     queryset = EducationalInstitute.objects.all()
     serializer_class = InstituteSerializer

@@ -3,7 +3,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from fsm.models import Event
 from fsm.serializers.fsm_serializers import EventSerializer
-from fsm.views.permissions import IsEventModifier
+from fsm.permissions import IsEventModifier
 
 
 class EventViewSet(ModelViewSet):

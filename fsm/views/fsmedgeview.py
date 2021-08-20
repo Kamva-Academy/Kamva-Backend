@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework import permissions
-from fsm.views import permissions as customPermissions
+from fsm import permissions as customPermissions
 from fsm.models import FSMEdge
 from fsm.serializers.serializers import FSMEdgeSerializer
 

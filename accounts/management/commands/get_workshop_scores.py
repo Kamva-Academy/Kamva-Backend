@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from accounts.models import Participant, Member, Team
+from accounts.models import Participant, Member, Teamm
 import os
 import logging
 
@@ -20,5 +20,5 @@ class Command(BaseCommand):
         for workshop_id in options['workshop_id']:
             print(f'----------\nfor workshop {FSM.objects.get(id=workshop_id)}\n------------')
             for player_workshop in PlayerWorkshop.objects.filter(workshop__id=workshop_id):
-                team = Team.objects.get(player_ptr_id=player_workshop.player.id)
+                team = Teamm.objects.get(player_ptr_id=player_workshop.player.id)
                 print(f'{team.group_name}: {get_scores_sum(player_workshop)}')

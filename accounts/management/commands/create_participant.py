@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from accounts.models import Participant, Member, Event, Team
+from accounts.models import Participant, Member, Event, Teamm
 import os
 import logging
 from .users import users
@@ -34,7 +34,7 @@ class Command(BaseCommand):
                 is_participated=True,
             )
 
-            team = Team.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
+            team = Teamm.objects.create(team_code=team_code, event=current_event, player_type='TEAM', )
             participant.event_team = team
 
             member.save()

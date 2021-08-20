@@ -486,7 +486,7 @@ class ParticipantManager(models.Manager):
 # member's participation in event
 class Participant(Player):
     member = models.ForeignKey(Member, related_name='event_participant', on_delete=models.CASCADE)
-    event_team = models.ForeignKey('Team', related_name='team_participants',
+    event_team = models.ForeignKey('accounts.Teamm', related_name='team_participants',
                                    null=True, blank=True, on_delete=models.CASCADE)
     # TODO change file directory to event name
     selection_doc = models.FileField(upload_to='selection_answers/', null=True, blank=True)
@@ -516,7 +516,7 @@ class Participant(Player):
         api.verify_lookup(params)
 
 
-class Team(Player):
+class Teamm(Player):
     group_name = models.CharField(max_length=200, blank=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     team_code = models.CharField(max_length=10)

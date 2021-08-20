@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from accounts.models import Participant, Member, Team
+from accounts.models import Participant, Member, Teamm
 import os
 import logging
 from backup_data.problem_day_users import problem_day_users
@@ -20,7 +20,7 @@ class Command(BaseCommand):
             for i, team_info in enumerate(problem_day_users):
                 print("----------")
                 team = team_info['team']
-                t = Team.objects.filter(group_name=team)[0]
+                t = Teamm.objects.filter(group_name=team)[0]
                 members = team_info['members']
                 for user_info in members:
                     password = user_info['id']

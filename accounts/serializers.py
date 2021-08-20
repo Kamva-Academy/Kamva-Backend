@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from errors.error_codes import serialize_error
 from workshop_backend.settings.base import SMS_CODE_LENGTH, DISCOUNT_CODE_LENGTH
-from .models import Member, Participant, Team, User, VerificationCode, EducationalInstitute, School, University, \
+from .models import Member, Participant, Teamm, User, VerificationCode, EducationalInstitute, School, University, \
     SchoolStudentship, Studentship, AcademicStudentship, Merchandise, DiscountCode, Purchase
 from .validators import phone_number_validator, grade_validator, price_validator
 
@@ -309,13 +309,13 @@ class ParticipantsListField(serializers.RelatedField):
         return value.member.first_name
 
 
-class TeamSerializer(serializers.ModelSerializer):
+class TeammSerializer(serializers.ModelSerializer):
     # histories = TeamHistorySerializer(many=True)
     # p_type = serializers.Field(source="team")
     team_participants = ParticipantsListField(many=True, read_only=True)
 
     class Meta:
-        model = Team
+        model = Teamm
         fields = ['player_type', 'id', 'uuid', 'group_name', 'score', 'team_participants']
 
 
@@ -324,14 +324,14 @@ class PlayerSerializer(serializers.Serializer):
     def get_serializer(cls, model):
         try:
             model.team
-            return TeamSerializer
+            return TeammSerializer
         except:
             return ParticipantSerializer
 
     def to_representation(self, instance):
         try:
             instance.team
-            serializer = TeamSerializer
+            serializer = TeammSerializer
             return serializer(instance.team).data
         except:
             try:

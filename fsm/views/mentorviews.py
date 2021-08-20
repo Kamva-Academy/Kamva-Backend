@@ -4,11 +4,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions
 
-from django.contrib.contenttypes.models import ContentType
-
-from fsm.serializers.serializers import EditEdgesSerializer
 from fsm.serializers.serializers import *
-from fsm.views import permissions as customPermissions
+from fsm import permissions as customPermissions
 from fsm.views.functions import *
 from notifications.models import Notification
 
@@ -56,12 +53,12 @@ def get_team_outward_edges(request):
     if not serializer.is_valid(raise_exception=True):
         return Response("team UUID problem ", status=status.HTTP_400_BAD_REQUEST)
     try:
-        team = Team.objects.get(uuid=serializer.validated_data['uuid'])
+        team = Teamm.objects.get(uuid=serializer.validated_data['uuid'])
         edges = team.current_state.outward_edges.all()
         output_serializer = serializers.ListField(child=FSMEdgeSerializer())
         data = output_serializer.to_representation(edges)
         return Response(data, status=status.HTTP_200_OK)
-    except Team.DoesNotExist:
+    except Teamm.DoesNotExist:
         return Response("team not found", status=status.HTTP_400_BAD_REQUEST)
     except AttributeError:
         return Response("team has no current_state", status=status.HTTP_400_BAD_REQUEST)
@@ -75,7 +72,7 @@ def get_team_history(request):
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     try:
-        team = Team.objects.filter(id=request.data['team'])[0]
+        team = Teamm.objects.filter(id=request.data['team'])[0]
     except:
         return Response("team not found", status=status.HTTP_400_BAD_REQUEST)
     history = team.histories.filter(state=team.current_state.id)[0]
@@ -151,7 +148,7 @@ def mentor_get_workshop_player(request):
 def mentor_get_player_state(request):
     state = get_object_or_404(MainState, id=request.data['state'])
     if state.fsm.fsm_p_type != 'individual':
-        player = get_object_or_404(Team, uuid=request.data['player_uuid'])
+        player = get_object_or_404(Teamm, uuid=request.data['player_uuid'])
     else:
         player = get_participant(get_object_or_404(Member, uuid=request.data['player_uuid']))
     player_workshop = get_player_workshop(player, state.fsm)

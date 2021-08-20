@@ -4,7 +4,8 @@ from rest_framework import permissions
 
 from fsm.models import PlayerHistory
 from fsm.serializers.serializers import PlayerHistorySerializer
-from fsm.views import permissions as customPermissions
+from fsm import permissions as customPermissions
+
 
 class TeamHistoryView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.ListModelMixin,
                    mixins.UpdateModelMixin):

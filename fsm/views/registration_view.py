@@ -1,4 +1,3 @@
-from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -7,13 +6,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from accounts import permissions
+from accounts.models import User
 from errors.error_codes import serialize_error
-from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer
-from fsm.serializers.paper_serializers import PaperPolymorphicSerializer, RegistrationFormSerializer, \
+from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer
+from fsm.serializers.paper_serializers import RegistrationFormSerializer, \
     ChangeWidgetOrderSerializer
-from fsm.models import RegistrationForm, transaction, AnswerSheet, RegistrationReceipt
-from fsm.views.permissions import IsRegistrationFormModifier
+from fsm.models import RegistrationForm, transaction, RegistrationReceipt
+from fsm.permissions import IsRegistrationFormModifier
 
 
 class RegistrationViewSet(ModelViewSet):
@@ -34,11 +33,42 @@ class RegistrationViewSet(ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action == 'create' or self.action == 'register' or self.action == 'retrieve' or self.action == 'list':
+        if self.action == 'create' or self.action == 'register' or self.action == 'retrieve' or self.action == 'list' \
+                or self.action == 'get_possible_teammates':
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsRegistrationFormModifier]
         return [permission() for permission in permission_classes]
+
+    @swagger_auto_schema(responses={200: RegistrationReceiptSerializer})
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def get_receipts(self, request, pk=None):
+        return Response(data=RegistrationReceiptSerializer(self.get_object().registration_receipts, many=True).data,
+                        status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(responses={200: RegistrationInfoSerializer})
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def get_possible_teammates(self, request, pk=None):
+        user = self.request.user
+        registration_form = self.get_object()
+
+        self_receipts = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=registration_form,
+                                                           is_participating=True)
+        if len(self_receipts) < 1:
+            raise ParseError(serialize_error('4050'))
+
+        if not user.gender or (user.gender != User.Gender.Male and user.gender != User.Gender.Female):
+            raise ParseError(serialize_error('4058'))
+        if registration_form.gender_partition_status == RegistrationForm.GenderPartitionStatus.BothNonPartitioned:
+            receipts = registration_form.registration_receipts.exclude(pk__in=self_receipts).filter(
+                is_participating=True)
+        else:
+            receipts = registration_form.registration_receipts.exclude(pk__in=self_receipts).filter(
+                is_participating=True,
+                user__gender=user.gender)
+        return Response(RegistrationInfoSerializer(receipts, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: RegistrationFormSerializer})
     @transaction.atomic

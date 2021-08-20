@@ -1,14 +1,13 @@
 from django.db import transaction
 from django.db.models import Sum
-from django.shortcuts import render
 
 # Create your views here.
 from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from fsm.views import permissions as custom_permissions
-from .serializers import ScoreSerializer, ScoreboardSerializer, ScoreTransaction, ScoreTransactionsSerializer
+from fsm import permissions as custom_permissions
+from .serializers import ScoreSerializer, ScoreTransactionsSerializer
 from .exception import BadRequest, ScoreTransactionNotFound, PlayerWorkshopNotFound
 from .models import ScoreTransaction
 from fsm.models import PlayerWorkshop

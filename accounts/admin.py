@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-from .models import Member, Participant, Team, Purchase, Mentor, Player, DiscountCode, User, VerificationCode, \
+from .models import Member, Participant, Teamm, Purchase, Mentor, Player, DiscountCode, User, VerificationCode, \
     University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship, Merchandise
 
 from import_export.admin import ExportActionMixin
@@ -393,7 +393,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 
 
 class TeamAdmin(admin.ModelAdmin):
-    model = Team
+    model = Teamm
     list_display = ['get_group_name', 'active', 'group_members_display', 'team_members_count', 'team_status']
 
     change_list_template = 'admin/accounts/change_list_team.html'
@@ -415,7 +415,7 @@ class TeamAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def unset_all_current_states(self, request, *args, **kwargs):
-        qs = Team.objects.all()
+        qs = Teamm.objects.all()
         ll = list(qs.values_list('id', 'current_state'))
         json.dump(ll, open(os.path.join(settings.MEDIA_ROOT,
                            'current_states_before_clear_%s.json' % datetime.now().isoformat()), 'w'))

@@ -1,14 +1,7 @@
-from django.db import models
-from django.db.models import QuerySet
-from django.db.models.signals import pre_delete
-from django.dispatch import receiver
-from model_utils.managers import InheritanceManager
-from polymorphic.models import PolymorphicModel
 from rest_framework.exceptions import PermissionDenied, ParseError
 
 from accounts.models import *
 from errors.error_codes import serialize_error
-from errors.exceptions import ServiceUnavailable
 
 
 class Paper(PolymorphicModel):
@@ -40,6 +33,12 @@ class RegistrationForm(Paper):
         CorrectAccept = 'CorrectAccept'
         Manual = 'Manual'
 
+    class GenderPartitionStatus(models.TextChoices):
+        OnlyMale = 'OnlyMale'
+        OnlyFemale = 'OnlyFemale'
+        BothPartitioned = 'BothPartitioned'
+        BothNonPartitioned = 'BothNonPartitioned'
+
     min_grade = models.IntegerField(default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
     max_grade = models.IntegerField(default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
     deadline = models.DateTimeField(null=True)
@@ -49,6 +48,8 @@ class RegistrationForm(Paper):
     conditions = models.TextField(null=True, blank=True)
 
     accepting_status = models.CharField(max_length=15, default='AutoAccept', choices=AcceptingStatus.choices)
+    gender_partition_status = models.CharField(max_length=25, default='BothPartitioned',
+                                               choices=GenderPartitionStatus.choices)
 
     @property
     def event_or_fsm(self):
@@ -83,8 +84,8 @@ class RegistrationReceipt(AnswerSheet):
     user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
                              null=True, blank=True)
     status = models.CharField(max_length=25, blank=False, default='Waiting', choices=RegistrationStatus.choices)
-
     is_participating = models.BooleanField(default=False)
+    team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL, related_name='members', null=True, blank=True)
 
     @property
     def purchases(self):
@@ -203,6 +204,7 @@ class FSM(models.Model):
                                          choices=FSMLearningType.choices)
     fsm_p_type = models.CharField(max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
     lock = models.CharField(max_length=10, null=True, blank=True)
+    team_size = models.IntegerField(default=3)
 
     # TODO - make locks as mixins
 
@@ -214,6 +216,24 @@ class FSM(models.Model):
         modifiers = {self.creator} if self.creator is not None else set()
         modifiers |= set(self.holder.admins.all()) if self.holder is not None else set()
         return modifiers
+
+
+class Team(models.Model):
+    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    registration_form = models.ForeignKey(RegistrationForm, related_name='teams', null=True, blank=True,
+                                          on_delete=models.SET_NULL)
+    team_head = models.OneToOneField(RegistrationReceipt, related_name='headed_team', null=True, blank=True,
+                                     on_delete=models.SET_NULL)
+
+
+class Invitation(models.Model):
+    invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')
+    has_accepted = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('invitee', 'team')
 
 
 class FSMState(Paper):

@@ -11,7 +11,7 @@ from .views.registration_receipt_view import RegistrationReceiptViewSet
 from .views.registration_view import RegistrationViewSet
 from .views.widgetview import *
 from .views.teamhistoryview import *
-from .views.teamview import *
+from .views.team_view import *
 from .views.participantviews import *
 from .views.mentorviews import *
 
@@ -78,5 +78,7 @@ urlpatterns = [
 router.register(r'registration', RegistrationViewSet, basename='registration')
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
+router.register(r'team', TeamViewSet, basename='teams')
+router.register(r'membership', InvitationViewSet, basename='memberships')
 router.register(r'upload_answer', UploadAnswerViewSet, basename='upload_answer')
 urlpatterns += router.urls

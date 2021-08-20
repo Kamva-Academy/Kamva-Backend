@@ -1,9 +1,18 @@
 from django.contrib.auth.models import AnonymousUser
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import permissions, status
+from rest_framework.decorators import action
+from rest_framework.exceptions import ParseError
 from rest_framework.mixins import RetrieveModelMixin, DestroyModelMixin
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-from fsm.models import RegistrationReceipt
-from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer
+from accounts.models import User
+from errors.error_codes import serialize_error
+from fsm.models import RegistrationReceipt, RegistrationForm
+from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer
 
 
 class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyModelMixin):

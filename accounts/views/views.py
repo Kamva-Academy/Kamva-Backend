@@ -188,8 +188,8 @@ class GetTeamData(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         team_code = request.data['team_code']
         try:
-            team = Team.objects.get(team_code=team_code)
-        except Team.DoesNotExist:
+            team = Teamm.objects.get(team_code=team_code)
+        except Teamm.DoesNotExist:
             return Response({'success': False, 'error': "کد تیم نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'success': True,
                          'team_members': list(map(lambda p: p.member.first_name, list(team.team_participants.all())))},
@@ -352,13 +352,13 @@ class TeamInfo(APIView):
     def get(self, request):
         member = request.user
         if "teamId" in request.GET:
-            team = Team.objects.filter(id=request.GET.get('teamId'))
+            team = Teamm.objects.filter(id=request.GET.get('teamId'))
             if not team.count() > 0:
                 return Response({'success': False, "error": "user not found"}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 team = team[0]
         elif "uuid" in request.GET:
-            team = Team.objects.filter(uuid=request.GET.get('uuid'))
+            team = Teamm.objects.filter(uuid=request.GET.get('uuid'))
             if not team.count() > 0:
                 return Response({'success': False, "error": "user not found"}, status=status.HTTP_400_BAD_REQUEST)
             else:

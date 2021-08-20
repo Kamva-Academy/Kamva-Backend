@@ -104,6 +104,9 @@ admin.site.register(AnswerSheet)
 admin.site.register(RegistrationReceipt, RegistrationReceiptsAdmin)
 admin.site.register(ChoiceSelection)
 
+admin.site.register(Team)
+admin.site.register(Invitation)
+
 admin.site.register(FSM)
 admin.site.register(FSMEdge, EdgeAdmin)
 admin.site.register(Ability)

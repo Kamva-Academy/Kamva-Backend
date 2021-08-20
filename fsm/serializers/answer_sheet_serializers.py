@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 from rest_polymorphic.serializers import PolymorphicSerializer
 
+from accounts.serializers import StudentshipSerializer
 from errors.error_codes import serialize_error
 from fsm.models import AnswerSheet, RegistrationReceipt, Problem
 from fsm.serializers.answer_serializers import AnswerPolymorphicSerializer
@@ -49,8 +50,8 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
 
     class Meta:
         model = RegistrationReceipt
-        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'answers', 'status', 'is_participating']
-        read_only_fields = ['id', 'user', 'status', 'answer_sheet_of', 'is_participating']
+        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'answers', 'status', 'is_participating', 'team']
+        read_only_fields = ['id', 'user', 'status', 'answer_sheet_of', 'is_participating', 'team']
 
     def create(self, validated_data):
         return super(RegistrationReceiptSerializer, self).create({'user': self.context.get('user', None),
@@ -67,6 +68,24 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
         if answer_sheet_of.deadline and datetime.now(answer_sheet_of.deadline.tzinfo) > answer_sheet_of.deadline:
             raise ParseError(serialize_error('4036'))
         return attrs
+
+
+class RegistrationInfoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RegistrationReceipt
+        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team']
+        read_only_fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team']
+
+    def to_representation(self, instance):
+        representation = super(RegistrationInfoSerializer, self).to_representation(instance)
+        user = instance.user
+        representation['first_name'] = user.first_name
+        representation['last_name'] = user.last_name
+        representation['profile_picture'] = user.profile_picture.url if user.profile_picture else None
+        representation['school_studentship'] = StudentshipSerializer().to_representation(user.school_studentship)
+        representation['academic_studentship'] = StudentshipSerializer().to_representation(user.academic_studentship)
+        return representation
 
 
 class AnswerSheetPolymorphicSerializer(PolymorphicSerializer):

@@ -7,6 +7,7 @@ from accounts.views.studentship_view import StudentshipViewSet
 from accounts.views.institute_view import InstituteViewSet
 from accounts.views.payment_view import PaymentViewSet
 from accounts.views.profile_view import ProfileViewSet
+from fsm.views.team_view import TeamViewSet, InvitationViewSet
 
 urlpatterns = [
     path('accounts/verification_code/', SendVerificationCode.as_view(), name="send_verification_code"),

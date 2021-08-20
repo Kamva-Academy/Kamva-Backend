@@ -1,4 +1,4 @@
-from accounts.models import Team
+from accounts.models import Teamm
 from django.utils import timezone
 from datetime import timedelta
 from fsm.models import PlayerHistory
@@ -15,7 +15,7 @@ class TeamsCache:
 
     @classmethod
     def calc_data(cls):
-        teams = Team.objects.all()
+        teams = Teamm.objects.all()
         valid_teams = []
 
         for team in teams:

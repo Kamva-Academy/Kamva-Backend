@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from accounts.models import Participant, Member, Team
+from accounts.models import Participant, Member, Teamm
 import os
 import logging
 from backup_data.problem_day_users import problem_day_users
