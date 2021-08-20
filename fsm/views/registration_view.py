@@ -49,7 +49,7 @@ class RegistrationViewSet(ModelViewSet):
                         status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
-    def get_registration_count_by_city(self, request, pk=None):
+    def get_registration_count_per_city(self, request, pk=None):
         results = RegistrationReceipt.objects.filter(answer_sheet_of=self.get_object()).annotate(
             city=F('user__city')).values('city').annotate(registration_count=Count('id'))
         return Response(RegistrationPerCitySerializer(results, many=True).data, status=status.HTTP_200_OK)
