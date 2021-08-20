@@ -4,15 +4,17 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError
-from rest_framework.mixins import RetrieveModelMixin, DestroyModelMixin
+from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.mixins import RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from accounts.models import User
 from errors.error_codes import serialize_error
 from fsm.models import RegistrationReceipt, RegistrationForm
-from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer
+from fsm.permissions import IsRegistrationReceiptOwner
+from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
+    RegistrationStatusSerializer
 
 
 class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyModelMixin):
@@ -20,12 +22,46 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
     queryset = RegistrationReceipt.objects.all()
     my_tags = ['registration']
 
+    serializer_action_classes = {
+        'validate_receipt': RegistrationStatusSerializer
+    }
+
+    def get_permissions(self):
+        if self.action == 'retrieve' or self.action == 'destroy':
+            permission_classes = [IsRegistrationReceiptOwner]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except(KeyError, AttributeError):
+            return super().get_serializer_class()
+
     def get_queryset(self):
         user = self.request.user
         if isinstance(user, AnonymousUser):
             return RegistrationReceipt.objects.none()
-        elif user.is_staff or user.is_superuser:
-            return RegistrationReceipt.objects.all()
-        else:
-            return RegistrationReceipt.objects.filter(user=user.id)
+        return self.queryset
 
+    @swagger_auto_schema(responses={200: RegistrationReceiptSerializer})
+    @action(detail=True, methods=['post'], serializer_class=RegistrationStatusSerializer)
+    @transaction.atomic
+    def validate_receipt(self, request, pk=None):
+        receipt = self.get_object()
+        if self.request.user not in receipt.answer_sheet_of.event_or_fsm.modifiers:
+            raise PermissionDenied(serialize_error('4061'))
+        status_serializer = RegistrationStatusSerializer(data=self.request.data)
+        if status_serializer.is_valid(raise_exception=True):
+            registration_status = status_serializer.data.get('status', RegistrationReceipt.RegistrationStatus.Waiting)
+
+            if registration_status == RegistrationReceipt.RegistrationStatus.Accepted:
+                merch = receipt.answer_sheet_of.event_or_fsm.merchandise
+                if receipt.answer_sheet_of is not None and (merch is None or merch.price == 0):
+                    receipt.is_participating = True
+            else:
+                receipt.is_participating = False
+            receipt.status = registration_status
+            receipt.save()
+            return Response(RegistrationReceiptSerializer().to_representation(receipt), status=status.HTTP_200_OK)

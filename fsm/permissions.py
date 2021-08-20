@@ -22,6 +22,16 @@ class IsRegistrationFormModifier(permissions.BasePermission):
         return (obj.event_or_fsm and request.user in obj.event_or_fsm.modifiers) or request.user == obj.creator
 
 
+class IsRegistrationReceiptOwner(permissions.BasePermission):
+    """
+    Permission for registration receipt owner to get
+    """
+    message = 'You are not this registration receipt\' owner'
+
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
+
+
 class IsTeamHead(permissions.BasePermission):
     """
     Permission for team's head

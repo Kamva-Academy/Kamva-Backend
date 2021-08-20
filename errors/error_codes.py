@@ -64,6 +64,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4058': 'you must provide your gender',
                '4059': 'team member capacity is full',
                '4060': 'only team heads can revoke invitations',
+               '4061': 'only registration form modifiers can validate receipts',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

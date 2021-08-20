@@ -17,7 +17,7 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
     #     read_only_fields = ['id']
 
     def create(self, validated_data):
-        answers = validated_data.pop('answers')
+        answers = validated_data.pop('answers') if 'answers' in validated_data.keys() else []
 
         instance = super(AnswerSheetSerializer, self).create(validated_data)
         context = self.context
@@ -46,7 +46,7 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
 
 
 class RegistrationReceiptSerializer(AnswerSheetSerializer):
-    answers = AnswerPolymorphicSerializer(many=True)
+    answers = AnswerPolymorphicSerializer(many=True, required=False)
 
     class Meta:
         model = RegistrationReceipt
@@ -99,4 +99,8 @@ class AnswerSheetPolymorphicSerializer(PolymorphicSerializer):
 class RegistrationPerCitySerializer(serializers.Serializer):
     city = serializers.CharField(max_length=50)
     registration_count = serializers.IntegerField(min_value=0)
+
+
+class RegistrationStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=RegistrationReceipt.RegistrationStatus.choices)
 
