@@ -79,6 +79,6 @@ router.register(r'registration', RegistrationViewSet, basename='registration')
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
 router.register(r'team', TeamViewSet, basename='teams')
-router.register(r'membership', InvitationViewSet, basename='memberships')
+router.register(r'invitations', InvitationViewSet, basename='memberships')
 router.register(r'upload_answer', UploadAnswerViewSet, basename='upload_answer')
 urlpatterns += router.urls
