@@ -94,3 +94,9 @@ class AnswerSheetPolymorphicSerializer(PolymorphicSerializer):
         # AnswerSheet: AnswerSheetSerializer,
         RegistrationReceipt: RegistrationReceiptSerializer,
     }
+
+
+class RegistrationPerCitySerializer(serializers.Serializer):
+    city = serializers.CharField(max_length=50)
+    registration_count = serializers.IntegerField(min_value=0)
+

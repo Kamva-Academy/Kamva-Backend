@@ -1,3 +1,4 @@
+from django.db.models import Count, F
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -8,7 +9,8 @@ from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import User
 from errors.error_codes import serialize_error
-from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer
+from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
+    RegistrationPerCitySerializer
 from fsm.serializers.paper_serializers import RegistrationFormSerializer, \
     ChangeWidgetOrderSerializer
 from fsm.models import RegistrationForm, transaction, RegistrationReceipt
@@ -41,14 +43,18 @@ class RegistrationViewSet(ModelViewSet):
         return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(responses={200: RegistrationReceiptSerializer})
-    @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_receipts(self, request, pk=None):
         return Response(data=RegistrationReceiptSerializer(self.get_object().registration_receipts, many=True).data,
                         status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['get'])
+    def get_registration_count_by_city(self, request, pk=None):
+        results = RegistrationReceipt.objects.filter(answer_sheet_of=self.get_object()).annotate(
+            city=F('user__city')).values('city').annotate(registration_count=Count('id'))
+        return Response(RegistrationPerCitySerializer(results, many=True).data, status=status.HTTP_200_OK)
+
     @swagger_auto_schema(responses={200: RegistrationInfoSerializer})
-    @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_possible_teammates(self, request, pk=None):
         user = self.request.user

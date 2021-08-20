@@ -50,10 +50,10 @@ class User(AbstractUser):
     national_code = models.CharField(max_length=10, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
-    country = models.CharField(max_length=30, null=True, blank=True)
+    country = models.CharField(max_length=50, null=True, blank=True)
     address = models.CharField(max_length=100, null=True, blank=True)
-    province = models.CharField(max_length=30, null=True, blank=True)
-    city = models.CharField(max_length=30, null=True, blank=True)
+    province = models.CharField(max_length=50, null=True, blank=True)
+    city = models.CharField(max_length=50, null=True, blank=True)
     postal_code = models.CharField(max_length=10, null=True, blank=True)
 
 
