@@ -39,7 +39,7 @@ class IsReceiptsFormModifier(permissions.BasePermission):
     message = 'You are not this registration receipt\'s registration form modifier'
 
     def has_object_permission(self, request, view, obj):
-        return request.user in obj.answer_sheet_of.modifiers
+        return request.user in obj.answer_sheet_of.event_or_fsm.modifiers
 
 
 class IsTeamHead(permissions.BasePermission):
