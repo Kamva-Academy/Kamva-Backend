@@ -17,18 +17,19 @@ from import_export.admin import ExportActionMixin
 from import_export.fields import Field
 from import_export import resources
 from django.urls import path, reverse
-from fsm.views.functions import team_change_current_state
+from fsm.views.functions import team_change_current_state, ContentType
 
 from datetime import datetime
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 import csv
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 
+zero_media_root = 'backend.rastaiha.ir/api/media/'
 
-zero_media_root = "zero.rastaiha.ir/api/media/"
 
 class ParticipantResource(resources.ModelResource):
     name = Field()
@@ -42,7 +43,6 @@ class ParticipantResource(resources.ModelResource):
     city = Field()
     team_count = Field()
     team = Field()
-
 
     class Meta:
         model = Participant
@@ -195,7 +195,7 @@ class IsAcceptedFilter(admin.SimpleListFilter):
         return queryset
 
 
-class CustomUserAdmin(admin.ModelAdmin,):
+class CustomUserAdmin(admin.ModelAdmin, ):
     model = Member
     # readonly_fields = [ 'first_name']
     list_display = ['username', 'email', 'first_name', 'is_active']
@@ -205,9 +205,10 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     resource_class = ParticipantResource
     # readonly_fields = ['document', 'gender', 'grade']
     # ,'document','member__gender', 'member__grade', 'member__school', 'member__city', 'get_name','get_team',
-    list_display = ['member', 'get_name', 'get_team','get_grade',
-                    'get_gender','get_doc','get_school', 'get_city','selection_doc', 'get_phone',
-                    'par_is_paid', 'par_is_accepted','par_is_participated', 'par_accepting','par_finalize',]
+    list_display = ['member', 'get_name', 'get_team', 'get_grade',
+                    'get_gender', 'get_doc', 'get_school', 'get_city', 'selection_doc', 'get_phone',
+                    'par_is_paid', 'par_is_accepted', 'par_is_participated', 'par_accepting', 'par_finalize', ]
+
     # fields = ['member','document','gender', 'grade', 'ent_answer', 'school', 'city', 'get_name','get_team', 'is_accepted', 'is_paid', 'is_email_verified']
     # list_filter = ('IsPaidFilter')
 
@@ -240,8 +241,8 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     def get_doc(self, obj):
         # try:
         link = "<a href={}>{}</a>".format(
-                    zero_media_root + str(obj.member.document),
-        obj.member.first_name)
+            zero_media_root + str(obj.member.document),
+            obj.member.first_name)
         return mark_safe(link)
         # except:
         #     return False
@@ -284,7 +285,7 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
 
     def get_team(self, obj):
         try:
-            if(obj.event_team):
+            if (obj.event_team):
                 display_text = str(obj.event_team.id) + '_' + obj.event_team.group_name + " (" + ", ".join([
                     "<a href={}>{}</a>".format(
                         reverse('admin:{}_{}_change'.format(Participant._meta.app_label, Participant._meta.model_name),
@@ -388,7 +389,6 @@ class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
     get_phone.short_description = 'شماره تماس'
     get_grade.short_description = 'پایه'
 
-
     list_per_page = sys.maxsize
 
 
@@ -418,7 +418,7 @@ class TeamAdmin(admin.ModelAdmin):
         qs = Teamm.objects.all()
         ll = list(qs.values_list('id', 'current_state'))
         json.dump(ll, open(os.path.join(settings.MEDIA_ROOT,
-                           'current_states_before_clear_%s.json' % datetime.now().isoformat()), 'w'))
+                                        'current_states_before_clear_%s.json' % datetime.now().isoformat()), 'w'))
         qs.update(current_state=None)
         return HttpResponse('Unseting current_states for %s teams was successfull!' % qs.count())
 
@@ -446,14 +446,17 @@ class TeamAdmin(admin.ModelAdmin):
 
     def team_members_count(self, obj):
         return obj.team_participants.all().count()
-    
+
     def team_status(self, obj):
         accept_count = 0
         for p in obj.team_participants.all():
             accept_count += 1
-        if accept_count == 0: return False
-        elif accept_count == obj.team_participants.all().count(): return True
-        else: return None
+        if accept_count == 0:
+            return False
+        elif accept_count == obj.team_participants.all().count():
+            return True
+        else:
+            return None
 
     group_members_display.short_description = "اعضای تیم"
     get_group_name.short_description = "تیم "
@@ -478,9 +481,15 @@ class TeamAdmin(admin.ModelAdmin):
 #     get_user_name.short_description = "نام"
 #     get_team.short_description = "تیم"
 
+def export_selected_objects(model_admin, request, queryset):
+    selected = queryset.values_list('pk', flat=True)
+    ct = ContentType.objects.get_for_model(queryset.model)
+    return HttpResponseRedirect(f'/api/admin/export/?ct={ct.pk}&ids={",".join(str(pk) for pk in selected)}&name={ct.model}')
 
-# Register your models here.
-# admin.site.register(Member, CustomUserAdmin)
+
+admin.site.add_action(export_selected_objects, 'export_selected')
+
+
 admin.site.register(User)
 admin.site.register(School)
 admin.site.register(EducationalInstitute)

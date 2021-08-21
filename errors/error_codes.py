@@ -71,6 +71,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4065': 'no receipt found for given username',
                '4066': 'you can\'t create discount code for a merchandise you don\'t own',
                '4067': 'neither username nor user_id is given',
+               '4068': 'only admin can export data',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',
