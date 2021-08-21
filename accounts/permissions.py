@@ -32,12 +32,28 @@ class IsInstituteAdmin(permissions.BasePermission):
 
 class IsPurchaseOwner(permissions.BasePermission):
     """
-    Permission for institute's admin to update institute
+    Permission for purchase's user to access it
     """
-    message = 'You are not this institute\'s admin'
+    message = 'You are not this purchase\'s user'
 
     def has_object_permission(self, request, view, obj):
         return request.user == obj.user
+
+
+class IsMerchandiseOwner(permissions.BasePermission):
+    """
+    Permission for merchandise owner to create
+    """
+    message = 'you are not this merchandise owner'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.event_or_fsm.modifiers
+
+
+class IsDiscountCodeModifier(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.merchandise.event_or_fsm.modifiers
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):

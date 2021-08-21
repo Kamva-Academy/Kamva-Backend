@@ -1,4 +1,4 @@
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -13,8 +13,9 @@ from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializ
     RegistrationPerCitySerializer
 from fsm.serializers.paper_serializers import RegistrationFormSerializer, \
     ChangeWidgetOrderSerializer
-from fsm.models import RegistrationForm, transaction, RegistrationReceipt
+from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation
 from fsm.permissions import IsRegistrationFormModifier
+from fsm.serializers.team_serializer import InvitationSerializer
 
 
 class RegistrationViewSet(ModelViewSet):
@@ -42,21 +43,22 @@ class RegistrationViewSet(ModelViewSet):
             permission_classes = [IsRegistrationFormModifier]
         return [permission() for permission in permission_classes]
 
-    @swagger_auto_schema(responses={200: RegistrationReceiptSerializer})
+    @swagger_auto_schema(responses={200: RegistrationInfoSerializer})
     @action(detail=True, methods=['get'])
-    def get_receipts(self, request, pk=None):
-        return Response(data=RegistrationReceiptSerializer(self.get_object().registration_receipts, many=True).data,
+    def receipts(self, request, pk=None):
+        return Response(data=RegistrationInfoSerializer(self.get_object().registration_receipts, many=True).data,
                         status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(responses={200: RegistrationPerCitySerializer})
     @action(detail=True, methods=['get'])
-    def get_registration_count_per_city(self, request, pk=None):
+    def registration_count_per_city(self, request, pk=None):
         results = RegistrationReceipt.objects.filter(answer_sheet_of=self.get_object()).annotate(
             city=F('user__city')).values('city').annotate(registration_count=Count('id'))
         return Response(RegistrationPerCitySerializer(results, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: RegistrationInfoSerializer})
     @action(detail=True, methods=['get'])
-    def get_possible_teammates(self, request, pk=None):
+    def possible_teammates(self, request, pk=None):
         user = self.request.user
         registration_form = self.get_object()
 
@@ -69,12 +71,20 @@ class RegistrationViewSet(ModelViewSet):
             raise ParseError(serialize_error('4058'))
         if registration_form.gender_partition_status == RegistrationForm.GenderPartitionStatus.BothNonPartitioned:
             receipts = registration_form.registration_receipts.exclude(pk__in=self_receipts).filter(
-                is_participating=True)
+                Q(team__isnull=True) | Q(team__exact=''), is_participating=True)
         else:
             receipts = registration_form.registration_receipts.exclude(pk__in=self_receipts).filter(
-                is_participating=True,
-                user__gender=user.gender)
+                Q(team__isnull=True) | Q(team__exact=''), is_participating=True, user__gender=user.gender)
         return Response(RegistrationInfoSerializer(receipts, many=True).data, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    @swagger_auto_schema(responses={200: InvitationSerializer}, tags=['teams'])
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_invitations(self, request, pk=None):
+        receipt = RegistrationReceipt.objects.filter(user=request.user, is_participating=True,
+                                                     answer_sheet_of=self.get_object()).first()
+        invitations = Invitation.objects.filter(invitee=receipt, team__registration_form=self.get_object())
+        return Response(data=InvitationSerializer(invitations, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: RegistrationFormSerializer})
     @transaction.atomic

@@ -26,10 +26,20 @@ class IsRegistrationReceiptOwner(permissions.BasePermission):
     """
     Permission for registration receipt owner to get
     """
-    message = 'You are not this registration receipt\' owner'
+    message = 'You are not this registration receipt\'s owner'
 
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user
+
+
+class IsReceiptsFormModifier(permissions.BasePermission):
+    """
+    Permission for receipt's registration form modifiers
+    """
+    message = 'You are not this registration receipt\'s registration form modifier'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.answer_sheet_of.modifiers
 
 
 class IsTeamHead(permissions.BasePermission):
@@ -42,11 +52,26 @@ class IsTeamHead(permissions.BasePermission):
         return obj.team_head.user == request.user
 
 
+class IsInvitationInvitee(permissions.BasePermission):
+    """
+    Permission for invitation's invitee
+    """
+    message = 'you are not this invitation\'s invitee'
+
+    def has_object_permission(self, request, view, obj):
+        return obj.invitee.user == request.user
+
+
 class IsTeamMember(permissions.BasePermission):
     """
     Permission for team's members
     """
-    pass
+    message = 'you are not a member of this team'
+
+    def has_object_permission(self, request, view, obj):
+        print(obj.members)
+        return len(obj.members.filter(user=request.user)) == 1
+
 # -------------
 
 

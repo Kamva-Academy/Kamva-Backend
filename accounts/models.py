@@ -22,10 +22,7 @@ from polymorphic.models import PolymorphicModel
 from accounts.tokens import account_activation_token
 import uuid
 
-from collections import defaultdict
-
 import logging
-import random
 import re
 
 from accounts.validators import percentage_validator
@@ -210,6 +207,7 @@ class Merchandise(models.Model):
 class DiscountCodeManager(models.Manager):
     @transaction.atomic
     def create_discount_code(self, **args):
+
         code = User.objects.make_random_password(length=DISCOUNT_CODE_LENGTH)
         return super().create(**{'code': code, **args})
 
@@ -219,10 +217,12 @@ class DiscountCode(models.Model):
     code = models.CharField(max_length=10, unique=True, null=False, blank=False)
     value = models.FloatField(null=False, blank=False, validators=[percentage_validator])
     expiration_date = models.DateTimeField(blank=True, null=True)
-    is_valid = models.BooleanField(default=True)
+    remaining = models.IntegerField(default=1)
     user = models.ForeignKey(User, related_name='discount_codes', on_delete=models.CASCADE, null=True, default=None)
-    merchandise = models.ForeignKey(Merchandise, related_name='discount_codes', on_delete=models.CASCADE, null=True,
-                                    default=None)
+    merchandise = models.ForeignKey(Merchandise, related_name='discount_codes', on_delete=models.CASCADE, null=False,
+                                    blank=False)
+
+    objects = DiscountCodeManager()
 
     def __str__(self):
         return self.code + " " + str(self.value)

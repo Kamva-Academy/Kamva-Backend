@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.views.accounting_view import SendVerificationCode, UserViewSet, Login, ChangePassword
 from accounts.views.studentship_view import StudentshipViewSet
 from accounts.views.institute_view import InstituteViewSet
-from accounts.views.payment_view import PaymentViewSet
+from accounts.views.payment_view import PaymentViewSet, DiscountCodeViewSet, MerchandiseViewSet
 from accounts.views.profile_view import ProfileViewSet
 from fsm.views.team_view import TeamViewSet, InvitationViewSet
 
@@ -38,4 +38,6 @@ router.register(r'institutes', InstituteViewSet, basename='institutes')
 router.register(r'profile', ProfileViewSet, basename='profiles')
 router.register(r'studentship', StudentshipViewSet, basename='studentships')
 router.register(r'payment', PaymentViewSet, basename='merchandises')
+router.register(r'discount_code', DiscountCodeViewSet, basename='discount_codes')
+router.register(r'merchandise', MerchandiseViewSet, basename='merchandises')
 urlpatterns += router.urls

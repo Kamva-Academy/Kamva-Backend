@@ -152,9 +152,9 @@ class InstituteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EducationalInstitute
-        fields = ['id', 'name', 'institute_type', 'school_type', 'address', 'province', 'city', 'postal_code', 'phone_number',
-                  'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved', 'created_at',
-                  'owner', 'admins', 'date_added', 'creator']
+        fields = ['id', 'name', 'institute_type', 'school_type', 'address', 'province', 'city', 'postal_code',
+                  'phone_number', 'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved',
+                  'created_at', 'owner', 'admins', 'date_added', 'creator']
         read_only_fields = ['id', 'date_added']
 
 
@@ -229,6 +229,32 @@ class MerchandiseSerializer(serializers.ModelSerializer):
 
 
 class DiscountCodeSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(max_length=150, required=False, write_only=True)
+
+    def validate(self, attrs):
+        merchandise = attrs.get('merchandise', None)
+        creator = self.context.get('user', None)
+        username = attrs.get('username', None)
+        user = attrs.get('user', None)
+        if creator not in merchandise.event_or_fsm.modifiers:
+            raise PermissionDenied(serialize_error('4066'))
+        if user is None:
+            if username is None:
+                raise ParseError(serialize_error('4067'))
+            attrs['user']= get_object_or_404(User, username=username)
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('username') if 'username' in validated_data.keys() else None
+        return DiscountCode.objects.create_discount_code(**validated_data)
+
+    class Meta:
+        model = DiscountCode
+        fields = ['id', 'code', 'value', 'expiration_date', 'remaining', 'user', 'merchandise', 'username']
+        read_only_fields = ['id', 'code']
+
+
+class DiscountCodeValidationSerializer(serializers.ModelSerializer):
     merchandise = serializers.PrimaryKeyRelatedField(required=True, queryset=Merchandise.objects.all())
     code = serializers.CharField(max_length=DISCOUNT_CODE_LENGTH, required=False)
 
@@ -256,7 +282,7 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
             if discount_code.expiration_date and discount_code.expiration_date < datetime.now(discount_code.expiration_date.tzinfo):
                 raise ParseError(serialize_error('4041'))
 
-            if not discount_code.is_valid:
+            if not discount_code.remaining > 1:
                 raise ParseError(serialize_error('4042'))
 
         return attrs
@@ -264,7 +290,7 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountCode
         fields = '__all__'
-        read_only_fields = ['id', 'value', 'expiration_date', 'is_valid', 'user']
+        read_only_fields = ['id', 'value', 'expiration_date', 'remaining', 'user']
         extra_kwargs = {
             'code': {'validators': []}
         }
@@ -276,7 +302,6 @@ class PurchaseSerializer(serializers.ModelSerializer):
         model = Purchase
         fields = '__all__'
         read_only_fields = ['id']
-
 
 
 #

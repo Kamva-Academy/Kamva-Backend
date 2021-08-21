@@ -119,6 +119,8 @@ class RegistrationReceipt(AnswerSheet):
         if studentship:
             if studentship.grade:
                 if form.min_grade <= studentship.grade <= form.max_grade:
+                    if studentship.school is None or studentship.document is None:
+                        raise PermissionDenied(serialize_error('4057'))
                     return True
                 else:
                     raise PermissionDenied(serialize_error('4032'))

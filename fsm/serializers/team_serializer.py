@@ -1,19 +1,36 @@
 from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError, PermissionDenied
 
+from accounts.models import User
 from errors.error_codes import serialize_error
 from fsm.models import Team, Invitation, RegistrationReceipt
 from fsm.serializers.answer_sheet_serializers import RegistrationInfoSerializer
 
 
 class InvitationSerializer(serializers.ModelSerializer):
-    team = serializers.PrimaryKeyRelatedField(queryset=Team.objects.all(), required=False)
+    invitee = serializers.PrimaryKeyRelatedField(queryset=RegistrationReceipt.objects.all(), required=False)
+    username = serializers.CharField(max_length=150, required=False, write_only=True)
 
     def validate(self, attrs):
+        username = attrs.get('username', None)
         invitee = attrs.get('invitee', None)
-        team = attrs.get('team', None)
+        team = self.context.get('team', None)
+        if team is None:
+            raise ParseError(serialize_error('4064'))
+
+        if invitee is None:
+            if username is None:
+                raise ParseError(serialize_error('4063'))
+            else:
+                invitee = RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form,
+                                                             user__username__exact=username).first()
+                if invitee is None:
+                    raise ParseError(serialize_error('4065'))
+                self.context['invitee'] = invitee
+
         if len(team.members.all()) >= team.registration_form.event_or_fsm.team_size:
             raise PermissionDenied(serialize_error('4059'))
         if invitee.answer_sheet_of != team.registration_form:
@@ -27,10 +44,16 @@ class InvitationSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def create(self, validated_data):
+        if 'username' in validated_data.keys():
+            validated_data.pop('username')
+            validated_data['invitee'] = self.context.get('invitee', None)
+        return super(InvitationSerializer, self).create({'team': self.context.get('team', None), **validated_data})
+
     class Meta:
         model = Invitation
-        fields = '__all__'
-        read_only_fields = ['id', 'has_accepted']
+        fields = ['id', 'invitee', 'team', 'username', 'has_accepted']
+        read_only_fields = ['id', 'team', 'has_accepted']
 
 
 class TeamSerializer(serializers.ModelSerializer):

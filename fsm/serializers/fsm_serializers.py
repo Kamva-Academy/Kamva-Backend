@@ -17,7 +17,7 @@ class EventSerializer(serializers.ModelSerializer):
         holder = validated_data.get('holder', None)
         if holder and creator not in holder.admins.all():
             raise ParseError(serialize_error('4031'))
-        instance = super(EventSerializer, self).create({'creator': self.context.get('user', None), **validated_data})
+        instance = super(EventSerializer, self).create({'creator': creator, **validated_data})
 
         if merchandise and merchandise.get('name', None) is None:
             merchandise['name'] = validated_data.get('name', 'unnamed_event')

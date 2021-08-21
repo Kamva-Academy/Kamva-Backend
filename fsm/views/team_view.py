@@ -14,6 +14,7 @@ from accounts.serializers import TeammSerializer
 from errors.error_codes import serialize_error
 from fsm import permissions as customPermissions
 from fsm.models import Team, Invitation, RegistrationReceipt, RegistrationForm
+from fsm.permissions import IsInvitationInvitee
 from fsm.serializers.team_serializer import TeamSerializer, InvitationSerializer, InvitationResponseSerializer
 
 logger = logging.getLogger(__name__)
@@ -44,16 +45,24 @@ class TeamViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [permissions.IsAuthenticated]
+        elif self.action == 'get_pending_invitations':
+            permission_classes = [customPermissions.IsTeamMember]
         else:
-            permission_classes = [customPermissions.IsTeamHead | permissions.IsAdminUser]
+            permission_classes = [customPermissions.IsTeamHead]
         return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(responses={200: InvitationSerializer})
+    @action(detail=True, methods=['get'], permission_classes=[customPermissions.IsTeamMember])
+    def get_invitations(self, request, pk=None):
+        return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object(), has_accepted=False),
+                                             many=True).data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(responses={200: InvitationSerializer})
     @transaction.atomic
-    @action(detail=True, methods=['post'], permission_classes=[customPermissions.IsTeamHead | permissions.IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[customPermissions.IsTeamHead])
     def invite_member(self, request, pk=None):
         team = self.get_object()
-        serializer = InvitationSerializer(data=request.data)
+        serializer = InvitationSerializer(data=self.request.data, context={'team': team})
         if serializer.is_valid(raise_exception=True):
             serializer.validated_data['team'] = team
             serializer.save()
@@ -69,11 +78,6 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
     serializer_action_classes = {
         'respond': InvitationResponseSerializer
     }
-
-    def get_queryset(self):
-        if self.action == 'my_invitations':
-            return RegistrationForm.objects.all()
-        return self.queryset
 
     def get_serializer_class(self):
         try:
@@ -92,14 +96,12 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
 
     @swagger_auto_schema(responses={200: InvitationSerializer})
     @transaction.atomic
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsInvitationInvitee])
     def respond(self, request, pk=None):
         invitation = self.get_object()
         serializer = InvitationResponseSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             invitee = invitation.invitee
-            if invitee.user != request.user:
-                raise PermissionDenied(serialize_error('4057'))
             receipt = RegistrationReceipt.objects.filter(user=request.user, is_participating=True,
                                                          answer_sheet_of=invitation.team.registration_form).first()
             if receipt.team:
@@ -114,11 +116,3 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
                 invitee.team = team
                 invitee.save()
             return Response(data=InvitationSerializer().to_representation(invitation), status=status.HTTP_200_OK)
-
-    @transaction.atomic
-    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def my_invitations(self, request, pk=None):
-        receipt = RegistrationReceipt.objects.filter(user=request.user, is_participating=True,
-                                                     answer_sheet_of=self.get_object()).first()
-        invitations = Invitation.objects.filter(invitee=receipt, team__registration_form=self.get_object())
-        return Response(data=InvitationSerializer(invitations, many=True).data, status=status.HTTP_200_OK)

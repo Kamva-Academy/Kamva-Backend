@@ -82,6 +82,7 @@ class RegistrationInfoSerializer(serializers.ModelSerializer):
         user = instance.user
         representation['first_name'] = user.first_name
         representation['last_name'] = user.last_name
+        representation['username'] = user.username
         representation['profile_picture'] = user.profile_picture.url if user.profile_picture else None
         representation['school_studentship'] = StudentshipSerializer().to_representation(user.school_studentship)
         representation['academic_studentship'] = StudentshipSerializer().to_representation(user.academic_studentship)
