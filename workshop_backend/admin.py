@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 def export(request):
     if request.user.is_staff or request.user.is_superuser:
-        logger.warning('salam')
         ct = request.GET.get('ct', None)
         ids = request.GET.get('ids', '').split(',')
         name = request.GET.get('name', 'untitled')
@@ -46,7 +45,6 @@ def export(request):
                 fields = validated_fields
             writer.writerow(fields)
         for obj in objects:
-            logger.warning(list(obj.__dict__[x] for x in fields))
             to_be_written = list(obj.__dict__[x] if x in obj.__dict__.keys() else '' for x in fields)
             writer.writerow(to_be_written)
 
