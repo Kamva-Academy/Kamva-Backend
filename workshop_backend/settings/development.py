@@ -98,5 +98,5 @@ ZARINPAL_CONFIG = {
 }
 PAYMENT = {
     'FRONT_HOST_SUCCESS': 'https://academy.rastaiha.ir/message/payment/success',
-    'FRONT_HOST_FAILURE': 'https://academy.rastaiha.ir/message/payment/success',
+    'FRONT_HOST_FAILURE': 'https://academy.rastaiha.ir/message/payment/failure',
 }
