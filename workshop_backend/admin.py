@@ -11,7 +11,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
+from accounts.models import User
 from errors.error_codes import serialize_error
+from fsm.models import RegistrationForm, RegistrationReceipt
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ def export(request):
         ct = request.GET.get('ct', None)
         ids = request.GET.get('ids', '').split(',')
         name = request.GET.get('name', 'untitled')
-        fields = request.GET.get('fields', None)\
+        fields = request.GET.get('fields', None)
 
         if not ct:
             return None
@@ -52,11 +54,36 @@ def export(request):
     raise PermissionDenied(serialize_error('4068'))
 
 
+def export_registration(request):
+    if request.user.is_staff or request.user.is_superuser:
+        q = request.GET.get('q', None)
+        if not q:
+            return None
+        form = RegistrationForm.objects.get(id=q)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{form.event_or_fsm.name}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['username', 'id', 'status', 'receipt_id', 'is_paid', 'is_participating'])
+        for user in User.objects.all():
+            receipt = RegistrationReceipt.objects.filter(answer_sheet_of=form, user=user).first()
+            if receipt:
+                writer.writerow([user.username, user.id, receipt.status, receipt.id, receipt.is_paid, receipt.is_participating])
+            else:
+                writer.writerow([user.username, user.id, 'NotRegistered', '', False, False])
+
+        return response
+    raise PermissionDenied(serialize_error('4068'))
+
+
+
 class MyAdminSite(admin.AdminSite):
     site_header = gettext_lazy('Rastaiha admin')
 
     def get_urls(self):
         urls = super(MyAdminSite, self).get_urls()
         urls += [path(r'export/', self.admin_view(export), name='export'), ]
+        urls += [path(r'export_registration_data/', self.admin_view(export_registration), name='export_registration')]
 
         return urls

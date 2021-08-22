@@ -135,7 +135,7 @@ class PaymentViewSet(GenericViewSet):
                     discount_code.save()
             purchase.save()
 
-            return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}{purchase.uniq_code}')
+            return redirect(f'{settings.PAYMENT["FRONT_HOST_SUCCESS"]}/{purchase.uniq_code}')
         else:
             purchase.authority = request.GET.get('Authority')
             purchase.status = Purchase.Status.Failed
@@ -143,7 +143,7 @@ class PaymentViewSet(GenericViewSet):
                 discount_code.remaining += 1
                 discount_code.save()
             purchase.save()
-            return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}{purchase.uniq_code}')
+            return redirect(f'{settings.PAYMENT["FRONT_HOST_FAILURE"]}/{purchase.uniq_code}')
 
 
 class MerchandiseViewSet(GenericViewSet, RetrieveModelMixin):

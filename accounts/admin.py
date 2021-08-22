@@ -488,7 +488,7 @@ class CustomUserAdmin(admin.ModelAdmin):
                           messages.SUCCESS)
 
     model = User
-    list_display = ['username', 'first_name', 'last_name', 'gender', 'province', 'city']
+    list_display = ['id', 'username', 'first_name', 'last_name', 'gender', 'province', 'city']
     actions = [verify_school_documents]
 
 

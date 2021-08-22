@@ -1,6 +1,9 @@
 import os
+from gettext import ngettext
 
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.db.models import Q
+from django.http import HttpResponseRedirect
 from import_export.admin import ExportActionMixin
 
 from .models import *
@@ -87,6 +90,18 @@ class DescriptionAdmin(admin.ModelAdmin):
         return name
 
 
+class RegistrationFormAdmin(admin.ModelAdmin):
+
+    def get_registration_status_for_users(self, request, queryset):
+        if len(queryset) > 0:
+            selected = queryset.values_list('pk', flat=True)[0]
+            return HttpResponseRedirect(f'/api/admin/export_registration_data/?q={selected}')
+
+    model = RegistrationForm
+    list_display = ['id', 'accepting_status', 'min_grade', 'max_grade', 'deadline']
+    actions = [get_registration_status_for_users]
+
+
 def delete_registration_receipts(modeladmin, request, queryset):
     for obj in queryset:
         obj.delete()
@@ -98,7 +113,7 @@ class RegistrationReceiptsAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Paper)
-admin.site.register(RegistrationForm)
+admin.site.register(RegistrationForm, RegistrationFormAdmin)
 admin.site.register(Problem)
 admin.site.register(AnswerSheet)
 admin.site.register(RegistrationReceipt, RegistrationReceiptsAdmin)
