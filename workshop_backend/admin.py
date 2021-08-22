@@ -1,4 +1,5 @@
 import csv
+import logging
 
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
@@ -11,6 +12,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from errors.error_codes import serialize_error
+
+logger = logging.getLogger(__name__)
 
 
 def export(request):
@@ -42,7 +45,7 @@ def export(request):
                 fields = validated_fields
             writer.writerow(fields)
         for obj in objects:
-            print(list(obj.__dict__[x] for x in fields))
+            logger.info(list(obj.__dict__[x] for x in fields))
             to_be_written = list(obj.__dict__[x] if x in obj.__dict__.keys() else '' for x in fields)
             writer.writerow(to_be_written)
 
