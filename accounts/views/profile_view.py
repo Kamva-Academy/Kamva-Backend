@@ -19,7 +19,7 @@ class ProfileViewSet(ModelViewSet):
         user = self.request.user
         if isinstance(user, AnonymousUser):
             return User.objects.none()
-        elif user.is_staff or user.is_superuser:
+        elif user.is_staff or user.is_superuser or len(user.institutes) > 0 or len(user.events) > 0 or len(user.fsms) > 0:
             return User.objects.all()
         else:
             return User.objects.filter(id=user.id)
