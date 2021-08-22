@@ -282,7 +282,7 @@ class DiscountCodeValidationSerializer(serializers.ModelSerializer):
             if discount_code.expiration_date and discount_code.expiration_date < datetime.now(discount_code.expiration_date.tzinfo):
                 raise ParseError(serialize_error('4041'))
 
-            if not discount_code.remaining > 1:
+            if not discount_code.remaining > 0:
                 raise ParseError(serialize_error('4042'))
 
         return attrs
