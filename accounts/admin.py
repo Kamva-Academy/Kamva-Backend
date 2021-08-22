@@ -1,10 +1,12 @@
-from django.contrib import admin
-from django.contrib import admin
+from gettext import ngettext
+
+from django.contrib import admin, messages
 from django.contrib.admin.options import InlineModelAdmin
 import sys
 import json
 import os
 
+from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -193,12 +195,6 @@ class IsAcceptedFilter(admin.SimpleListFilter):
         elif value == 'No':
             return queryset.exclude(accepted=True)
         return queryset
-
-
-class CustomUserAdmin(admin.ModelAdmin, ):
-    model = Member
-    # readonly_fields = [ 'first_name']
-    list_display = ['username', 'email', 'first_name', 'is_active']
 
 
 class ParticipantInline(ExportActionMixin, admin.ModelAdmin, ):
@@ -481,16 +477,30 @@ class TeamAdmin(admin.ModelAdmin):
 #     get_user_name.short_description = "نام"
 #     get_team.short_description = "تیم"
 
+class CustomUserAdmin(admin.ModelAdmin):
+    def verify_school_documents(self, request, queryset):
+        documents = queryset.exclude(
+            Q(school_studentship__document__isnull=True) | Q(school_studentship__document__exact='')
+        ).values_list('school_studentship', flat=True)
+
+        updated = SchoolStudentship.objects.filter(pk__in=documents).update(is_document_verified=True)
+        self.message_user(request, ngettext('%d document verified.', '%d documents verified.', updated, ) % updated,
+                          messages.SUCCESS)
+
+    model = User
+    list_display = ['username', 'first_name', 'last_name', 'gender', 'province', 'city']
+    actions = [verify_school_documents]
+
+
 def export_selected_objects(model_admin, request, queryset):
     selected = queryset.values_list('pk', flat=True)
     ct = ContentType.objects.get_for_model(queryset.model)
-    return HttpResponseRedirect(f'/api/admin/export/?ct={ct.pk}&ids={",".join(str(pk) for pk in selected)}&name={ct.model}')
+    return HttpResponseRedirect(
+        f'/api/admin/export/?ct={ct.pk}&ids={",".join(str(pk) for pk in selected)}&name={ct.model}')
 
 
 admin.site.add_action(export_selected_objects, 'export_selected')
-
-
-admin.site.register(User)
+admin.site.register(User, CustomUserAdmin)
 admin.site.register(School)
 admin.site.register(EducationalInstitute)
 admin.site.register(University)

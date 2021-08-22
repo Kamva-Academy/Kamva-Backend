@@ -42,7 +42,8 @@ def export(request):
                 fields = validated_fields
             writer.writerow(fields)
         for obj in objects:
-            to_be_written = list(obj.__dict__[x] for x in fields)
+            print(list(obj.__dict__[x] for x in fields))
+            to_be_written = list(obj.__dict__[x] if x in obj.__dict__.keys() else '' for x in fields)
             writer.writerow(to_be_written)
 
         return response
