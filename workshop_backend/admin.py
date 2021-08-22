@@ -32,7 +32,7 @@ def export(request):
         response['Content-Disposition'] = f'attachment; filename="{name}.csv"'
 
         writer = csv.writer(response)
-        if len(objects) > 1:
+        if len(objects) > 0:
             if fields is None:
                 fields = list(objects[0].__dict__.keys())[1:-1]
             else:
