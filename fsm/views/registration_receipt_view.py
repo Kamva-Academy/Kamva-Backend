@@ -47,6 +47,11 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
             return RegistrationReceipt.objects.none()
         return self.queryset
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'domain': self.request.build_absolute_uri('/api/'[:-5])})
+        return context
+
     @swagger_auto_schema(responses={200: RegistrationReceiptSerializer})
     @action(detail=True, methods=['post'], serializer_class=RegistrationStatusSerializer)
     @transaction.atomic

@@ -28,7 +28,6 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
             if serializer.is_valid(raise_exception=True):
                 serializer.validated_data['answer_sheet'] = instance
                 serializer.save()
-                print(serializer.data)
 
         return instance
 
@@ -71,7 +70,6 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
 
 
 class RegistrationInfoSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = RegistrationReceipt
         fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team']
@@ -104,4 +102,3 @@ class RegistrationPerCitySerializer(serializers.Serializer):
 
 class RegistrationStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=RegistrationReceipt.RegistrationStatus.choices)
-

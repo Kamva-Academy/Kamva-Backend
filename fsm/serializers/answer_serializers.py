@@ -2,7 +2,6 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 from rest_polymorphic.serializers import PolymorphicSerializer
-from datetime import datetime
 from errors.error_codes import serialize_error
 from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
 from fsm.serializers.validators import multi_choice_answer_validator
@@ -31,10 +30,6 @@ class AnswerSerializer(serializers.ModelSerializer):
                                                           'original paper': answer_sheet.answer_sheet_of},
                                                  is_field_error=False))
         return attrs
-
-    # class Meta:
-    #     model = Answer
-    #     fields = '__all__'
 
 
 class SmallAnswerSerializer(AnswerSerializer):
@@ -143,11 +138,18 @@ class FileAnswerSerializer(AnswerSerializer):
         return upload_file_answer
 
     def to_representation(self, instance):
-        return UploadFileAnswerSerializer().to_representation(instance)
+        return UploadFileAnswerSerializer(context=self.context).to_representation(instance)
 
 
 class UploadFileAnswerSerializer(AnswerSerializer):
     file_name = serializers.CharField(max_length=50, required=False, write_only=True)
+
+    class Meta:
+        model = UploadFileAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+                  'problem', 'answer_file', 'file_name']
+        read_only_fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_solution']
+        write_only_fields = ['file_name']
 
     def create(self, validated_data):
         answer_file = validated_data.get('answer_file', None)
@@ -161,12 +163,14 @@ class UploadFileAnswerSerializer(AnswerSerializer):
             answer_file.name = f'Q{problem.id}-{user.username}{suffix}' if problem else f'{answer_file.name}-{user.username}{suffix}'
         return super(UploadFileAnswerSerializer, self).create({'answer_type': 'UploadFileAnswer', **validated_data})
 
-    class Meta:
-        model = UploadFileAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
-                  'problem', 'answer_file', 'file_name']
-        read_only_fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_solution']
-        write_only_fields = ['file_name']
+    def to_representation(self, instance):
+        representation = super(UploadFileAnswerSerializer, self).to_representation(instance)
+        answer_file = representation['answer_file']
+        if answer_file.startswith('/api/'):
+            domain = self.context.get('domain', None)
+            if domain:
+                representation['answer_file'] = domain + answer_file
+        return representation
 
 
 class AnswerPolymorphicSerializer(PolymorphicSerializer):
