@@ -65,17 +65,23 @@ def export_registration(request):
         response['Content-Disposition'] = f'attachment; filename="{form.event_or_fsm.name}.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['username', 'id', 'status', 'receipt_id', 'is_paid', 'is_participating'])
+        writer.writerow(
+            ['username', 'id', 'first_name', 'last_name', 'phone_number', 'gender', 'national_code', 'province', 'city',
+             'status', 'receipt_id', 'is_paid', 'is_participating'])
         for user in User.objects.all():
             receipt = RegistrationReceipt.objects.filter(answer_sheet_of=form, user=user).first()
             if receipt:
-                writer.writerow([user.username, user.id, receipt.status, receipt.id, receipt.is_paid, receipt.is_participating])
+                writer.writerow(
+                    [user.username, user.id, user.first_name, user.last_name, user.phone_number, user.gender,
+                     user.national_code, user.province, user.city, receipt.status, receipt.id, receipt.is_paid,
+                     receipt.is_participating])
             else:
-                writer.writerow([user.username, user.id, 'NotRegistered', '', False, False])
+                writer.writerow(
+                    [user.username, user.id, user.first_name, user.last_name, user.phone_number, user.gender,
+                     user.national_code, user.province, user.city, 'NotRegistered', '', False, False])
 
         return response
     raise PermissionDenied(serialize_error('4068'))
-
 
 
 class MyAdminSite(admin.AdminSite):
