@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def export(request):
     if request.user.is_staff or request.user.is_superuser:
-        logger.log('salam')
+        logger.warning('salam')
         ct = request.GET.get('ct', None)
         ids = request.GET.get('ids', '').split(',')
         name = request.GET.get('name', 'untitled')
