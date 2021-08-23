@@ -488,8 +488,9 @@ class CustomUserAdmin(admin.ModelAdmin):
                           messages.SUCCESS)
 
     model = User
-    list_display = ['id', 'username', 'first_name', 'last_name', 'gender', 'province', 'city']
+    list_display = ['id', 'username', 'first_name', 'last_name', 'gender', 'province', 'city', 'date_joined']
     actions = [verify_school_documents]
+    ordering = ['-date_joined']
 
 
 def export_selected_objects(model_admin, request, queryset):
