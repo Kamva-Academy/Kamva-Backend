@@ -50,6 +50,13 @@ class InvitationSerializer(serializers.ModelSerializer):
             validated_data['invitee'] = self.context.get('invitee', None)
         return super(InvitationSerializer, self).create({'team': self.context.get('team', None), **validated_data})
 
+    def to_representation(self, instance):
+        representation = super(InvitationSerializer, self).to_representation(instance)
+        representation['first_name'] = instance.invitee.user.first_name
+        representation['last_name'] = instance.invitee.user.last_name
+        representation['phone_number'] = instance.invitee.user.phone_number
+        return representation
+
     class Meta:
         model = Invitation
         fields = ['id', 'invitee', 'team', 'username', 'has_accepted']
