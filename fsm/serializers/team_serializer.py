@@ -64,7 +64,8 @@ class TeamSerializer(serializers.ModelSerializer):
         team = super(TeamSerializer, self).create(validated_data)
         user = self.context.get('user', None)
         user_registration = team.registration_form.registration_receipts.filter(user=user).first()
-        invitation_serializer = InvitationSerializer(data={'team': team.id, 'invitee': user_registration.id})
+        context = {'team': team, **self.context}
+        invitation_serializer = InvitationSerializer(data={'invitee': user_registration.id}, context=context)
 
         if invitation_serializer.is_valid(raise_exception=True):
             invitation_serializer.validated_data['has_accepted'] = True
