@@ -241,7 +241,7 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         if user is None:
             if username is None:
                 raise ParseError(serialize_error('4067'))
-            attrs['user']= get_object_or_404(User, username=username)
+            attrs['user'] = get_object_or_404(User, username=username)
         return attrs
 
     def create(self, validated_data):
@@ -279,7 +279,8 @@ class DiscountCodeValidationSerializer(serializers.ModelSerializer):
                 if merchandise != discount_code.merchandise:
                     raise ParseError(serialize_error('4040'))
 
-            if discount_code.expiration_date and discount_code.expiration_date < datetime.now(discount_code.expiration_date.tzinfo):
+            if discount_code.expiration_date and discount_code.expiration_date < datetime.now(
+                    discount_code.expiration_date.tzinfo):
                 raise ParseError(serialize_error('4041'))
 
             if not discount_code.remaining > 0:
@@ -297,7 +298,6 @@ class DiscountCodeValidationSerializer(serializers.ModelSerializer):
 
 
 class PurchaseSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Purchase
         fields = '__all__'
