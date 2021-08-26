@@ -38,7 +38,7 @@ class RegistrationViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'create' or self.action == 'register' or self.action == 'retrieve' or self.action == 'list' \
-                or self.action == 'get_possible_teammates':
+                or self.action == 'get_possible_teammates' or self.action == 'my_invitations':
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsRegistrationFormModifier]
