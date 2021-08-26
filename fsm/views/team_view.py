@@ -27,8 +27,7 @@ class TeamViewSet(viewsets.ModelViewSet):
     my_tags = ['teams']
 
     serializer_action_classes = {
-        'invite_member': InvitationSerializer,
-        'revoke_invitation': InvitationSerializer
+        'invite_member': InvitationSerializer
     }
 
     def get_serializer_class(self):
@@ -45,7 +44,7 @@ class TeamViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [permissions.IsAuthenticated]
-        elif self.action == 'get_pending_invitations':
+        elif self.action == 'get_invitations' or self.action == 'retrieve':
             permission_classes = [customPermissions.IsTeamMember]
         else:
             permission_classes = [customPermissions.IsTeamHead]
