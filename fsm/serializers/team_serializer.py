@@ -55,6 +55,12 @@ class InvitationSerializer(serializers.ModelSerializer):
         representation['first_name'] = instance.invitee.user.first_name
         representation['last_name'] = instance.invitee.user.last_name
         representation['phone_number'] = instance.invitee.user.phone_number
+
+        representation['head_first_name'] = instance.team.team_head.user.first_name
+        representation['head_last_name'] = instance.team.team_head.user.last_name
+        representation['head_phone_number'] = instance.team.team_head.user.phone_number
+
+        representation['team_name'] = instance.team.name
         return representation
 
     class Meta:
