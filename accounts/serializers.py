@@ -253,6 +253,7 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         representation['first_name'] = instance.user.first_name
         representation['last_name'] = instance.user.last_name
         representation['phone_number'] = instance.user.phone_number
+        return representation
 
     class Meta:
         model = DiscountCode
