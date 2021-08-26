@@ -248,6 +248,12 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         validated_data.pop('username') if 'username' in validated_data.keys() else None
         return DiscountCode.objects.create_discount_code(**validated_data)
 
+    def to_representation(self, instance):
+        representation = super(DiscountCodeSerializer, self).to_representation(instance)
+        representation['first_name'] = instance.user.first_name
+        representation['last_name'] = instance.user.last_name
+        representation['phone_number'] = instance.user.phone_number
+
     class Meta:
         model = DiscountCode
         fields = ['id', 'code', 'value', 'expiration_date', 'remaining', 'user', 'merchandise', 'username']
