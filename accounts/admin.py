@@ -479,9 +479,11 @@ class TeamAdmin(admin.ModelAdmin):
 
 class CustomUserAdmin(admin.ModelAdmin):
     def verify_school_documents(self, request, queryset):
-        documents = queryset.exclude(
-            Q(school_studentship__document__isnull=True) | Q(school_studentship__document__exact='')
-        ).values_list('school_studentship', flat=True)
+        # documents = queryset.exclude(
+        #     Q(school_studentship__document__isnull=True) | Q(school_studentship__document__exact='')
+        # ).values_list('school_studentship', flat=True)
+
+        documents = queryset.values_list('school_studentship', flat=True)
 
         updated = SchoolStudentship.objects.filter(pk__in=documents).update(is_document_verified=True)
         self.message_user(request, ngettext('%d document verified.', '%d documents verified.', updated, ) % updated,
