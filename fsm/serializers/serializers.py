@@ -274,29 +274,3 @@ class MentorPlayerWorkshopSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlayerWorkshop
         fields = ['id', 'player', 'current_state', 'last_visit']
-
-
-class FSMSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FSM
-        fields = '__all__'
-
-
-class FSMRawSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FSM
-        fields = '__all__'
-
-
-class CreateFSMSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FSM
-        fields = ['name', 'type', 'active', ]
-
-
-class FSMGetSerializer(serializers.ModelSerializer):
-    states = MainStateGetSerializer(many=True)
-
-    class Meta:
-        model = FSM
-        fields = '__all__'

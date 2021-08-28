@@ -22,7 +22,8 @@ from notifications.models import Notification
 import logging
 
 from ..serializers.answer_serializers import AnswerSerializer
-from ..serializers.serializers import FSMEdgeSerializer, FSMSerializer
+from ..serializers.serializers import FSMEdgeSerializer
+from ..serializers.fsm_serializers import FSMSerializer
 
 logger = logging.getLogger(__name__)
 

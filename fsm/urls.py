@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views.answer_view import UploadAnswerViewSet
 from .views.event_view import EventViewSet
-from .views.fsmview import *
+from .views.fsm_view import *
 from .views.fsmstateview import *
 from .views.fsmedgeview import *
 from .views.abilityview import *
@@ -79,6 +79,7 @@ router.register(r'registration', RegistrationViewSet, basename='registration')
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
 router.register(r'team', TeamViewSet, basename='teams')
-router.register(r'invitations', InvitationViewSet, basename='memberships')
+router.register(r'invitations', InvitationViewSet, basename='invitations')
 router.register(r'upload_answer', UploadAnswerViewSet, basename='upload_answer')
+router.register(r'fsm', FSMViewSet, basename='fsms')
 urlpatterns += router.urls

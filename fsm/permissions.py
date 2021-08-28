@@ -69,17 +69,19 @@ class IsTeamMember(permissions.BasePermission):
     message = 'you are not a member of this team'
 
     def has_object_permission(self, request, view, obj):
-        print(obj.members)
         return len(obj.members.filter(user=request.user)) == 1
-
-# -------------
 
 
 class MentorPermission(permissions.BasePermission):
+    """
+    Permission for mentor
+    """
+    message = 'you are not a mentor of this fsm'
 
-    def has_permission(self, request, view):
-        # print(request.user, request.user.is_authenticated, request.user.is_mentor)
-        return bool(request.user and request.user.is_authenticated and request.user.is_mentor)
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.mentors.all()
+
+# -------------
 
 
 class ParticipantPermission(permissions.BasePermission):

@@ -7,6 +7,7 @@ from errors.error_codes import serialize_error
 class Paper(PolymorphicModel):
     class PaperType(models.TextChoices):
         RegistrationForm = "RegistrationForm"
+        State = "State"
         Article = "Article"
 
     paper_type = models.CharField(max_length=25, blank=False, choices=PaperType.choices)
@@ -176,6 +177,18 @@ class Event(models.Model):
         return super(Event, self).delete(using, keep_parents)
 
 
+class FSMManager(models.Manager):
+    @transaction.atomic
+    def create(self, **args):
+        fsm = super().create(**args)
+        fsm.mentors.add(fsm.creator)
+        # ct = ContentType.objects.get_for_model(institute)
+        # assign_perm(Permission.objects.filter(codename='add_admin', content_type=ct).first(), institute.owner, institute)
+        # these permission settings worked correctly but were too messy
+        fsm.save()
+        return fsm
+
+
 class FSM(models.Model):
     class FSMLearningType(models.TextChoices):
         Supervised = 'Supervised'
@@ -191,11 +204,11 @@ class FSM(models.Model):
                                        blank=True)
     registration_form = models.OneToOneField(RegistrationForm, related_name='fsm', on_delete=models.SET_NULL, null=True,
                                              blank=True)
-    creator = models.ForeignKey('accounts.User', related_name='fsms', on_delete=models.SET_NULL, null=True, blank=True)
+    creator = models.ForeignKey('accounts.User', related_name='created_fsms', on_delete=models.SET_NULL, null=True,
+                                blank=True)
     holder = models.ForeignKey('accounts.EducationalInstitute', related_name='fsms', on_delete=models.SET_NULL,
                                null=True, blank=True)
-
-    scores = models.JSONField(null=True, blank=True)
+    mentors = models.ManyToManyField('accounts.User', related_name='fsms', blank=True)
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
@@ -208,6 +221,8 @@ class FSM(models.Model):
     lock = models.CharField(max_length=10, null=True, blank=True)
     team_size = models.IntegerField(default=3)
 
+    objects = FSMManager()
+
     # TODO - make locks as mixins
 
     def __str__(self):
@@ -217,6 +232,7 @@ class FSM(models.Model):
     def modifiers(self):
         modifiers = {self.creator} if self.creator is not None else set()
         modifiers |= set(self.holder.admins.all()) if self.holder is not None else set()
+        modifiers |= set(self.mentors.all())
         return modifiers
 
 
