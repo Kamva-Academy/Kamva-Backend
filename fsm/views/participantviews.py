@@ -164,7 +164,7 @@ def get_last_state_in_fsm(team, fsm):
         return hist.form
     except IndexError:
         try:
-            return MainState.objects.filter(fsm=fsm, name='start')[0]
+            return State.objects.filter(fsm=fsm, name='start')[0]
         except IndexError:
             logger.error(f'fsm {fsm.name} has no start state')
             return None
@@ -407,7 +407,7 @@ def player_go_backward_on_edge(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, ])
 def user_get_team_outward_edges(request):
-    state = MainState.objects.get(id=request.data['state'])
+    state = State.objects.get(id=request.data['state'])
     serializer = TeamUUIDSerializer(data=request.data)
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -622,7 +622,7 @@ def start_workshop(request):
 @permission_classes([permissions.IsAuthenticated, ParticipantPermission])
 def participant_get_player_state(request):
     participant = get_participant(request.user)
-    state = get_object_or_404(MainState, id=request.data['state'])
+    state = get_object_or_404(State, id=request.data['state'])
     if state.fsm.fsm_p_type == "TEAM":
         player = get_object_or_404(Teamm, uuid=request.data['player_uuid'])
     else:

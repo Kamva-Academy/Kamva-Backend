@@ -9,7 +9,8 @@ from .views.fsmedgeview import *
 from .views.abilityview import *
 from .views.registration_receipt_view import RegistrationReceiptViewSet
 from .views.registration_view import RegistrationViewSet
-from .views.widgetview import *
+from .views.state_view import StateViewSet
+from .views.widget_view import *
 from .views.teamhistoryview import *
 from .views.team_view import *
 from .views.participantviews import *
@@ -82,4 +83,6 @@ router.register(r'team', TeamViewSet, basename='teams')
 router.register(r'invitations', InvitationViewSet, basename='invitations')
 router.register(r'upload_answer', UploadAnswerViewSet, basename='upload_answer')
 router.register(r'fsm', FSMViewSet, basename='fsms')
+router.register(r'state', StateViewSet, basename='states')
+router.register(r'widget', WidgetViewSet, basename='widgets')
 urlpatterns += router.urls

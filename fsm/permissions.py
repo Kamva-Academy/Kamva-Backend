@@ -81,6 +81,16 @@ class MentorPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user in obj.mentors.all()
 
+
+class IsStateModifier(permissions.BasePermission):
+    """
+    Permission for mentors modifying states
+    """
+    message = 'you are not this state modifier'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.fsm.mentors.all()
+
 # -------------
 
 

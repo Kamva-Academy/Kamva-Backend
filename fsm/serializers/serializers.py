@@ -107,7 +107,7 @@ class HelpStateSerializer(serializers.ModelSerializer):
     widgets = WidgetSerializer(many=True, required=False)
 
     class Meta:
-        model = HelpState
+        model = Hint
         fields = '__all__'
 
 
@@ -117,7 +117,7 @@ class PlayerStateGetSerializer(serializers.ModelSerializer):
     help_states = HelpStateSerializer(many=True)
 
     class Meta:
-        model = MainState
+        model = State
         fields = '__all__'
         # queryset = FSM.objects.filter(active=True)
         # instance = FSM.objects.filter(active=True)
@@ -127,13 +127,13 @@ class MainStateSerializer(serializers.ModelSerializer):
     widgets = WidgetSerializer(many=True, required=False)
 
     class Meta:
-        model = MainState
+        model = State
         fields = '__all__'
 
     def create(self, validated_data):
         if 'widgets' in validated_data:
             validated_data.pop('widgets')
-        instance = MainState.objects.create(**validated_data)
+        instance = State.objects.create(**validated_data)
         return instance
 
     def update(self, instance, validated_data):
@@ -152,7 +152,7 @@ class MainStateGetSerializer(serializers.ModelSerializer):
     help_states = HelpStateSerializer(many=True)
 
     class Meta:
-        model = MainState
+        model = State
         fields = '__all__'
         # queryset = FSM.objects.filter(active=True)
         # instance = FSM.objects.filter(active=True)
@@ -160,7 +160,7 @@ class MainStateGetSerializer(serializers.ModelSerializer):
 
 class CurrentStateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MainState
+        model = State
         fields = ['id', 'name']
 
 

@@ -34,8 +34,7 @@ class RegistrationFormSerializer(PaperSerializer):
     fsm = serializers.PrimaryKeyRelatedField(queryset=FSM.objects.all(), required=False, allow_null=True)
     widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
 
-# TODO - check if update works or not
-
+    @transaction.atomic
     def create(self, validated_data):
         event = validated_data.get('event', None)
         fsm = validated_data.get('fsm', None)
@@ -90,11 +89,40 @@ class ArticleSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class StateSerializer(PaperSerializer):
+    widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
+
+    @transaction.atomic
+    def create(self, validated_data):
+        fsm = validated_data.get('fsm', None)
+        instance = super(StateSerializer, self).create({'paper_type': State, **validated_data})
+        if fsm.first_state is None:
+            fsm.first_state = instance
+            fsm.save()
+
+        return instance
+
+    def validate(self, attrs):
+        fsm = attrs.get('fsm', None)
+        user = self.context.get('user', None)
+        if user not in fsm.mentors.all():
+            raise PermissionDenied(serialize_error('4075'))
+
+        return attrs
+
+    class Meta:
+        model = State
+        ref_name = 'state'
+        fields = ['id', 'widgets', 'name', 'creator', 'fsm']
+        read_only_fields = ['id', 'creator']
+
+
 class PaperPolymorphicSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
         'Paper': PaperSerializer,
         'RegistrationForm': RegistrationFormSerializer,
         'Article': ArticleSerializer,
+        'State': StateSerializer,
 
     }
 

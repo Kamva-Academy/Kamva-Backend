@@ -12,7 +12,7 @@ from rest_framework import permissions
 from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
-from fsm.models import FSM, MainState
+from fsm.models import FSM, State
 from fsm.permissions import MentorPermission
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer
 

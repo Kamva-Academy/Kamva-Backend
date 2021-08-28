@@ -5,7 +5,7 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from fsm.models import Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
-    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer
+    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
 from fsm.serializers.validators import multi_choice_answer_validator
@@ -15,6 +15,18 @@ class WidgetSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return super().create({'creator': self.context.get('user', None), **validated_data})
+
+    def validate(self, attrs):
+        user = self.context.get('user', None)
+        paper = attrs.get('paper', None)
+        if isinstance(paper, State):
+            if user not in paper.fsm.mentors.all():
+                raise ParseError(serialize_error('4075'))
+        elif isinstance(paper, Hint):
+            if user not in paper.reference.fsm.mentors.all():
+                raise ParseError(serialize_error('4075'))
+
+        return super(WidgetSerializer, self).validate(attrs)
 
     # class Meta:
     #     model = Widget
@@ -59,7 +71,7 @@ class ProblemSerializer(WidgetSerializer):
 
 
 class SmallAnswerProblemSerializer(WidgetSerializer):
-    solution = SmallAnswerSerializer()
+    solution = SmallAnswerSerializer(required=False)
 
     class Meta:
         model = SmallAnswerProblem
@@ -81,7 +93,7 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 
 
 class BigAnswerProblemSerializer(WidgetSerializer):
-    solution = BigAnswerSerializer()
+    solution = BigAnswerSerializer(required=False)
 
     class Meta:
         model = SmallAnswerProblem
@@ -123,7 +135,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
             if selection >= len(choices):
                 raise ParseError(serialize_error('4021', is_field_error=False))
 
-        return attrs
+        return super(MultiChoiceProblemSerializer, self).validate(attrs)
 
     @transaction.atomic
     def create(self, validated_data):

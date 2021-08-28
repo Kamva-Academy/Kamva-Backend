@@ -6,9 +6,10 @@ from errors.error_codes import serialize_error
 
 class Paper(PolymorphicModel):
     class PaperType(models.TextChoices):
-        RegistrationForm = "RegistrationForm"
-        State = "State"
-        Article = "Article"
+        RegistrationForm = 'RegistrationForm'
+        State = 'State'
+        Hint = 'Hint'
+        Article = 'Article'
 
     paper_type = models.CharField(max_length=25, blank=False, choices=PaperType.choices)
     creator = models.ForeignKey('accounts.User', related_name='papers', null=True, blank=True,
@@ -214,7 +215,7 @@ class FSM(models.Model):
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    first_state = models.OneToOneField('MainState', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
+    first_state = models.OneToOneField('fsm.State', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
     fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
                                          choices=FSMLearningType.choices)
     fsm_p_type = models.CharField(max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
@@ -254,34 +255,20 @@ class Invitation(models.Model):
         unique_together = ('invitee', 'team')
 
 
-class FSMState(Paper):
-    name = models.CharField(max_length=150)
-
-    def __str__(self):
-        try:
-            state = self.mainstate
-            if state.fsm:
-                return '%s: %s' % (state.fsm.name, state.name)
-            return self.name
-        except:
-            try:
-                help = self.helpstate
-                if help.form:
-                    return '%s: %s' % (help.form.name, help.name)
-                return self.name
-            except:
-                return self.name
-
-    def widgets(self):
-        return Widget.objects.filter(state=self)
-
-
-class MainState(FSMState):
+class State(Paper):
+    name = models.TextField(null=True, blank=True)
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
 
+    def delete(self):
+        if self.my_fsm:
+            fsm = self.fsm
+            fsm.first_state = fsm.states.exclude(id=self.id).first()
+            fsm.save()
+        return super(State, self).delete()
 
-class HelpState(FSMState):
-    state = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='help_states')
+
+class Hint(Paper):
+    reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='help_states')
 
 
 class Article(Paper):
@@ -292,8 +279,8 @@ class Article(Paper):
 
 # from tail to head
 class FSMEdge(models.Model):
-    tail = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='outward_edges')
-    head = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='inward_edges')
+    tail = models.ForeignKey(State, on_delete=models.CASCADE, related_name='outward_edges')
+    head = models.ForeignKey(State, on_delete=models.CASCADE, related_name='inward_edges')
     is_back_enabled = models.BooleanField(default=True)
     min_score = models.FloatField(default=0.0)
     cost = models.FloatField(default=0.0)
@@ -511,7 +498,7 @@ class SubmittedAnswer(models.Model):
 class PlayerWorkshop(models.Model):
     player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
     workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
-    current_state = models.ForeignKey(MainState, null=True, blank=True, on_delete=models.SET_NULL,
+    current_state = models.ForeignKey(State, null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='player_workshop')
     last_visit = models.DateTimeField(null=True, blank=True)
 
@@ -521,7 +508,7 @@ class PlayerWorkshop(models.Model):
 
 class PlayerHistory(models.Model):
     player_workshop = models.ForeignKey(PlayerWorkshop, on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(MainState, on_delete=models.CASCADE, related_name='player_histories')
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='player_histories')
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     inward_edge = models.ForeignKey(FSMEdge, default=None, null=True, on_delete=models.SET_NULL)

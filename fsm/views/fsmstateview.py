@@ -7,7 +7,7 @@ from rest_framework import viewsets
 from rest_framework import mixins
 
 
-from fsm.models import MainState, HelpState, Article
+from fsm.models import State, Hint, Article
 from fsm.serializers.serializers import MainStateSerializer, MainStateGetSerializer, HelpStateSerializer
 from fsm.serializers.paper_serializers import ArticleSerializer
 
@@ -19,7 +19,7 @@ class MainStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
                     mixins.UpdateModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
 
-    queryset = MainState.objects.all()
+    queryset = State.objects.all()
     serializer_class = MainStateSerializer
 
     def get_serializer_class(self):
@@ -56,7 +56,7 @@ class HelpStateView(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
                     mixins.UpdateModelMixin):
     permission_classes = [permissions.IsAuthenticated, customPermissions.MentorPermission,]
 
-    queryset = HelpState.objects.all()
+    queryset = Hint.objects.all()
     serializer_class = HelpStateSerializer
 
     def get_serializer_class(self):

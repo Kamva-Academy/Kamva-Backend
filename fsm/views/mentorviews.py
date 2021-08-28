@@ -22,7 +22,7 @@ def edit_edges(request):
     if not serializer.is_valid(raise_exception=True):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     try:
-        state = FSMState.objects.filter(id=serializer.validated_data['tail'])[0]
+        state = State.objects.filter(id=serializer.validated_data['tail'])[0]
     except:
         return Response("state not found", status=status.HTTP_400_BAD_REQUEST)
 
@@ -146,7 +146,7 @@ def mentor_get_workshop_player(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, customPermissions.MentorPermission, ])
 def mentor_get_player_state(request):
-    state = get_object_or_404(MainState, id=request.data['state'])
+    state = get_object_or_404(State, id=request.data['state'])
     if state.fsm.fsm_p_type != 'individual':
         player = get_object_or_404(Teamm, uuid=request.data['player_uuid'])
     else:
@@ -162,7 +162,7 @@ def mentor_get_all_problems(request):
     result = []
     fsms = FSM.objects.all()
     for fsm in fsms:
-        states = MainState.objects.filter(fsm=fsm)
+        states = State.objects.filter(fsm=fsm)
         states_result = []
         for state in states:
             problems = Problem.objects.filter(state=state).values('id', 'name')
@@ -182,7 +182,7 @@ def mentor_get_submissions(request):
 
     problem_id = request.data.get('problem_id', None)
     f = FSM.objects.filter(id=fsm_id).last()
-    s = MainState.objects.filter(id=state_id).last()
+    s = State.objects.filter(id=state_id).last()
     problem = Problem.objects.filter(id=problem_id).last()
 
     if f and s and s.fsm != f:
@@ -272,7 +272,7 @@ def mentor_mark_submission(request):
         return Response({'error': 'score is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     state = submission.problem.paper
-    state = MainState.objects.filter(id=state.id).last()
+    state = State.objects.filter(id=state.id).last()
     if not state:
         return Response({'error': 'submissions related state not found'}, status=status.HTTP_404_NOT_FOUND)
     fsm = state.fsm
