@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db import transaction
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -14,10 +15,10 @@ from rest_framework import permissions
 from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
-from fsm.models import FSM, State, PlayerHistory, Player
+from fsm.models import FSM, State, PlayerHistory, Player, Edge
 from fsm.permissions import MentorPermission, HasActiveRegistration
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer
-from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
+from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer, EdgeSimpleSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
 from fsm.views.functions import get_player, get_receipt
 
@@ -29,7 +30,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     my_tags = ['fsm']
 
     def get_permissions(self):
-        if self.action == 'update' or self.action == 'destroy' or self.action == 'add_mentor' or self.action == 'get_states':
+        if self.action == 'update' or self.action == 'destroy' or self.action == 'add_mentor' or self.action == 'get_states' or self.action == 'get_edges':
             permission_classes = [MentorPermission]
         elif self.action == 'enter' or self.action == 'get_self':
             permission_classes = [HasActiveRegistration]
@@ -100,12 +101,21 @@ class FSMViewSet(viewsets.ModelViewSet):
         else:
             raise NotFound(serialize_error('4081'))
 
-    @swagger_auto_schema(responses={200: StateSerializer})
+    @swagger_auto_schema(responses={200: StateSimpleSerializer})
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_states(self, request, pk):
         return Response(data=StateSimpleSerializer(self.get_object().states, context=self.get_serializer_context(),
                                                    many=True).data, status=status.HTTP_200_OK)
+
+
+    @swagger_auto_schema(responses={200: EdgeSimpleSerializer})
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def get_edges(self, request, pk):
+        edges = Edge.objects.filter(Q(tail__fsm=self.get_object()) | Q(head__fsm=self.get_object()))
+        return Response(data=EdgeSimpleSerializer(edges, context=self.get_serializer_context(), many=True).data,
+                        status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: FSMSerializer})
     @transaction.atomic
