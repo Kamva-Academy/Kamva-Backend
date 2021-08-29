@@ -156,6 +156,14 @@ class StateSerializer(PaperSerializer):
         read_only_fields = ['id', 'creator', 'hints', 'inward_edges', 'outward_edges']
 
 
+class StateSimpleSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = State
+        fields = ['id', 'name', 'fsm']
+        read_only_Fields = ['id', 'name', 'fsm']
+
+
 class PaperPolymorphicSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
         'Paper': PaperSerializer,

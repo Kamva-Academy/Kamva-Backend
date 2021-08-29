@@ -15,7 +15,7 @@ from errors.error_codes import serialize_error
 from fsm.models import FSM, State
 from fsm.permissions import MentorPermission, HasActiveRegistration
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer
-from fsm.serializers.paper_serializers import StateSerializer
+from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
 
 
 class FSMViewSet(viewsets.ModelViewSet):
@@ -56,7 +56,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_states(self, request, pk):
-        return Response(data=StateSerializer(self.get_object().states, many=True).data, status=status.HTTP_200_OK)
+        return Response(data=StateSimpleSerializer(self.get_object().states, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: FSMSerializer})
     @transaction.atomic
