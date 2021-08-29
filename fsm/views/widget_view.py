@@ -35,7 +35,8 @@ class WidgetViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         logger.info(self.request.data)
-        serializer = self.get_serializer_class()(data=self.request.data, context=self.get_serializer_context())
+        serializer = WidgetPolymorphicSerializer(data=self.request.data, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
-            widget = serializer.save()
-            return Response(data=serializer.to_representation(widget), status=status.HTTP_201_CREATED)
+            serializer.save()
+            logger.info(serializer.data)
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
