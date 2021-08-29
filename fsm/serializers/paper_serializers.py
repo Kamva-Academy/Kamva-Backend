@@ -134,7 +134,7 @@ class StateSerializer(PaperSerializer):
     @transaction.atomic
     def create(self, validated_data):
         fsm = validated_data.get('fsm', None)
-        instance = super(StateSerializer, self).create({'paper_type': State, **validated_data})
+        instance = super(StateSerializer, self).create({'paper_type': 'State', **validated_data})
         if fsm.first_state is None:
             fsm.first_state = instance
             fsm.save()
