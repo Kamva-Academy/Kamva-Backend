@@ -16,8 +16,8 @@ from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm.models import FSM, State, PlayerHistory, Player, Edge
-from fsm.permissions import MentorPermission, HasActiveRegistration
-from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer
+from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
+from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer, EdgeSimpleSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
 from fsm.views.functions import get_player, get_receipt
@@ -30,9 +30,9 @@ class FSMViewSet(viewsets.ModelViewSet):
     my_tags = ['fsm']
 
     def get_permissions(self):
-        if self.action == 'update' or self.action == 'destroy' or self.action == 'add_mentor' or self.action == 'get_states' or self.action == 'get_edges':
+        if self.action in ['update', 'destroy', 'add_mentor', 'get_states', 'get_edges']:
             permission_classes = [MentorPermission]
-        elif self.action == 'enter' or self.action == 'get_self':
+        elif self.action in ['enter', 'get_self']:
             permission_classes = [HasActiveRegistration]
         else:
             permission_classes = self.permission_classes
@@ -49,7 +49,7 @@ class FSMViewSet(viewsets.ModelViewSet):
         context.update({'user': self.request.user})
         return context
 
-    @swagger_auto_schema(responses={200: PlayerSerializer})
+    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
     @transaction.atomic
     @action(detail=True, methods=['post'], serializer_class=KeySerializer)
     def enter(self, request, pk=None):
@@ -88,7 +88,7 @@ class FSMViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_200_OK)
         return Response('not implemented yet')
 
-    @swagger_auto_schema(responses={200: PlayerSerializer})
+    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_self(self, request, pk=None):
@@ -101,23 +101,22 @@ class FSMViewSet(viewsets.ModelViewSet):
         else:
             raise NotFound(serialize_error('4081'))
 
-    @swagger_auto_schema(responses={200: StateSimpleSerializer})
+    @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_states(self, request, pk):
         return Response(data=StateSimpleSerializer(self.get_object().states, context=self.get_serializer_context(),
                                                    many=True).data, status=status.HTTP_200_OK)
 
-
-    @swagger_auto_schema(responses={200: EdgeSimpleSerializer})
+    @swagger_auto_schema(responses={200: EdgeSimpleSerializer}, tags=['mentor'])
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_edges(self, request, pk):
         edges = Edge.objects.filter(Q(tail__fsm=self.get_object()) | Q(head__fsm=self.get_object()))
-        return Response(data=EdgeSimpleSerializer(edges, context=self.get_serializer_context(), many=True).data,
+        return Response(data=EdgeSerializer(edges, context=self.get_serializer_context(), many=True).data,
                         status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(responses={200: FSMSerializer})
+    @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
     @transaction.atomic
     @action(detail=True, methods=['post'], serializer_class=AccountSerializer, permission_classes=[MentorPermission, ])
     def add_mentor(self, request, pk=None):
@@ -129,3 +128,35 @@ class FSMViewSet(viewsets.ModelViewSet):
             fsm.mentors.add(new_mentor)
             return Response(FSMSerializer(context=self.get_serializer_context()).to_representation(fsm),
                             status=status.HTTP_200_OK)
+
+
+class PlayerViewSet(viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Player.objects.all()
+    serializer_class = PlayerSerializer
+    my_tags = ['fsm']
+
+    def get_permissions(self):
+        if self.action in ['get_player_current_state']:
+            permission_classes = [PlayerViewerPermission]
+        else:
+            permission_classes = self.permission_classes
+        return [permission() for permission in permission_classes]
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except(KeyError, AttributeError):
+            return super().get_serializer_class()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'user': self.request.user})
+        return context
+
+    @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def get_player_current_state(self, request, pk=None):
+        return Response(StateSimpleSerializer(context=self.get_serializer_context()).to_representation(self.get_object().current_state),
+                        status=status.HTTP_200_OK)

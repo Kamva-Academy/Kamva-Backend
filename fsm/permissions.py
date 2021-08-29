@@ -84,6 +84,16 @@ class MentorPermission(permissions.BasePermission):
         return request.user in obj.mentors.all()
 
 
+class PlayerViewerPermission(permissions.BasePermission):
+    """
+    Permission for viewing player
+    """
+    message = 'you don\'t have necessary access to view this player'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.fsm.mentors.all()
+
+
 class IsStateModifier(permissions.BasePermission):
     """
     Permission for mentors modifying states

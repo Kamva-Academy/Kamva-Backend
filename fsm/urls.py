@@ -86,4 +86,5 @@ router.register(r'state', StateViewSet, basename='states')
 router.register(r'edge', EdgeViewSet, basename='edges')
 router.register(r'hint', HintViewSet, basename='hints')
 router.register(r'widget', WidgetViewSet, basename='widgets')
+router.register(r'player', PlayerViewSet, basename='players')
 urlpatterns += router.urls
