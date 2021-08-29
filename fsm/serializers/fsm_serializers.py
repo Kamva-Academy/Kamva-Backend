@@ -5,7 +5,7 @@ from rest_framework import serializers
 from accounts.serializers import MerchandiseSerializer, AccountSerializer
 from errors.error_codes import serialize_error
 from fsm.models import Event, RegistrationReceipt, FSM, Edge
-from fsm.serializers.paper_serializers import StateSerializer
+from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -165,8 +165,8 @@ class EdgeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super(EdgeSerializer, self).to_representation(instance)
-        representation['tail'] = StateSerializer(context=self.context).to_representation(instance.tail)
-        representation['head'] = StateSerializer(context=self.context).to_representation(instance.head)
+        representation['tail'] = StateSimpleSerializer(context=self.context).to_representation(instance.tail)
+        representation['head'] = StateSimpleSerializer(context=self.context).to_representation(instance.head)
         representation['str'] = str(instance)
         return representation
 
@@ -174,3 +174,7 @@ class EdgeSerializer(serializers.ModelSerializer):
         model = Edge
         fields = '__all__'
         read_only_fields = ['id', 'has_lock']
+
+
+class KeySerializer(serializers.BaseSerializer):
+    key = serializers.CharField(max_length=10, required=False)

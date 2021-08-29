@@ -14,6 +14,7 @@ from accounts.serializers import StudentshipSerializer, InstituteSerializer
 logger = logging.getLogger(__name__)
 
 
+# todo - everyone can edit anyone's studentships
 class StudentshipViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, ]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

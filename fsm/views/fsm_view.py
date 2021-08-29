@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from django.db import transaction
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ParseError, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import viewsets
@@ -12,10 +14,12 @@ from rest_framework import permissions
 from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
-from fsm.models import FSM, State
+from fsm.models import FSM, State, PlayerHistory
 from fsm.permissions import MentorPermission, HasActiveRegistration
-from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer
+from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
+from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
+from fsm.views.functions import get_player, get_receipt
 
 
 class FSMViewSet(viewsets.ModelViewSet):
@@ -44,13 +48,44 @@ class FSMViewSet(viewsets.ModelViewSet):
         context.update({'user': self.request.user})
         return context
 
-    @swagger_auto_schema(responses={200: StateSerializer})
+    @swagger_auto_schema(responses={200: PlayerSerializer})
     @transaction.atomic
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], serializer_class=KeySerializer)
     def enter(self, request, pk=None):
+        key = self.request.data.get('key', None)
         fsm = self.get_object()
         user = self.request.user
-        # TODO - complete it or DIE
+        # TODO - add for hybrid and individual
+        if fsm.fsm_p_type == FSM.FSMPType.Team:
+            receipt = get_receipt(user, fsm)
+            player = get_player(user, fsm)
+            if receipt is None:
+                raise ParseError('4079')
+            if receipt.team is None:
+                raise ParseError(serialize_error('4078'))
+
+            # first time entering fsm
+            if not player:
+                if fsm.lock and len(fsm.lock) > 0:
+                    if key and key != fsm.lock:
+                        raise PermissionDenied(serialize_error('4080'))
+                serializer = PlayerSerializer(data={'user': user.id, 'fsm': fsm.id, 'receipt': receipt.id,
+                                                    'current_state': fsm.first_state.id, 'last_visit': datetime.now()},
+                                              context=self.get_serializer_context())
+                if serializer.is_valid(raise_exception=True):
+                    player = serializer.save()
+                serializer = PlayerHistorySerializer(data={'player': player.id, 'state': player.current_state.id,
+                                                           'start_time': player.last_visit},
+                                                     context=self.get_serializer_context())
+                if serializer.is_valid(raise_exception=True):
+                    player_history = serializer.save()
+            else:
+                player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
+                if player_history is None:
+                    raise NotFound(serialize_error('4081'))
+            return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                            status=status.HTTP_200_OK)
+        return Response('not implemented yet')
 
     @swagger_auto_schema(responses={200: StateSerializer})
     @transaction.atomic

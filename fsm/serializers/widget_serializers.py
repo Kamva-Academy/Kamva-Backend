@@ -1,11 +1,13 @@
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from fsm.models import Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
-    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint
+    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
+    Paper
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
 from fsm.serializers.validators import multi_choice_answer_validator
@@ -121,6 +123,7 @@ class BigAnswerProblemSerializer(WidgetSerializer):
 
 
 class MultiChoiceProblemSerializer(WidgetSerializer):
+    # todo - this is bullshit move it to representation
     choices = ChoiceSerializer(many=True)
     solution = serializers.ListField(child=serializers.IntegerField(min_value=0), allow_empty=True, allow_null=False,
                                      required=True, write_only=True)
@@ -191,6 +194,9 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
             choices_raw = data.pop('choices')
             choices = [{"text": c} for c in choices_raw]
             data['choices'] = choices
+            if 'paper' in data.keys() and not isinstance(data.get('paper'), Paper):
+                data['paper'] = get_object_or_404(Paper, id=data.get('paper'))
+            # data['paper'] = get_object_or_404(Paper, id=data['paper'])
         return data
 
     def to_representation(self, instance):

@@ -268,6 +268,9 @@ class Player(models.Model):
     def team(self):
         return self.receipt.team if self.receipt else None
 
+    class Meta:
+        unique_together = ('user', 'fsm')
+
 
 class State(Paper):
     name = models.TextField(null=True, blank=True)

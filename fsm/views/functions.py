@@ -12,6 +12,18 @@ from scoring.models import ScoreTransaction
 logger = logging.getLogger(__name__)
 
 
+def get_receipt(user, fsm):
+    if fsm.registration_form and fsm.event.registration_form:
+        raise ParseError(serialize_error('4077'))
+    registration_form = fsm.registration_form or fsm.event.registration_form
+    return RegistrationReceipt.objects.filter(user=user, answer_sheet_of=registration_form,
+                                              is_participating=True).first()
+
+
+def get_player(user, fsm):
+    return user.players.filter(fsm=fsm, is_active=True).first()
+
+
 def team_change_current_state(team, state):
     # fsm change checked
     # create history

@@ -1,6 +1,7 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 from accounts.models import Member, Teamm, Participant
-from fsm.models import RegistrationReceipt, Event
+from fsm.models import RegistrationReceipt, Event, RegistrationForm, FSM
 
 
 class IsEventModifier(permissions.BasePermission):
@@ -120,13 +121,18 @@ class HasActiveRegistration(permissions.BasePermission):
     message = 'you don\'t have an active registration receipt for this entity'
 
     def has_object_permission(self, request, view, obj):
-        receipts = RegistrationReceipt.objects.filter(user=request.user, registration_form=obj.registration_form,
-                                                      is_participating=True)
         if isinstance(obj, Event):
-            return len(receipts) > 0
-        else:
-            return len(receipts) > 0 or len(RegistrationReceipt.objects.filter(user=request.user, is_participating=True,
-                                                                               registration_form=obj.event.registration_form)) > 0
+            return len(RegistrationReceipt.objects.filter(user=request.user, answer_sheet_of=obj.registration_form,
+                                                          is_participating=True)) > 0
+        elif isinstance(obj, FSM):
+            if obj.event:
+                return len(
+                    RegistrationReceipt.objects.filter(user=request.user, answer_sheet_of=obj.event.registration_form,
+                                                       is_participating=True)) > 0
+            else:
+                return len(
+                    RegistrationReceipt.objects.filter(user=request.user, answer_sheet_of=obj.registration_form,
+                                                       is_participating=True))
 
         # -------------
 
