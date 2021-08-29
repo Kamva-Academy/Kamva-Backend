@@ -126,7 +126,7 @@ class BigAnswerProblemSerializer(WidgetSerializer):
             {'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
 
     class Meta:
-        model = SmallAnswerProblem
+        model = BigAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
                   'required', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
