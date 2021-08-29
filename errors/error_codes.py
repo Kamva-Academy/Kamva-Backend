@@ -78,9 +78,8 @@ errors_dict = {'4000': 'phone number must be digit',
                '4072': 'team size must be the same as event team size',
                '4073': 'creator must be a modifier of event in order to add fsm to event',
                '4074': 'team based event must have team_size > 0 and vise versa',
-               '4075': 'you are not this fsm\'s mentor, only mentors can add or edit states or widgets',
-
-
+               '4075': 'you are not this fsm\'s mentor, only mentors can add or edit states, edges & widgets ',
+               '4076': 'tail & head of an edge must be from same fsms',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

@@ -239,3 +239,15 @@ class WidgetPolymorphicSerializer(PolymorphicSerializer):
     }
 
     resource_type_field_name = 'widget_type'
+
+
+class MockWidgetSerializer(serializers.Serializer):
+    GameSerializer = GameSerializer(required=False)
+    VideoSerializer = VideoSerializer(required=False)
+    ImageSerializer = ImageSerializer(required=False)
+    DescriptionSerializer = DescriptionSerializer(required=False)
+    ProblemSerializer = ProblemSerializer(required=False)
+    SmallAnswerProblemSerializer = SmallAnswerProblemSerializer(required=False)
+    BigAnswerProblemSerializer = BigAnswerProblemSerializer(required=False)
+    MultiChoiceProblemSerializer = MultiChoiceProblemSerializer(required=False)
+    UploadFileProblemSerializer = UploadFileProblemSerializer(required=False)

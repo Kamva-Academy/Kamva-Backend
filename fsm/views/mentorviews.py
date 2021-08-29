@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions
 
+from fsm.serializers.fsm_serializers import EdgeSerializer
 from fsm.serializers.serializers import *
 from fsm import permissions as customPermissions
 from fsm.views.functions import *
@@ -32,14 +33,14 @@ def edit_edges(request):
     for edge_data in serializer.validated_data['edges']:
         try:
             id = request.data['edges'][index]['id']
-            instance = FSMEdge.objects.filter(id=id)[0]
-            instance = FSMEdgeSerializer().update(instance, edge_data)
+            instance = Edge.objects.filter(id=id)[0]
+            instance = EdgeSerializer().update(instance, edge_data)
         except:
-            instance = FSMEdgeSerializer().create(edge_data)
-        data.append(FSMEdgeSerializer().to_representation(instance))
+            instance = EdgeSerializer().create(edge_data)
+        data.append(EdgeSerializer().to_representation(instance))
         ids.append(instance.id)
         index += 1
-    for edge in FSMEdge.objects.filter(tail=state):
+    for edge in Edge.objects.filter(tail=state):
         if edge.id not in ids:
             edge.delete()
     return Response(data, status=status.HTTP_200_OK)
@@ -55,7 +56,7 @@ def get_team_outward_edges(request):
     try:
         team = Teamm.objects.get(uuid=serializer.validated_data['uuid'])
         edges = team.current_state.outward_edges.all()
-        output_serializer = serializers.ListField(child=FSMEdgeSerializer())
+        output_serializer = serializers.ListField(child=EdgeSerializer())
         data = output_serializer.to_representation(edges)
         return Response(data, status=status.HTTP_200_OK)
     except Teamm.DoesNotExist:

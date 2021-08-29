@@ -10,7 +10,7 @@ from .models import *
 
 
 class EdgeAdmin(admin.ModelAdmin):
-    model = FSMEdge
+    model = Edge
     list_display = ['text', 'priority', 'head_name', 'tail_name', 'is_back_enabled']
 
     def head_name(self, obj):
@@ -123,8 +123,7 @@ admin.site.register(Team)
 admin.site.register(Invitation)
 
 admin.site.register(FSM)
-admin.site.register(FSMEdge, EdgeAdmin)
-admin.site.register(Ability)
+admin.site.register(Edge, EdgeAdmin)
 admin.site.register(State)
 admin.site.register(Hint)
 admin.site.register(Widget)

@@ -86,10 +86,31 @@ class IsStateModifier(permissions.BasePermission):
     """
     Permission for mentors modifying states
     """
-    message = 'you are not this state modifier'
+    message = 'you are not this state\'s modifier'
 
     def has_object_permission(self, request, view, obj):
         return request.user in obj.fsm.mentors.all()
+
+
+class IsHintModifier(permissions.BasePermission):
+    """
+    Permission for mentors modifying hints
+    """
+    message = 'you are not this hint\'s modifier'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.reference.fsm.mentors.all()
+
+
+class IsEdgeModifier(permissions.BasePermission):
+    """
+    Permission for mentors modifying edges
+    """
+    message = 'you are not this edge\'s modifier'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user in obj.tail.fsm.mentors.all() or request.user in obj.head.fsm.mentors.all()
+
 
 # -------------
 

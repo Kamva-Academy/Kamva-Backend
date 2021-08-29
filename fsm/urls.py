@@ -5,11 +5,10 @@ from .views.answer_view import UploadAnswerViewSet
 from .views.event_view import EventViewSet
 from .views.fsm_view import *
 from .views.fsmstateview import *
-from .views.fsmedgeview import *
-from .views.abilityview import *
+from .views.edge_view import *
 from .views.registration_receipt_view import RegistrationReceiptViewSet
 from .views.registration_view import RegistrationViewSet
-from .views.state_view import StateViewSet
+from .views.state_view import StateViewSet, HintViewSet
 from .views.widget_view import *
 from .views.teamhistoryview import *
 from .views.team_view import *
@@ -84,5 +83,7 @@ router.register(r'invitations', InvitationViewSet, basename='invitations')
 router.register(r'upload_answer', UploadAnswerViewSet, basename='upload_answer')
 router.register(r'fsm', FSMViewSet, basename='fsms')
 router.register(r'state', StateViewSet, basename='states')
+router.register(r'edge', EdgeViewSet, basename='edges')
+router.register(r'hint', HintViewSet, basename='hints')
 router.register(r'widget', WidgetViewSet, basename='widgets')
 urlpatterns += router.urls

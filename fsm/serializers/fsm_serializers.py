@@ -1,11 +1,11 @@
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import serializers
 
 from accounts.serializers import MerchandiseSerializer, AccountSerializer
 from errors.error_codes import serialize_error
-from fsm.models import Event, RegistrationReceipt, FSM
-from fsm.serializers.serializers import MainStateGetSerializer
+from fsm.models import Event, RegistrationReceipt, FSM, Edge
+from fsm.serializers.paper_serializers import StateSerializer
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -29,7 +29,8 @@ class EventSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         team_size = attrs.get('team_size', 0)
         event_type = attrs.get('event_type', Event.EventType.Individual)
-        if (team_size > 0 and event_type != Event.EventType.Team) or (event_type == Event.EventType.Team and team_size <= 0):
+        if (team_size > 0 and event_type != Event.EventType.Team) or (
+                event_type == Event.EventType.Team and team_size <= 0):
             raise ParseError(serialize_error('4074'))
         creator = self.context.get('user', None)
         holder = attrs.get('holder', None)
@@ -116,7 +117,6 @@ class FSMSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'creator', 'mentors', 'first_state', 'registration_form']
 
 
-
 class FSMRawSerializer(serializers.ModelSerializer):
     class Meta:
         model = FSM
@@ -130,8 +130,35 @@ class CreateFSMSerializer(serializers.ModelSerializer):
 
 
 class FSMGetSerializer(serializers.ModelSerializer):
-    states = MainStateGetSerializer(many=True)
+    states = StateSerializer(many=True)
 
     class Meta:
         model = FSM
         fields = '__all__'
+
+
+class EdgeSerializer(serializers.ModelSerializer):
+
+    def validate(self, attrs):
+        user = self.context.get('user', None)
+        tail = attrs.get('tail')
+        head = attrs.get('head')
+        if tail.fsm != head.fsm:
+            raise ParseError(serialize_error('4076'))
+
+        if user not in tail.fsm.mentors.all():
+            raise PermissionDenied(serialize_error('4075'))
+
+        return super(EdgeSerializer, self).validate(attrs)
+
+    def to_representation(self, instance):
+        representation = super(EdgeSerializer, self).to_representation(instance)
+        representation['tail'] = StateSerializer(context=self.context).to_representation(instance.tail)
+        representation['head'] = StateSerializer(context=self.context).to_representation(instance.head)
+        representation['str'] = str(instance)
+        return representation
+
+    class Meta:
+        model = Edge
+        fields = '__all__'
+        read_only_fields = ['id', 'has_lock']

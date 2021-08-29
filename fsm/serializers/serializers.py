@@ -6,52 +6,8 @@ import sys
 from django.utils import timezone
 
 from fsm.serializers.answer_serializers import AnswerSerializer
+from fsm.serializers.fsm_serializers import EdgeSerializer
 from fsm.serializers.widget_serializers import WidgetSerializer
-
-
-class AbilitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ability
-        fields = '__all__'
-
-
-class FSMEdgeSerializer(serializers.ModelSerializer):
-    # abilities = AbilitySerializer(many=True)
-    class Meta:
-        model = FSMEdge
-        fields = '__all__'
-
-    '''
-    def create(self, validated_data):
-        abilities_data = validated_data.pop('abilities')
-        instance = FSMEdge.objects.create(**validated_data)
-        for ability_data in abilities_data:
-            ability = Ability.objects.create(**ability_data)
-            ability.edge = instance
-            ability.save()
-
-        return instance
-
-    def update(self, instance, validated_data):    
-        validated_data['pk'] = instance.pk
-        abilities = Ability.objects.filter(edge=instance)
-        index = 0
-        for ability in abilities:
-            try:
-                validated_data['abilities'][index]['pk'] = ability.pk
-            except:
-                pass
-            ability.delete()
-            index+=1
-        instance.delete()
-        instance = self.create(validated_data)
-        return instance
-    '''
-
-
-class EditEdgesSerializer(serializers.Serializer):
-    edges = serializers.ListField(child=FSMEdgeSerializer())
-    tail = serializers.IntegerField()
 
 
 class SubmitedAnswerSerializer(serializers.ModelSerializer):
@@ -112,8 +68,8 @@ class HelpStateSerializer(serializers.ModelSerializer):
 
 
 class PlayerStateGetSerializer(serializers.ModelSerializer):
-    outward_edges = FSMEdgeSerializer(many=True)
-    inward_edges = FSMEdgeSerializer(many=True)
+    outward_edges = EdgeSerializer(many=True)
+    inward_edges = EdgeSerializer(many=True)
     help_states = HelpStateSerializer(many=True)
 
     class Meta:
@@ -146,8 +102,8 @@ class MainStateSerializer(serializers.ModelSerializer):
 
 
 class MainStateGetSerializer(serializers.ModelSerializer):
-    outward_edges = FSMEdgeSerializer(many=True)
-    inward_edges = FSMEdgeSerializer(many=True)
+    outward_edges = EdgeSerializer(many=True)
+    inward_edges = EdgeSerializer(many=True)
     widgets = WidgetSerializer(many=True)
     help_states = HelpStateSerializer(many=True)
 
@@ -274,3 +230,4 @@ class MentorPlayerWorkshopSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlayerWorkshop
         fields = ['id', 'player', 'current_state', 'last_visit']
+

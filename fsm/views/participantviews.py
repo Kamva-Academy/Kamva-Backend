@@ -22,8 +22,7 @@ from notifications.models import Notification
 import logging
 
 from ..serializers.answer_serializers import AnswerSerializer
-from ..serializers.serializers import FSMEdgeSerializer
-from ..serializers.fsm_serializers import FSMSerializer
+from ..serializers.fsm_serializers import FSMSerializer, EdgeSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +147,7 @@ def send_pdf_answer(request):
 @permission_classes([IsAuthenticated, ParticipantPermission])
 def move_to_next_state(request):
     team = get_participant(request.user).team
-    edges = FSMEdge.objects.filter(tail=team.current_state.id)
+    edges = Edge.objects.filter(tail=team.current_state.id)
     if team.current_state.name == 'start' and edges.count() == 1:
         logger.info(
             f'team {get_participant(request.user).team.id} changed state team from {team.current_state.name} to {edges[0].head.name}')
@@ -242,7 +241,7 @@ def player_go_forward_on_edge(request):
     edge_id = request.data.get('edge', None)
     player_id = request.data.get('player', None)
     key = request.data.get('key', None)
-    edge = get_object_or_404(FSMEdge, id=edge_id)
+    edge = get_object_or_404(Edge, id=edge_id)
     player = get_object_or_404(Player, id=player_id)
     fsm = edge.tail.fsm
     player_workshop = get_player_workshop(player, fsm)
@@ -359,7 +358,7 @@ def get_team(request):
 def player_go_backward_on_edge(request):
     edge_id = request.data.get('edge', None)
     player_id = request.data.get('player', None)
-    edge = get_object_or_404(FSMEdge, id=edge_id)
+    edge = get_object_or_404(Edge, id=edge_id)
     player = get_object_or_404(Player, id=player_id)
     fsm = edge.tail.fsm
     player_workshop = get_player_workshop(player, fsm)
@@ -419,7 +418,7 @@ def user_get_team_outward_edges(request):
         #     return Response("this state with mentor and user doesn't have permission to get forward edges", status=status.HTTP_403_FORBIDDEN)
 
         edges = team.form.outward_edges.all()
-        output_serializer = serializers.ListField(child=FSMEdgeSerializer())
+        output_serializer = serializers.ListField(child=EdgeSerializer())
         data = output_serializer.to_representation(edges)
         return Response(data, status=status.HTTP_200_OK)
     except Teamm.DoesNotExist:

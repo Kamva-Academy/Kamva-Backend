@@ -215,7 +215,8 @@ class FSM(models.Model):
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    first_state = models.OneToOneField('fsm.State', null=True, on_delete=models.SET_NULL, related_name='my_fsm')
+    first_state = models.OneToOneField('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
+                                       related_name='my_fsm')
     fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
                                          choices=FSMLearningType.choices)
     fsm_p_type = models.CharField(max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
@@ -266,9 +267,12 @@ class State(Paper):
             fsm.save()
         return super(State, self).delete()
 
+    def __str__(self):
+        return f'{self.id}-{self.name} in {str(self.fsm)}'
+
 
 class Hint(Paper):
-    reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='help_states')
+    reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='hints')
 
 
 class Article(Paper):
@@ -277,48 +281,45 @@ class Article(Paper):
     active = models.BooleanField(default=False)
 
 
+class EdgeManager(models.Manager):
+    @transaction.atomic
+    def create(self, **args):
+        lock = args.get('lock', None)
+        has_lock = False
+        if lock:
+            has_lock = True
+        return super(EdgeManager, self).create(**{'has_lock': has_lock, **args})
+
+    def update(self, instance, **args):
+        lock = args.get('lock', None)
+        has_lock = False
+        if lock or instance.lock:
+            has_lock = True
+        return super(EdgeManager, self).update(instance, **{'has_lock': has_lock, **args})
+
+
 # from tail to head
-class FSMEdge(models.Model):
+class Edge(models.Model):
     tail = models.ForeignKey(State, on_delete=models.CASCADE, related_name='outward_edges')
     head = models.ForeignKey(State, on_delete=models.CASCADE, related_name='inward_edges')
     is_back_enabled = models.BooleanField(default=True)
     min_score = models.FloatField(default=0.0)
     cost = models.FloatField(default=0.0)
-    priority = models.IntegerField()
+    priority = models.IntegerField(null=True, blank=True)
     lock = models.CharField(max_length=10, null=True, blank=True)
     has_lock = models.BooleanField(default=False)
-    text = models.TextField(null=True)
+    is_hidden = models.BooleanField(default=False)
+    text = models.TextField(null=True, blank=True)
 
-    def get_next_state(self, abilities):
-        output = True
-        for ability in Ability.objects.filter(edge=self):
-            try:
-                value = abilities.filter(name=ability.name)[0].value
-            except:
-                output = False
-                return
-            output = output and ability.is_valid(value)
-        return self.head if output else None
+    objects = EdgeManager()
+
+    class Meta:
+        unique_together = ('tail', 'head')
+
+
 
     def __str__(self):
         return f'از {self.tail.name} به {self.head.name}'
-
-
-class Ability(models.Model):
-    edge = models.ForeignKey(FSMEdge, null=True, on_delete=models.CASCADE, related_name='abilities')
-    name = models.CharField(max_length=150)
-    value = models.BooleanField()
-    player_history = models.ForeignKey('fsm.PlayerHistory', null=True, on_delete=models.CASCADE,
-                                       related_name='abilities')
-
-    def __str__(self):
-        return self.name
-
-    def is_valid(self, value):
-        return self.value == value
-
-    def widgets(self):
-        return Widget.objects.filter(state=self)
 
 
 class Widget(PolymorphicModel):
@@ -339,6 +340,7 @@ class Widget(PolymorphicModel):
                                 on_delete=models.SET_NULL)
     duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name='duplications')
+
 
     class Meta:
         order_with_respect_to = 'paper'
@@ -511,7 +513,7 @@ class PlayerHistory(models.Model):
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='player_histories')
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
-    inward_edge = models.ForeignKey(FSMEdge, default=None, null=True, on_delete=models.SET_NULL)
+    inward_edge = models.ForeignKey(Edge, default=None, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return f'{self.player_workshop.id}-{self.state.name}'

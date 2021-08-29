@@ -3,10 +3,10 @@ from django.db.models import Sum
 from fsm.models import *
 from django.utils import timezone
 
+from fsm.serializers.paper_serializers import EdgeSimpleSerializer
 from fsm.serializers.serializers import PlayerStateGetSerializer
 from fsm.serializers.widget_serializers import WidgetSerializer
 from fsm.serializers.answer_serializers import AnswerSerializer
-from fsm.serializers.serializers import FSMEdgeSerializer
 from scoring.models import ScoreTransaction
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def player_state(state, player_workshop):
     state_result['widgets'] = widgets
     edge = current_state_incoming_edge(state, player_workshop)
     if edge:
-        state_result['inward_edges'] = [FSMEdgeSerializer().to_representation(edge)]
+        state_result['inward_edges'] = [EdgeSimpleSerializer().to_representation(edge)]
     else:
         state_result['inward_edges'] = []
 

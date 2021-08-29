@@ -89,8 +89,47 @@ class ArticleSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class HintSerializer(PaperSerializer):
+    widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
+
+    @transaction.atomic
+    def create(self, validated_data):
+        return super(HintSerializer, self).create({'paper_type': 'Hint', **validated_data})
+
+    def validate(self, attrs):
+        reference = attrs.get('reference', None)
+        user = self.context.get('user', None)
+        if user not in reference.fsm.mentors.all():
+            raise PermissionDenied(serialize_error('4075'))
+
+        return super(HintSerializer, self).validate(attrs)
+
+    class Meta:
+        model = Hint
+        ref_name = 'hint'
+        fields = ['id', 'widgets', 'creator', 'reference']
+        read_only_fields = ['id', 'creator']
+
+
+class EdgeSimpleSerializer(serializers.ModelSerializer):
+
+    def to_representation(self, instance):
+        representation = super(EdgeSimpleSerializer, self).to_representation(instance)
+        representation['str'] = str(instance)
+        return representation
+
+    class Meta:
+        model = Edge
+        fields = '__all__'
+        read_only_fields = ['id', 'tail', 'head', 'is_back_enabled', 'min_score', 'cost', 'priority', 'lock',
+                            'has_lock', 'is_hidden', 'text']
+
+
 class StateSerializer(PaperSerializer):
     widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
+    hints = HintSerializer(many=True, read_only=True)
+    outward_edges = EdgeSimpleSerializer(many=True, read_only=True)
+    inward_edges = EdgeSimpleSerializer(many=True, read_only=True)
 
     @transaction.atomic
     def create(self, validated_data):
@@ -108,13 +147,13 @@ class StateSerializer(PaperSerializer):
         if user not in fsm.mentors.all():
             raise PermissionDenied(serialize_error('4075'))
 
-        return attrs
+        return super(StateSerializer, self).validate(attrs)
 
     class Meta:
         model = State
         ref_name = 'state'
-        fields = ['id', 'widgets', 'name', 'creator', 'fsm']
-        read_only_fields = ['id', 'creator']
+        fields = ['id', 'widgets', 'name', 'creator', 'fsm', 'hints', 'inward_edges', 'outward_edges']
+        read_only_fields = ['id', 'creator', 'hints', 'inward_edges', 'outward_edges']
 
 
 class PaperPolymorphicSerializer(PolymorphicSerializer):
@@ -123,6 +162,7 @@ class PaperPolymorphicSerializer(PolymorphicSerializer):
         'RegistrationForm': RegistrationFormSerializer,
         'Article': ArticleSerializer,
         'State': StateSerializer,
+        'Hint': HintSerializer
 
     }
 
