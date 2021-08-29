@@ -6,6 +6,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ParseError, NotFound
+from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import viewsets
@@ -130,33 +131,24 @@ class FSMViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_200_OK)
 
 
-class PlayerViewSet(viewsets.GenericViewSet):
+class PlayerViewSet(viewsets.GenericViewSet, RetrieveModelMixin):
     permission_classes = [IsAuthenticated]
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     my_tags = ['fsm']
 
     def get_permissions(self):
-        if self.action in ['get_player_current_state']:
+        if self.action in ['retrieve']:
             permission_classes = [PlayerViewerPermission]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
-
-    def get_serializer_class(self):
-        try:
-            return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
-            return super().get_serializer_class()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update({'user': self.request.user})
         return context
 
-    @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
-    @transaction.atomic
-    @action(detail=True, methods=['get'])
-    def get_player_current_state(self, request, pk=None):
-        return Response(StateSimpleSerializer(context=self.get_serializer_context()).to_representation(self.get_object().current_state),
-                        status=status.HTTP_200_OK)
+    @swagger_auto_schema(tags=['mentor'])
+    def retrieve(self, request, *args, **kwargs):
+        return super(PlayerViewSet, self).retrieve(request, *args, **kwargs)
