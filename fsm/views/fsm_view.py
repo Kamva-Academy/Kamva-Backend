@@ -52,15 +52,11 @@ class FSMViewSet(viewsets.ModelViewSet):
         user = self.request.user
         # TODO - complete it or DIE
 
-
     @swagger_auto_schema(responses={200: StateSerializer})
     @transaction.atomic
     @action(detail=True, methods=['get'])
-    def get_states(self):
-        serializer = StateSerializer(self.get_object().states, many=True)
-        serializer.is_valid()
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
+    def get_states(self, request, pk):
+        return Response(data=StateSerializer(self.get_object().states, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: FSMSerializer})
     @transaction.atomic
