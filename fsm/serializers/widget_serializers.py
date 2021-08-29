@@ -5,17 +5,21 @@ from rest_framework.exceptions import ParseError
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
+from errors.exceptions import InternalServerError
 from fsm.models import Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
-    Paper
+    Paper, Widget
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
 from fsm.serializers.validators import multi_choice_answer_validator
 
 
 class WidgetSerializer(serializers.ModelSerializer):
+    widget_type = serializers.ChoiceField(choices=Widget.WidgetTypes.choices, required=True)
 
     def create(self, validated_data):
+        # if 'widget_type' not in validated_data.keys():
+        #     raise InternalServerError('sag to in zendegi')
         return super().create({'creator': self.context.get('user', None), **validated_data})
 
     def validate(self, attrs):
@@ -37,6 +41,9 @@ class WidgetSerializer(serializers.ModelSerializer):
 
 
 class GameSerializer(WidgetSerializer):
+    def create(self, validated_data):
+        return super(GameSerializer, self).create({'widget_type': Widget.WidgetTypes.Game, **validated_data})
+
     class Meta:
         model = Game
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
@@ -44,6 +51,9 @@ class GameSerializer(WidgetSerializer):
 
 
 class VideoSerializer(WidgetSerializer):
+    def create(self, validated_data):
+        return super(VideoSerializer, self).create({'widget_type': Widget.WidgetTypes.Video, **validated_data})
+
     class Meta:
         model = Video
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
@@ -51,6 +61,9 @@ class VideoSerializer(WidgetSerializer):
 
 
 class ImageSerializer(WidgetSerializer):
+    def create(self, validated_data):
+        return super(ImageSerializer, self).create({'widget_type': Widget.WidgetTypes.Image, **validated_data})
+
     class Meta:
         model = Image
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
@@ -58,6 +71,10 @@ class ImageSerializer(WidgetSerializer):
 
 
 class DescriptionSerializer(WidgetSerializer):
+    def create(self, validated_data):
+        return super(DescriptionSerializer, self).create(
+            {'widget_type': Widget.WidgetTypes.Description, **validated_data})
+
     class Meta:
         model = Description
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text']
@@ -74,6 +91,10 @@ class ProblemSerializer(WidgetSerializer):
 
 class SmallAnswerProblemSerializer(WidgetSerializer):
     solution = SmallAnswerSerializer(required=False)
+
+    def create(self, validated_data):
+        return super(SmallAnswerProblemSerializer, self).create(
+            {'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
 
     class Meta:
         model = SmallAnswerProblem
@@ -99,6 +120,10 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 
 class BigAnswerProblemSerializer(WidgetSerializer):
     solution = BigAnswerSerializer(required=False)
+
+    def create(self, validated_data):
+        return super(BigAnswerProblemSerializer, self).create(
+            {'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
 
     class Meta:
         model = SmallAnswerProblem
@@ -127,6 +152,10 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     solution = serializers.ListField(child=serializers.IntegerField(min_value=0), allow_empty=True, allow_null=False,
                                      required=True, write_only=True)
+
+    def create(self, validated_data):
+        return super(MultiChoiceProblemSerializer, self).create(
+            {'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
 
     class Meta:
         model = MultiChoiceProblem
@@ -210,6 +239,10 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
 class UploadFileProblemSerializer(WidgetSerializer):
     solution = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=False)
+
+    def create(self, validated_data):
+        return super(UploadFileProblemSerializer, self).create(
+            {'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
 
     class Meta:
         model = UploadFileProblem
