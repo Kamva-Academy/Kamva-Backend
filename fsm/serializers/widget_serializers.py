@@ -121,9 +121,8 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 class BigAnswerProblemSerializer(WidgetSerializer):
     solution = BigAnswerSerializer(required=False)
 
-    def create(self, validated_data):
-        return super(BigAnswerProblemSerializer, self).create(
-            {'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
+    def save(self, **kwargs):
+        return super(BigAnswerProblemSerializer, self).save(**{'widget_type': Widget.WidgetTypes.BigAnswerProblem, **kwargs})
 
     class Meta:
         model = BigAnswerProblem
