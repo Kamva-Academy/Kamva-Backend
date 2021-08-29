@@ -68,8 +68,8 @@ class PlayerWorkshopAdmin(admin.ModelAdmin):
 
 class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
     model = PlayerHistory
-    list_display = ['player_workshop', 'state', 'start_time', 'end_time', 'inward_edge', 'delta_time']
-    list_filter = ['start_time', 'end_time', 'state__fsm', 'player_workshop__player', 'state', 'inward_edge']
+    list_display = ['player', 'state', 'start_time', 'end_time', 'inward_edge', 'delta_time']
+    list_filter = ['start_time', 'end_time', 'state__fsm', 'player', 'state', 'inward_edge']
 
     def delta_time(self, obj):
         if (obj.end_time and obj.start_time):

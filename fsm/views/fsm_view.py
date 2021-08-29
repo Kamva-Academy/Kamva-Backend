@@ -13,8 +13,9 @@ from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm.models import FSM, State
-from fsm.permissions import MentorPermission
+from fsm.permissions import MentorPermission, HasActiveRegistration
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer
+from fsm.serializers.paper_serializers import StateSerializer
 
 
 class FSMViewSet(viewsets.ModelViewSet):
@@ -24,8 +25,10 @@ class FSMViewSet(viewsets.ModelViewSet):
     my_tags = ['fsm']
 
     def get_permissions(self):
-        if self.action == 'update' or self.action == 'destroy' or self.action == 'add_mentor':
+        if self.action == 'update' or self.action == 'destroy' or self.action == 'add_mentor' or self.action == 'get_states':
             permission_classes = [MentorPermission]
+        elif self.action == 'enter':
+            permission_classes = [HasActiveRegistration]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -40,6 +43,22 @@ class FSMViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({'user': self.request.user})
         return context
+
+    @swagger_auto_schema(responses={200: StateSerializer})
+    @transaction.atomic
+    @action(detail=True, methods=['post'])
+    def enter(self, request, pk=None):
+        fsm = self.get_object()
+        user = self.request.user
+        # TODO - complete it or DIE
+
+
+    @swagger_auto_schema(responses={200: StateSerializer})
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def get_states(self):
+        return Response(data=StateSerializer(self.get_object().states, many=True).data, status=status.HTTP_200_OK)
+
 
     @swagger_auto_schema(responses={200: FSMSerializer})
     @transaction.atomic

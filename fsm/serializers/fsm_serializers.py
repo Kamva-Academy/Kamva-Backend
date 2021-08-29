@@ -114,6 +114,15 @@ class FSMSerializer(serializers.ModelSerializer):
                 instance.save()
         return instance
 
+    def to_representation(self, instance):
+        representation = super(FSMSerializer, self).to_representation(instance)
+        user = self.context.get('user', None)
+        player = user.players.filter(is_active=True, fsm=instance).first()
+        representation['player'] = player.id if player else 'NotStarted'
+        representation['state'] = player.current_state.name if player and player.current_state else None
+        representation['last_visit'] = player.last_visit if player else 'NotStarted'
+        return representation
+
     class Meta:
         model = FSM
         fields = '__all__'

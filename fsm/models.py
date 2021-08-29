@@ -260,6 +260,8 @@ class Player(models.Model):
     user = models.ForeignKey(User, related_name='players', on_delete=models.CASCADE)
     fsm = models.ForeignKey(FSM, related_name='players', on_delete=models.CASCADE)
     receipt = models.ForeignKey(RegistrationReceipt, on_delete=models.SET_NULL, null=True, blank=True)
+    current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL, related_name='players')
+    last_visit = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     @property
@@ -334,6 +336,17 @@ class Edge(models.Model):
 
     def __str__(self):
         return f'از {self.tail.name} به {self.head.name}'
+
+
+class PlayerHistory(models.Model):
+    player = models.ForeignKey('fsm.Player', on_delete=models.CASCADE, related_name='histories')
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='player_histories')
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    inward_edge = models.ForeignKey(Edge, default=None, null=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return f'{self.player.id}-{self.state.name}'
 
 
 class Widget(PolymorphicModel):
@@ -522,12 +535,3 @@ class PlayerWorkshop(models.Model):
         return f'{self.id}:{str(self.player)}-{self.workshop.name}'
 
 
-class PlayerHistory(models.Model):
-    player_workshop = models.ForeignKey(PlayerWorkshop, on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='player_histories')
-    start_time = models.DateTimeField(null=True, blank=True)
-    end_time = models.DateTimeField(null=True, blank=True)
-    inward_edge = models.ForeignKey(Edge, default=None, null=True, on_delete=models.SET_NULL)
-
-    def __str__(self):
-        return f'{self.player_workshop.id}-{self.state.name}'
