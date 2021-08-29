@@ -410,6 +410,9 @@ class Problem(Widget):
     def solution(self):
         return self.answers.filter(is_solution=True).first()
 
+    def __str__(self):
+        return f'{self.id}-{self.widget_type}:{self.text}'
+
 
 class SmallAnswerProblem(Problem):
     pass
