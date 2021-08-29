@@ -35,4 +35,5 @@ class EventViewSet(ModelViewSet):
     @swagger_auto_schema(responses={200: FSMSerializer})
     @action(detail=True, methods=['get'], permission_classes=[HasActiveRegistration])
     def get_fsms(self, request, pk=None):
-        return Response(data=FSMSerializer(self.get_object().fsms, many=True).data, status=status.HTTP_200_OK)
+        return Response(data=FSMSerializer(self.get_object().fsms.filter(is_active=True), many=True).data,
+                        status=status.HTTP_200_OK)
