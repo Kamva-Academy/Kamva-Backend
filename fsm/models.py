@@ -135,7 +135,7 @@ class RegistrationReceipt(AnswerSheet):
             raise ParseError(serialize_error('4034'))
 
     def __str__(self):
-        return f'{self.id}:{self.user.full_name}{"+" if self.status == self.RegistrationStatus.Accepted else "-"}'
+        return f'{self.id}:{self.user.full_name}{"+" if self.status == self.is_participating else "x"}'
 
 
 class Team(models.Model):
