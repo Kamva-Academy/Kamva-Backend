@@ -53,6 +53,9 @@ class User(AbstractUser):
     city = models.CharField(max_length=50, null=True, blank=True)
     postal_code = models.CharField(max_length=10, null=True, blank=True)
 
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'
 
 class InstituteManager(PolymorphicManager):
     @transaction.atomic

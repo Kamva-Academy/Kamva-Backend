@@ -112,8 +112,11 @@ def delete_registration_receipts(modeladmin, request, queryset):
 
 
 class RegistrationReceiptsAdmin(admin.ModelAdmin):
-    list_display = ['user', 'answer_sheet_of']
+    list_display = ['user', 'name', 'answer_sheet_of', 'status', 'team']
     actions = [delete_registration_receipts]
+
+    def name(self, obj):
+        return obj.user.full_name
 
 
 admin.site.register(Paper)

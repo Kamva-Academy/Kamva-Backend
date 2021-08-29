@@ -86,6 +86,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4080': 'invalid key',
                '4081': 'player history not found',
                '4082': 'player not found',
+               '4083': 'player current state and edge tail must be the same to move forward on edge',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

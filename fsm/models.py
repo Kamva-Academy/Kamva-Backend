@@ -143,6 +143,9 @@ class Team(models.Model):
     team_head = models.OneToOneField(RegistrationReceipt, related_name='headed_team', null=True, blank=True,
                                      on_delete=models.SET_NULL)
 
+    def __str__(self):
+        return f'{self.name}:{",".join(member.user.full_name for member in self.members.all())}'
+
 
 class Invitation(models.Model):
     invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
