@@ -34,7 +34,7 @@ class WidgetViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(responses={200: MockWidgetSerializer})
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer_class()(data=request.data)
+        serializer = self.get_serializer_class()(data=request.data, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
             widget = serializer.save()
             return Response(data=serializer.to_representation(widget), status=status.HTTP_201_CREATED)
