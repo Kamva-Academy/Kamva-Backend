@@ -379,28 +379,28 @@ class Description(Widget):
     text = models.TextField()
 
     def __str__(self):
-        return f'{self.id}<{self.widget_type}>-{self.name}:{self.text}'
+        return f'{self.id}-{self.widget_type}:{self.name}'
 
 
 class Game(Widget):
     link = models.TextField()
 
     def __str__(self):
-        return f'{self.id}<{self.widget_type}>-{self.name}:{self.link}'
+        return f'{self.id}-{self.widget_type}:{self.name}'
 
 
 class Video(Widget):
     link = models.TextField()
 
     def __str__(self):
-        return f'{self.id}<{self.widget_type}>-{self.name}:{self.link}'
+        return f'{self.id}-{self.widget_type}:{self.name}'
 
 
 class Image(Widget):
     link = models.TextField()
 
     def __str__(self):
-        return f'{self.id}<{self.widget_type}>-{self.name}:{self.link}'
+        return f'{self.id}-{self.widget_type}:{self.name}'
 
 
 class Problem(Widget):
@@ -414,7 +414,7 @@ class Problem(Widget):
         return self.answers.filter(is_solution=True).first()
 
     def __str__(self):
-        return f'{self.id}<{self.widget_type}>-{self.name}:{self.text}'
+        return f'{self.id}-{self.widget_type}:{self.name}'
 
 
 class SmallAnswerProblem(Problem):
