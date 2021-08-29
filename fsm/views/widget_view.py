@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework import mixins
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework import viewsets
+from rest_framework.response import Response
 
 from fsm.models import *
 from rest_framework import permissions
@@ -33,4 +34,7 @@ class WidgetViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(responses={200: MockWidgetSerializer})
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        return super(WidgetViewSet, self).create(request, *args, **kwargs)
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            widget = serializer.save()
+            return Response(data=serializer.to_representation(widget), status=status.HTTP_201_CREATED)

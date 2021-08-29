@@ -66,6 +66,10 @@ class RegistrationForm(Paper):
                 raise InternalServerError(serialize_error('5002'))
 
 
+    def __str__(self):
+        return f'<{self.id}-{self.paper_type}>:{self.event_or_fsm.name if self.event_or_fsm else None}'
+
+
 class RegistrationReceipt(AnswerSheet):
     class RegistrationStatus(models.TextChoices):
         Accepted = "Accepted"
