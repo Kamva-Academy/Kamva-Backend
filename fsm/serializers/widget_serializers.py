@@ -81,14 +81,17 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        solution = validated_data.pop('solution')
+        has_solution = 'solution' in validated_data.keys()
+        if has_solution:
+            solution = validated_data.pop('solution')
         instance = super().create(validated_data)
-        serializer = SmallAnswerSerializer(data={'problem': instance,
-                                                 'is_final_answer': True,
-                                                 'is_solution': True,
-                                                 **solution})
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        if has_solution:
+            serializer = SmallAnswerSerializer(data={'problem': instance,
+                                                     'is_final_answer': True,
+                                                     'is_solution': True,
+                                                     **solution})
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
         return instance
 
 
@@ -103,14 +106,17 @@ class BigAnswerProblemSerializer(WidgetSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        solution = validated_data.pop('solution')
+        has_solution = 'solution' in validated_data.keys()
+        if has_solution:
+            solution = validated_data.pop('solution')
         instance = super().create(validated_data)
-        serializer = BigAnswerSerializer(data={'problem': instance,
-                                               'is_final_answer': True,
-                                               'is_solution': True,
-                                               **solution})
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        if has_solution:
+            serializer = BigAnswerSerializer(data={'problem': instance,
+                                                   'is_final_answer': True,
+                                                   'is_solution': True,
+                                                   **solution})
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
         return instance
 
 
@@ -140,18 +146,21 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
     @transaction.atomic
     def create(self, validated_data):
         choices = validated_data.pop('choices')
-        solution = validated_data.pop('solution')
+        has_solution = 'solution' in validated_data.keys()
+        if has_solution:
+            solution = validated_data.pop('solution')
         instance = super().create(validated_data)
         # used direct creation instead of serializer.save() for fewer db transactions
         choice_objects = [Choice.objects.create(**{'problem': instance, **c}) for c in choices]
-        multi_choice_solution = MultiChoiceAnswer.objects.create(**{'problem': instance,
-                                                                    'is_final_answer': True,
-                                                                    'is_solution': True,
-                                                                    'submitted_by': self.context.get('user', None),
-                                                                    'answer_type': 'MultiChoiceAnswer'})
-        choice_selections = [choice_objects[s] for s in solution]
-        multi_choice_solution.choices.add(*choice_selections)
-        multi_choice_solution.save()
+        if has_solution:
+            multi_choice_solution = MultiChoiceAnswer.objects.create(**{'problem': instance,
+                                                                        'is_final_answer': True,
+                                                                        'is_solution': True,
+                                                                        'submitted_by': self.context.get('user', None),
+                                                                        'answer_type': 'MultiChoiceAnswer'})
+            choice_selections = [choice_objects[s] for s in solution]
+            multi_choice_solution.choices.add(*choice_selections)
+            multi_choice_solution.save()
         return instance
 
     # @transaction.atomic
@@ -210,11 +219,14 @@ class UploadFileProblemSerializer(WidgetSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        solution = validated_data.pop('solution')
+        has_solution = 'solution' in validated_data.keys()
+        if has_solution:
+            solution = validated_data.pop('solution')
         instance = super().create(validated_data)
-        solution.problem = instance
-        solution.is_solution = True
-        solution.save()
+        if has_solution:
+            solution.problem = instance
+            solution.is_solution = True
+            solution.save()
         return instance
 
     def to_representation(self, instance):
