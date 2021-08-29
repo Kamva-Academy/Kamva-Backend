@@ -91,7 +91,8 @@ class FSMViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_states(self, request, pk):
-        return Response(data=StateSimpleSerializer(self.get_object().states, many=True).data, status=status.HTTP_200_OK)
+        return Response(data=StateSimpleSerializer(self.get_object().states, context=self.get_serializer_context(),
+                                                   many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: FSMSerializer})
     @transaction.atomic
@@ -99,8 +100,9 @@ class FSMViewSet(viewsets.ModelViewSet):
     def add_mentor(self, request, pk=None):
         data = request.data
         fsm = self.get_object()
-        serializer = AccountSerializer(data=data)
+        serializer = AccountSerializer(data=data, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
             new_mentor = find_user(serializer.validated_data)
             fsm.mentors.add(new_mentor)
-            return Response(FSMSerializer(fsm).data, status=status.HTTP_200_OK)
+            return Response(FSMSerializer(context=self.get_serializer_context()).to_representation(fsm),
+                            status=status.HTTP_200_OK)

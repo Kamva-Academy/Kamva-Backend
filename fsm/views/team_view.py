@@ -55,14 +55,15 @@ class TeamViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], permission_classes=[customPermissions.IsTeamMember])
     def get_invitations(self, request, pk=None):
         return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object(), has_accepted=False),
-                                             many=True).data, status=status.HTTP_200_OK)
+                                             many=True, context=self.get_serializer_context()).data,
+                        status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: InvitationSerializer})
     @transaction.atomic
     @action(detail=True, methods=['post'], permission_classes=[customPermissions.IsTeamHead])
     def invite_member(self, request, pk=None):
         team = self.get_object()
-        serializer = InvitationSerializer(data=self.request.data, context={'team': team})
+        serializer = InvitationSerializer(data=self.request.data, context={'team': team, **self.get_serializer_context()})
         if serializer.is_valid(raise_exception=True):
             serializer.validated_data['team'] = team
             serializer.save()
@@ -99,7 +100,7 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
     @action(detail=True, methods=['post'], permission_classes=[IsInvitationInvitee])
     def respond(self, request, pk=None):
         invitation = self.get_object()
-        serializer = InvitationResponseSerializer(data=request.data)
+        serializer = InvitationResponseSerializer(data=request.data, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
             invitee = invitation.invitee
             receipt = RegistrationReceipt.objects.filter(user=request.user, is_participating=True,
@@ -115,4 +116,5 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
                 invitation.save()
                 invitee.team = team
                 invitee.save()
-            return Response(data=InvitationSerializer().to_representation(invitation), status=status.HTTP_200_OK)
+            return Response(data=InvitationSerializer(context=self.get_serializer_context()).to_representation(invitation),
+                            status=status.HTTP_200_OK)
