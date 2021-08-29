@@ -363,7 +363,7 @@ class Widget(PolymorphicModel):
         MultiChoiceProblem = 'MultiChoiceProblem'
         UploadFileProblem = 'UploadFileProblem'
 
-    name = models.CharField(max_length=100, null=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
     paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='widgets')
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices, null=False, blank=False)
     creator = models.ForeignKey('accounts.User', related_name='widgets', null=True, blank=True,
