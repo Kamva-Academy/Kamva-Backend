@@ -124,7 +124,7 @@ class BigAnswerProblemSerializer(WidgetSerializer):
 
 class MultiChoiceProblemSerializer(WidgetSerializer):
     # todo - this is bullshit move it to representation
-    choices = ChoiceSerializer(many=True)
+    choices = ChoiceSerializer(many=True, required=False)
     solution = serializers.ListField(child=serializers.IntegerField(min_value=0), allow_empty=True, allow_null=False,
                                      required=True, write_only=True)
 
@@ -191,9 +191,10 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
     def to_internal_value(self, data):
         if 'editable' in self.context and self.context.get('editable') is True:
-            choices_raw = data.pop('choices')
-            choices = [{"text": c} for c in choices_raw]
-            data['choices'] = choices
+            if 'choices' in data.keys():
+                choices_raw = data.pop('choices')
+                choices = [{"text": c} for c in choices_raw]
+                data['choices'] = choices
             if 'paper' in data.keys() and not isinstance(data.get('paper'), Paper):
                 data['paper'] = get_object_or_404(Paper, id=data.get('paper'))
             # data['paper'] = get_object_or_404(Paper, id=data['paper'])

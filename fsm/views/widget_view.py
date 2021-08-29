@@ -15,6 +15,8 @@ class WidgetViewSet(viewsets.ModelViewSet):
     serializer_class = WidgetPolymorphicSerializer
     my_tags = ['widget']
 
+    # todo - manage permissions
+
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
