@@ -92,10 +92,6 @@ class ProblemSerializer(WidgetSerializer):
 class SmallAnswerProblemSerializer(WidgetSerializer):
     solution = SmallAnswerSerializer(required=False)
 
-    def create(self, validated_data):
-        return super(SmallAnswerProblemSerializer, self).create(
-            {'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
-
     class Meta:
         model = SmallAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
@@ -107,7 +103,7 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create(validated_data)
+        instance = super().create({'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
         if has_solution:
             serializer = SmallAnswerSerializer(data={'problem': instance,
                                                      'is_final_answer': True,
@@ -121,9 +117,6 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 class BigAnswerProblemSerializer(WidgetSerializer):
     solution = BigAnswerSerializer(required=False)
 
-    def save(self, **kwargs):
-        return super(BigAnswerProblemSerializer, self).save(**{'widget_type': Widget.WidgetTypes.BigAnswerProblem, **kwargs})
-
     class Meta:
         model = BigAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
@@ -135,7 +128,7 @@ class BigAnswerProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create(validated_data)
+        instance = super().create({'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
         if has_solution:
             serializer = BigAnswerSerializer(data={'problem': instance,
                                                    'is_final_answer': True,
@@ -151,10 +144,6 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     solution = serializers.ListField(child=serializers.IntegerField(min_value=0), allow_empty=True, allow_null=False,
                                      required=True, write_only=True)
-
-    def create(self, validated_data):
-        return super(MultiChoiceProblemSerializer, self).create(
-            {'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
 
     class Meta:
         model = MultiChoiceProblem
@@ -180,7 +169,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create(validated_data)
+        instance = super().create({'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
         # used direct creation instead of serializer.save() for fewer db transactions
         choice_objects = [Choice.objects.create(**{'problem': instance, **c}) for c in choices]
         if has_solution:
@@ -237,11 +226,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
 
 class UploadFileProblemSerializer(WidgetSerializer):
-    solution = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=False)
-
-    def create(self, validated_data):
-        return super(UploadFileProblemSerializer, self).create(
-            {'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
+    solution = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=False, allow_null=False)
 
     class Meta:
         model = UploadFileProblem
@@ -261,7 +246,7 @@ class UploadFileProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create(validated_data)
+        instance = super().create({'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
         if has_solution:
             solution.problem = instance
             solution.is_solution = True
@@ -297,7 +282,7 @@ class MockWidgetSerializer(serializers.Serializer):
     VideoSerializer = VideoSerializer(required=False)
     ImageSerializer = ImageSerializer(required=False)
     DescriptionSerializer = DescriptionSerializer(required=False)
-    ProblemSerializer = ProblemSerializer(required=False)
+    # ProblemSerializer = ProblemSerializer(required=False)
     SmallAnswerProblemSerializer = SmallAnswerProblemSerializer(required=False)
     BigAnswerProblemSerializer = BigAnswerProblemSerializer(required=False)
     MultiChoiceProblemSerializer = MultiChoiceProblemSerializer(required=False)
