@@ -378,26 +378,29 @@ class Widget(PolymorphicModel):
 class Description(Widget):
     text = models.TextField()
 
+    def __str__(self):
+        return f'{self.id}<{self.widget_type}>-{self.name}:{self.text}'
+
 
 class Game(Widget):
     link = models.TextField()
 
     def __str__(self):
-        return f'{self.pk}-{self.link}'
+        return f'{self.id}<{self.widget_type}>-{self.name}:{self.link}'
 
 
 class Video(Widget):
     link = models.TextField()
 
     def __str__(self):
-        return self.name
+        return f'{self.id}<{self.widget_type}>-{self.name}:{self.link}'
 
 
 class Image(Widget):
     link = models.TextField()
 
     def __str__(self):
-        return self.name
+        return f'{self.id}<{self.widget_type}>-{self.name}:{self.link}'
 
 
 class Problem(Widget):
@@ -411,7 +414,7 @@ class Problem(Widget):
         return self.answers.filter(is_solution=True).first()
 
     def __str__(self):
-        return f'{self.id}-{self.widget_type}:{self.text}'
+        return f'{self.id}<{self.widget_type}>-{self.name}:{self.text}'
 
 
 class SmallAnswerProblem(Problem):
