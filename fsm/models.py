@@ -150,6 +150,11 @@ class Team(models.Model):
         return f'{self.name}:{",".join(member.user.full_name for member in self.members.all())}'
 
 
+class TeamLock(models.Model):
+    team = models.OneToOneField(Team, related_name='lock', on_delete=models.CASCADE)
+    is_locked = models.BooleanField(default=False)
+
+
 class Invitation(models.Model):
     invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')
@@ -269,7 +274,7 @@ class FSM(models.Model):
 class Player(models.Model):
     user = models.ForeignKey(User, related_name='players', on_delete=models.CASCADE)
     fsm = models.ForeignKey(FSM, related_name='players', on_delete=models.CASCADE)
-    receipt = models.ForeignKey(RegistrationReceipt, on_delete=models.SET_NULL, null=True, blank=True)
+    receipt = models.ForeignKey(RegistrationReceipt, related_name='players', on_delete=models.CASCADE)
     current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='players')
     last_visit = models.DateTimeField(null=True, blank=True)

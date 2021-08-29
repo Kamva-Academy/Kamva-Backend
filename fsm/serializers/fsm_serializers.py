@@ -153,8 +153,8 @@ class EdgeSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context.get('user', None)
-        tail = attrs.get('tail')
-        head = attrs.get('head')
+        tail = attrs.get('tail', None)
+        head = attrs.get('head', None)
         if tail.fsm != head.fsm:
             raise ParseError(serialize_error('4076'))
 

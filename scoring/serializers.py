@@ -26,12 +26,12 @@ class ScoreSerializer(serializers.ModelSerializer):
         return ScoreTransaction.objects.create(score, description, player_workshop)
 
     def update(self, instance, validated_data):
-        player_workshop_id = validated_data.get('player_workshop_id', instance.player_workshop.id)
+        player_workshop_id = validated_data.get('player_workshop_id', instance.player.id)
         try:
             player_workshop = PlayerWorkshop.objects.get(id=player_workshop_id)
         except PlayerWorkshop.DoesNotExist:
             raise PlayerWorkshopNotFound
-        instance.player_workshop = player_workshop
+        instance.player = player_workshop
         instance.score = validated_data.get('score', instance.score)
         instance.description = validated_data.pop('description', instance.description)
         instance.save()

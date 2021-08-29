@@ -11,7 +11,7 @@ from .models import *
 
 class EdgeAdmin(admin.ModelAdmin):
     model = Edge
-    list_display = ['text', 'priority', 'head_name', 'tail_name', 'is_back_enabled']
+    list_display = ['id', 'text', 'head_name', 'tail_name']
 
     def head_name(self, obj):
         name = obj.head.name

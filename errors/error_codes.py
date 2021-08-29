@@ -87,6 +87,8 @@ errors_dict = {'4000': 'phone number must be digit',
                '4081': 'player history not found',
                '4082': 'player not found',
                '4083': 'player current state and edge tail must be the same to move forward on edge',
+               '4084': 'other teammates are already trying to move you to next state',
+               '4085': 'edge / fsm is locked',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

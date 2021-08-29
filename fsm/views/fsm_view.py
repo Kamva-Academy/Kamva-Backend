@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -69,10 +70,12 @@ class FSMViewSet(viewsets.ModelViewSet):
             # first time entering fsm
             if not player:
                 if fsm.lock and len(fsm.lock) > 0:
-                    if key and key != fsm.lock:
+                    if not key:
+                        raise PermissionDenied(serialize_error('4085'))
+                    elif key != fsm.lock:
                         raise PermissionDenied(serialize_error('4080'))
                 serializer = PlayerSerializer(data={'user': user.id, 'fsm': fsm.id, 'receipt': receipt.id,
-                                                    'current_state': fsm.first_state.id, 'last_visit': datetime.now()},
+                                                    'current_state': fsm.first_state.id, 'last_visit': timezone.now()},
                                               context=self.get_serializer_context())
                 if serializer.is_valid(raise_exception=True):
                     player = serializer.save()

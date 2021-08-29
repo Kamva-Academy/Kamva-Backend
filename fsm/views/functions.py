@@ -115,15 +115,15 @@ def get_score_histories(player_workshop):
     return [{'description': s.description,
              'id': s.id,
              'is_valid': s.is_valid,
-             'player_workshop': s.player_workshop.id,
+             'player_workshop': s.player.id,
              'score': s.score,
-             'submitted_answer': s.submitted_answer.id if s.submitted_answer is not None else None,
-             'problem_name': s.submitted_answer.problem.name if (s.submitted_answer is not None) and (
-                     s.submitted_answer.problem is not None) else None,
-             'state_name': s.submitted_answer.problem.form.name if (s.submitted_answer is not None) and (
-                     s.submitted_answer.problem is not None) else None,
-             'problem_id': s.submitted_answer.problem.id if (s.submitted_answer is not None) and (
-                     s.submitted_answer.problem is not None) else None} for s in score_transactions]
+             'submitted_answer': s.answer.id if s.answer is not None else None,
+             'problem_name': s.answer.problem.name if (s.answer is not None) and (
+                     s.answer.problem is not None) else None,
+             'state_name': s.answer.problem.form.name if (s.answer is not None) and (
+                     s.answer.problem is not None) else None,
+             'problem_id': s.answer.problem.id if (s.answer is not None) and (
+                     s.answer.problem is not None) else None} for s in score_transactions]
 
 
 def get_scores_sum(player_workshop):
