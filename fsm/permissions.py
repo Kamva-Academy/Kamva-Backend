@@ -1,5 +1,6 @@
 from rest_framework import permissions
 from accounts.models import Member, Teamm, Participant
+from fsm.models import RegistrationReceipt
 
 
 class IsEventModifier(permissions.BasePermission):
@@ -110,6 +111,17 @@ class IsEdgeModifier(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user in obj.tail.fsm.mentors.all() or request.user in obj.head.fsm.mentors.all()
+
+
+class HasActiveRegistration(permissions.BasePermission):
+    """
+    Permission for checking registration of users in events / fsms
+    """
+    message = 'you don\'t have an active registration receipt for this entity'
+
+    def has_object_permission(self, request, view, obj):
+        return len(RegistrationReceipt.objects.filter(user=request.user, registration_form=obj.registration_form,
+                                                      is_participating=True)) > 0
 
 
 # -------------

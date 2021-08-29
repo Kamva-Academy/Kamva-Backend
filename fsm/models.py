@@ -19,7 +19,7 @@ class Paper(PolymorphicModel):
 class AnswerSheet(PolymorphicModel):
     class AnswerSheetType(models.TextChoices):
         RegistrationReceipt = "RegistrationReceipt"
-        FsmStateAnswerSheet = "FsmStateAnswerSheet"
+        StateAnswerSheet = "StateAnswerSheet"
 
     # form = models.ForeignKey(Form, null=True, default=None, on_delete=models.SET_NULL, related_name='answer_sheets')
     answer_sheet_type = models.CharField(max_length=25, blank=False, choices=AnswerSheetType.choices)
@@ -132,6 +132,24 @@ class RegistrationReceipt(AnswerSheet):
             raise ParseError(serialize_error('4034'))
 
 
+class Team(models.Model):
+    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    registration_form = models.ForeignKey(RegistrationForm, related_name='teams', null=True, blank=True,
+                                          on_delete=models.SET_NULL)
+    team_head = models.OneToOneField(RegistrationReceipt, related_name='headed_team', null=True, blank=True,
+                                     on_delete=models.SET_NULL)
+
+
+class Invitation(models.Model):
+    invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')
+    has_accepted = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('invitee', 'team')
+
+
 class Event(models.Model):
     class EventType(models.TextChoices):
         Team = 'Team'
@@ -200,7 +218,7 @@ class FSM(models.Model):
         Individual = 'Individual'
         Hybrid = 'Hybrid'
 
-    event = models.ForeignKey(Event, on_delete=models.SET_NULL, default=None, null=True, blank=True)
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True, blank=True)
     merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True,
                                        blank=True)
     registration_form = models.OneToOneField(RegistrationForm, related_name='fsm', on_delete=models.SET_NULL, null=True,
@@ -238,22 +256,15 @@ class FSM(models.Model):
         return modifiers
 
 
-class Team(models.Model):
-    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=200, null=True, blank=True)
-    registration_form = models.ForeignKey(RegistrationForm, related_name='teams', null=True, blank=True,
-                                          on_delete=models.SET_NULL)
-    team_head = models.OneToOneField(RegistrationReceipt, related_name='headed_team', null=True, blank=True,
-                                     on_delete=models.SET_NULL)
+class Player(models.Model):
+    user = models.ForeignKey(User, related_name='players', on_delete=models.CASCADE)
+    fsm = models.ForeignKey(FSM, related_name='players', on_delete=models.CASCADE)
+    receipt = models.ForeignKey(RegistrationReceipt, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
-
-class Invitation(models.Model):
-    invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')
-    has_accepted = models.BooleanField(default=False)
-
-    class Meta:
-        unique_together = ('invitee', 'team')
+    @property
+    def team(self):
+        return self.receipt.team if self.receipt else None
 
 
 class State(Paper):
@@ -269,6 +280,11 @@ class State(Paper):
 
     def __str__(self):
         return f'{self.id}-{self.name} in {str(self.fsm)}'
+
+
+class StateAnswerSheet(AnswerSheet):
+    answer_sheet_of = models.ForeignKey(State, related_name='answer_sheets', on_delete=models.CASCADE)
+    player = models.ForeignKey(Player, related_name='answer_sheets', on_delete=models.CASCADE)
 
 
 class Hint(Paper):
@@ -316,8 +332,6 @@ class Edge(models.Model):
     class Meta:
         unique_together = ('tail', 'head')
 
-
-
     def __str__(self):
         return f'از {self.tail.name} به {self.head.name}'
 
@@ -340,7 +354,6 @@ class Widget(PolymorphicModel):
                                 on_delete=models.SET_NULL)
     duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name='duplications')
-
 
     class Meta:
         order_with_respect_to = 'paper'
@@ -483,6 +496,7 @@ class UploadFileAnswer(Answer):
     answer_file = models.FileField(upload_to='answers', max_length=4000, blank=False)
 
 
+# ---------
 class SubmittedAnswer(models.Model):
     player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='submitted_answers')
     publish_date = models.DateTimeField(null=True, blank=True)

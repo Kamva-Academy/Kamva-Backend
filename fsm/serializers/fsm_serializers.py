@@ -47,6 +47,8 @@ class EventSerializer(serializers.ModelSerializer):
         representation['is_user_participating'] = registration.is_participating if registration else False
         representation['participants_size'] = len(instance.participants)
         representation['registration_receipt'] = registration.id if registration else None
+        if registration and registration.is_participating and instance.event_type == Event.EventType.Team:
+            representation['team'] = registration.team.id if registration.team else 'TeamNotCreatedYet'
         return representation
 
     class Meta:
@@ -60,6 +62,7 @@ class FSMSerializer(serializers.ModelSerializer):
     lock = serializers.CharField(required=False, write_only=True)
     merchandise = MerchandiseSerializer(required=False)
     mentors = AccountSerializer(many=True, read_only=True)
+    first_state = StateSerializer(read_only=True)
 
     def validate(self, attrs):
         event = attrs.get('event', None)
@@ -72,7 +75,7 @@ class FSMSerializer(serializers.ModelSerializer):
         if event:
             if merchandise or registration_form:
                 raise ParseError(serialize_error('4069'))
-            if holder != event.holder:
+            if holder and event.holder and holder != event.holder:
                 raise ParseError(serialize_error('4070'))
             if fsm_p_type == FSM.FSMPType.Individual:
                 if event.event_type != Event.EventType.Individual:

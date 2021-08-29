@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-from .models import Member, Participant, Teamm, Purchase, Mentor, Player, DiscountCode, User, VerificationCode, \
+from .models import Member, Participant, Teamm, Purchase, Mentor, DiscountCode, User, VerificationCode, \
     University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship, Merchandise
 
 from import_export.admin import ExportActionMixin
@@ -514,7 +514,6 @@ admin.site.register(University)
 admin.site.register(DiscountCode)
 admin.site.register(VerificationCode)
 admin.site.register(Purchase)
-admin.site.register(Player)
 admin.site.register(SchoolStudentship)
 admin.site.register(AcademicStudentship)
 admin.site.register(Merchandise)
