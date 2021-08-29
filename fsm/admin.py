@@ -79,15 +79,19 @@ class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
 
 class DescriptionAdmin(admin.ModelAdmin):
     model = Description
-    list_display = ['paper', 'text_part']
+    list_display = ['paper', 'text']
 
-    #
     def paper(self, obj):
         return obj.paper.id
 
-    def text_part(self, obj):
+    def text(self, obj):
         name = str(obj.text)[0:100]
         return name
+
+
+class WidgetAdmin(admin.ModelAdmin):
+    model = Widget
+    list_display = ['id', 'widget_type', 'paper', 'name']
 
 
 class RegistrationFormAdmin(admin.ModelAdmin):
@@ -126,7 +130,7 @@ admin.site.register(FSM)
 admin.site.register(Edge, EdgeAdmin)
 admin.site.register(State)
 admin.site.register(Hint)
-admin.site.register(Widget)
+admin.site.register(Widget, WidgetAdmin)
 admin.site.register(Video)
 admin.site.register(Image)
 admin.site.register(Player)

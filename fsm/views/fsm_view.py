@@ -14,7 +14,7 @@ from rest_framework import permissions
 from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
-from fsm.models import FSM, State, PlayerHistory
+from fsm.models import FSM, State, PlayerHistory, Player
 from fsm.permissions import MentorPermission, HasActiveRegistration
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
@@ -86,6 +86,19 @@ class FSMViewSet(viewsets.ModelViewSet):
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                             status=status.HTTP_200_OK)
         return Response('not implemented yet')
+
+    @swagger_auto_schema(responses={200: PlayerSerializer})
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def get_self(self, request, pk=None):
+        fsm = self.get_object()
+        user = self.request.user
+        player = get_player(user, fsm)
+        if player:
+            return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                            status=status.HTTP_200_OK)
+        else:
+            raise Player.DoesNotExist
 
     @swagger_auto_schema(responses={200: StateSerializer})
     @transaction.atomic
