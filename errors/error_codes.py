@@ -85,6 +85,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4079': 'no valid registration found for given fsm / event',
                '4080': 'invalid key',
                '4081': 'player history not found',
+               '4082': 'player not found',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

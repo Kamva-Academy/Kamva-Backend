@@ -31,7 +31,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'update' or self.action == 'destroy' or self.action == 'add_mentor' or self.action == 'get_states':
             permission_classes = [MentorPermission]
-        elif self.action == 'enter':
+        elif self.action == 'enter' or self.action == 'get_self':
             permission_classes = [HasActiveRegistration]
         else:
             permission_classes = self.permission_classes
@@ -98,7 +98,7 @@ class FSMViewSet(viewsets.ModelViewSet):
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                             status=status.HTTP_200_OK)
         else:
-            raise Player.DoesNotExist
+            raise NotFound(serialize_error('4081'))
 
     @swagger_auto_schema(responses={200: StateSerializer})
     @transaction.atomic

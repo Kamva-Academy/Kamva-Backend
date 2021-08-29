@@ -65,7 +65,6 @@ class RegistrationForm(Paper):
             except:
                 raise InternalServerError(serialize_error('5002'))
 
-
     def __str__(self):
         return f'<{self.id}-{self.paper_type}>:{self.event_or_fsm.name if self.event_or_fsm else None}'
 
@@ -222,7 +221,8 @@ class FSM(models.Model):
         Individual = 'Individual'
         Hybrid = 'Hybrid'
 
-    event = models.ForeignKey(Event, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True, blank=True)
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
+                              blank=True)
     merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True,
                                        blank=True)
     registration_form = models.OneToOneField(RegistrationForm, related_name='fsm', on_delete=models.SET_NULL, null=True,
@@ -264,7 +264,8 @@ class Player(models.Model):
     user = models.ForeignKey(User, related_name='players', on_delete=models.CASCADE)
     fsm = models.ForeignKey(FSM, related_name='players', on_delete=models.CASCADE)
     receipt = models.ForeignKey(RegistrationReceipt, on_delete=models.SET_NULL, null=True, blank=True)
-    current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL, related_name='players')
+    current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
+                                      related_name='players')
     last_visit = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -288,7 +289,7 @@ class State(Paper):
         return super(State, self).delete()
 
     def __str__(self):
-        return f'{self.id}-{self.name} in {str(self.fsm)}'
+        return f'{self.name} in {str(self.fsm)}'
 
 
 class StateAnswerSheet(AnswerSheet):
@@ -546,5 +547,3 @@ class PlayerWorkshop(models.Model):
 
     def __str__(self):
         return f'{self.id}:{str(self.player)}-{self.workshop.name}'
-
-
