@@ -130,7 +130,7 @@ class FSMSerializer(serializers.ModelSerializer):
         representation['player'] = player.id if player else 'NotStarted'
         representation['state'] = player.current_state.name if player and player.current_state else None
         representation['last_visit'] = player.last_visit if player else 'NotStarted'
-        if player.receipt.team:
+        if player and player.receipt.team:
             representation['team'] = player.receipt.team.id
             if player.receipt.team.team_head:
                 representation['team_head_name'] = player.receipt.team.team_head.user.full_name

@@ -124,6 +124,7 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = ['user', 'receipt', 'fsm', 'current_state', 'last_visit']
     list_filter = ['last_visit', 'fsm', 'current_state']
 
+
 class TeamAdmin(admin.ModelAdmin):
     model = Team
     list_display = ['id', 'name', 'team_head', 'members']
