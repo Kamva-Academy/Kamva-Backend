@@ -19,10 +19,11 @@ from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm.models import FSM, State, PlayerHistory, Player, Edge
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
-from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer
+from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer, \
+    TeamGetSerializer
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer, EdgeSimpleSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
-from fsm.views.functions import get_player, get_receipt
+from fsm.views.functions import get_player, get_receipt, get_a_player_from_team
 
 
 class FSMViewSet(viewsets.ModelViewSet):
@@ -32,7 +33,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     my_tags = ['fsm']
 
     def get_permissions(self):
-        if self.action in ['update', 'destroy', 'add_mentor', 'get_states', 'get_edges']:
+        if self.action in ['update', 'destroy', 'add_mentor', 'get_states', 'get_edges','get_player_from_team']:
             permission_classes = [MentorPermission]
         elif self.action in ['enter', 'get_self']:
             permission_classes = [HasActiveRegistration]
@@ -132,6 +133,18 @@ class FSMViewSet(viewsets.ModelViewSet):
             fsm.mentors.add(new_mentor)
             return Response(FSMSerializer(context=self.get_serializer_context()).to_representation(fsm),
                             status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['mentor'])
+    @transaction.atomic
+    @action(detail=True, methods=['post'], serializer_class=TeamGetSerializer)
+    def get_player_from_team(self, request, pk):
+        fsm = self.get_object()
+        serializer = TeamGetSerializer(data=self.request.data, context=self.get_serializer_context())
+        if serializer.is_valid(raise_exception=True):
+            team = serializer.validated_data['team']
+            player = get_a_player_from_team(team, fsm)
+            return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
 
 
 class PlayerViewSet(viewsets.GenericViewSet, RetrieveModelMixin):

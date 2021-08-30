@@ -41,6 +41,18 @@ def move_on_edge(p, edge, departure_time, is_forward):
         serializer.save()
 
 
+def get_a_player_from_team(team, fsm):
+    head_receipt = team.team_head
+    players = Player.objects.filter(fsm=fsm, receipt__in=team.members.all())
+    if len(players) <= 0:
+        raise ParseError(serialize_error('4088'))
+    else:
+        player = players.filter(receipt=head_receipt).first()
+        if not player:
+            player = players.first()
+        return player
+
+
 def team_change_current_state(team, state):
     # fsm change checked
     # create history

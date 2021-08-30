@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from accounts.serializers import MerchandiseSerializer, AccountSerializer
 from errors.error_codes import serialize_error
-from fsm.models import Event, RegistrationReceipt, FSM, Edge
+from fsm.models import Event, RegistrationReceipt, FSM, Edge, Team
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
 
 
@@ -176,5 +176,9 @@ class EdgeSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'has_lock']
 
 
-class KeySerializer(serializers.BaseSerializer):
+class KeySerializer(serializers.Serializer):
     key = serializers.CharField(max_length=10, required=False)
+
+
+class TeamGetSerializer(serializers.Serializer):
+    team = serializers.PrimaryKeyRelatedField(queryset=Team.objects.all(), required=True)

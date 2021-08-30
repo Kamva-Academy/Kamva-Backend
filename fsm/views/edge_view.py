@@ -15,9 +15,9 @@ from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
 from fsm.models import Edge, FSM, PlayerHistory, TeamLock
 from fsm.permissions import IsEdgeModifier
-from fsm.serializers.fsm_serializers import EdgeSerializer, KeySerializer
+from fsm.serializers.fsm_serializers import EdgeSerializer, KeySerializer, TeamGetSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
-from fsm.views.functions import get_player, move_on_edge
+from fsm.views.functions import get_player, move_on_edge, get_a_player_from_team
 from workshop_backend.settings.production import REDIS_PORT, REDIS_HOST
 
 
@@ -115,6 +115,8 @@ class EdgeViewSet(ModelViewSet):
         player = get_player(user, fsm)
         if player is None:
             raise ParseError(serialize_error('4082'))
+        if edge.is_hidden:
+            raise PermissionDenied(serialize_error('4087'))
         if fsm.fsm_p_type == FSM.FSMPType.Team:
             team = player.team
             try:
@@ -165,3 +167,61 @@ class EdgeViewSet(ModelViewSet):
                 raise e
         else:
             return InternalServerError('Not implemented Yet😎')
+
+    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['mentor'])
+    @transaction.atomic
+    @action(detail=True, methods=['post'], serializer_class=TeamGetSerializer)
+    def mentor_move_forward(self, request, pk):
+        serializer = TeamGetSerializer(data=self.request.data, context=self.get_serializer_context())
+        if serializer.is_valid(raise_exception=True):
+            team = serializer.validated_data['team']
+            edge = self.get_object()
+            fsm = edge.tail.fsm
+            player = get_a_player_from_team(team, fsm)
+            if fsm.fsm_p_type == FSM.FSMPType.Team:
+                if player.current_state == edge.tail:
+                    departure_time = timezone.now()
+                    for member in team.members.all():
+                        p = member.players.filter(fsm=fsm).first()
+                        if p:
+                            move_on_edge(p, edge, departure_time, is_forward=True)
+                        if player.id == p.id:
+                            player = p
+                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                    status=status.HTTP_200_OK)
+                elif player.current_state == edge.head:
+                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                    status=status.HTTP_200_OK)
+                else:
+                    raise ParseError(serialize_error('4083'))
+            else:
+                raise InternalServerError('Not implemented Yet😎')
+
+    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['mentor'])
+    @transaction.atomic
+    @action(detail=True, methods=['post'], serializer_class=TeamGetSerializer)
+    def mentor_move_backward(self, request, pk):
+        serializer = TeamGetSerializer(data=self.request.data, context=self.get_serializer_context())
+        if serializer.is_valid(raise_exception=True):
+            team = serializer.validated_data['team']
+            edge = self.get_object()
+            fsm = edge.tail.fsm
+            player = get_a_player_from_team(team, fsm)
+            if fsm.fsm_p_type == FSM.FSMPType.Team:
+                if player.current_state == edge.head:
+                    departure_time = timezone.now()
+                    for member in team.members.all():
+                        p = member.players.filter(fsm=fsm).first()
+                        if p:
+                            move_on_edge(p, edge, departure_time, is_forward=False)
+                        if player.id == p.id:
+                            player = p
+                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                    status=status.HTTP_200_OK)
+                elif player.current_state == edge.tail:
+                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                    status=status.HTTP_200_OK)
+                else:
+                    raise ParseError(serialize_error('4083'))
+            else:
+                raise InternalServerError('Not implemented Yet😎')
