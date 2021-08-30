@@ -125,6 +125,11 @@ class PlayerAdmin(admin.ModelAdmin):
     list_filter = ['last_visit', 'fsm', 'current_state']
 
 
+class FSMAdmin(admin.ModelAdmin):
+    model = FSM
+    list_display = ['name', 'first_state', 'is_active']
+
+
 class TeamAdmin(admin.ModelAdmin):
     model = Team
     list_display = ['id', 'name', 'team_head', 'members']
@@ -143,7 +148,7 @@ admin.site.register(StateAnswerSheet)
 admin.site.register(Team, TeamAdmin)
 admin.site.register(Invitation)
 
-admin.site.register(FSM)
+admin.site.register(FSM, FSMAdmin)
 admin.site.register(Edge, EdgeAdmin)
 admin.site.register(State)
 admin.site.register(Hint)
