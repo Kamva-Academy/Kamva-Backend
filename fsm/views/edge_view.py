@@ -85,11 +85,11 @@ class EdgeViewSet(ModelViewSet):
                     return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                     status=status.HTTP_200_OK)
 
-                elif player.current_state == edge.tail:
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
+                # elif player.current_state == edge.tail:
+                #     team_lock.is_locked = False
+                #     team_lock.save()
+                #     return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                #                     status=status.HTTP_200_OK)
                 else:
                     team_lock.is_locked = False
                     team_lock.save()
@@ -152,11 +152,10 @@ class EdgeViewSet(ModelViewSet):
                     team_lock.save()
                     return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                     status=status.HTTP_200_OK)
-                elif player.current_state == edge.head:
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
+                # elif player.current_state == edge.head:
+                #     team_lock.is_locked = False
+                #     team_lock.save()
+                #     raise ParseError(serialize_error())
                 else:
                     team_lock.is_locked = False
                     team_lock.save()
