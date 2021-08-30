@@ -119,6 +119,12 @@ class RegistrationReceiptsAdmin(admin.ModelAdmin):
         return obj.user.full_name
 
 
+class PlayerAdmin(admin.ModelAdmin):
+    model = Player
+    list_display = ['user', 'receipt', 'fsm', 'current_state', 'last_visit']
+    list_filter = ['last_visit', 'fsm', 'current_state']
+
+
 admin.site.register(Paper)
 admin.site.register(RegistrationForm, RegistrationFormAdmin)
 admin.site.register(Problem)
@@ -136,7 +142,7 @@ admin.site.register(Hint)
 admin.site.register(Widget, WidgetAdmin)
 admin.site.register(Video)
 admin.site.register(Image)
-admin.site.register(Player)
+admin.site.register(Player, PlayerAdmin)
 admin.site.register(Game)
 admin.site.register(SmallAnswerProblem)
 admin.site.register(SmallAnswer)
