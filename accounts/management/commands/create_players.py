@@ -14,7 +14,7 @@ class Command(BaseCommand):
     help = 'Create players'
 
     def handle(self, *args, **options):
-        for f in Event.objects.get(id=1).fsms.all():
+        for f in Event.objects.get(id=1).fsms.filter(is_active=True):
             for r in RegistrationReceipt.objects.filter(is_participating=True):
                 if len(Player.objects.filter(user=r.user, fsm=f, receipt=r)) <= 0:
                     Player.objects.create(user=r.user, fsm=f, receipt=r, current_state=f.first_state, last_visit=timezone.now())
