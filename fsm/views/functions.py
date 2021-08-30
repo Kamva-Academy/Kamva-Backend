@@ -29,6 +29,7 @@ def move_on_edge(p, edge, departure_time, is_forward):
     p.current_state = edge.head if is_forward else edge.tail
     p.last_visit = departure_time
     p.save()
+    return p
     # last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
     # if last_state_history is None:
     #     logger.info('no player moved on edge')

@@ -62,45 +62,46 @@ class EdgeViewSet(ModelViewSet):
         # todo check back enable
         if fsm.fsm_p_type == FSM.FSMPType.Team:
             team = player.team
-            try:
-                team_lock = team.lock
-            except:
-                team_lock = TeamLock.objects.create(team=team)
-            if team_lock.is_locked:
-                logger.warning(serialize_error('4084'))
-                raise ParseError(serialize_error('4084'))
+            # try:
+            #     team_lock = team.lock
+            # except:
+            #     team_lock = TeamLock.objects.create(team=team)
+            # if team_lock.is_locked:
+            #     logger.warning(serialize_error('4084'))
+            #     raise ParseError(serialize_error('4084'))
+            # else:
+            #     team_lock.is_locked = True
+            #     team_lock.save()
+            # try:
+            if player.current_state == edge.head:
+                departure_time = timezone.now()
+                player = move_on_edge(player, edge, departure_time, is_forward=False)
+                # for member in team.members.all():
+                #     p = member.players.filter(fsm=fsm).first()
+                #     if p:
+                #         move_on_edge(p, edge, departure_time, is_forward=False)
+                #         if player.id == p.id:
+                #             player = p
+
+                # team_lock.is_locked = False
+                # team_lock.save()
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+
+            elif player.current_state == edge.tail:
+                # team_lock.is_locked = False
+                # team_lock.save()
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
             else:
-                team_lock.is_locked = True
-                team_lock.save()
-            try:
-                if player.current_state == edge.head:
-                    departure_time = timezone.now()
-                    for member in team.members.all():
-                        p = member.players.filter(fsm=fsm).first()
-                        if p:
-                            move_on_edge(p, edge, departure_time, is_forward=False)
-                            if player.id == p.id:
-                                player = p
-
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-
-                elif player.current_state == edge.tail:
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-                else:
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    logger.warning(serialize_error('4083'))
-                    raise ParseError(serialize_error('4083'))
-            except Exception as e:
-                team_lock.is_locked = False
-                team_lock.save()
-                raise e
+                # team_lock.is_locked = False
+                # team_lock.save()
+                logger.warning(serialize_error('4083'))
+                raise ParseError(serialize_error('4083'))
+            # except Exception as e:
+            #     team_lock.is_locked = False
+            #     team_lock.save()
+            #     raise e
 
 
 
@@ -119,61 +120,43 @@ class EdgeViewSet(ModelViewSet):
         if player is None:
             logger.warning(serialize_error('4082'))
             raise ParseError(serialize_error('4082'))
-        if not edge.is_hidden: # todo - eslah dis!
-            raise PermissionDenied(serialize_error('4087'))
+        # if not edge.is_hidden: # todo - eslah dis!
+        #     raise PermissionDenied(serialize_error('4087'))
         if fsm.fsm_p_type == FSM.FSMPType.Team:
             team = player.team
-            try:
-                team_lock = team.lock
-            except:
-                team_lock = TeamLock.objects.create(team=team)
-            if team_lock.is_locked:
-                logger.warning(serialize_error('4084'))
-                raise ParseError(serialize_error('4084'))
+
+
+            if player.current_state == edge.tail:
+                # if edge.lock and len(edge.lock) > 0:
+                #     if not key:
+                #
+                #         logger.warning(serialize_error('4085'))
+                #         raise PermissionDenied(serialize_error('4085'))
+                #     elif edge.lock != key:
+                #
+                #         logger.warning(serialize_error('4084'))
+                #         raise PermissionDenied(serialize_error('4084'))
+
+                # todo - handle scoring things - not needed now
+
+                departure_time = timezone.now()
+                player = move_on_edge(player, edge, departure_time, is_forward=True)
+                # for member in team.members.all():
+                #     p = member.players.filter(fsm=fsm).first()
+                #     if p:
+                #         move_on_edge(p, edge, departure_time, is_forward=True)
+                #         if player.id == p.id:
+                #             player = p
+
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+            elif player.current_state == edge.head:
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
             else:
-                team_lock.is_locked = True
-                team_lock.save()
-            try:
-                if player.current_state == edge.tail:
-                    if edge.lock and len(edge.lock) > 0:
-                        if not key:
-                            team_lock.is_locked = False
-                            team_lock.save()
-                            logger.warning(serialize_error('4085'))
-                            raise PermissionDenied(serialize_error('4085'))
-                        elif edge.lock != key:
-                            team_lock.is_locked = False
-                            team_lock.save()
-                            logger.warning(serialize_error('4084'))
-                            raise PermissionDenied(serialize_error('4084'))
 
-                    # todo - handle scoring things - not needed now
-
-                    departure_time = timezone.now()
-                    for member in team.members.all():
-                        p = member.players.filter(fsm=fsm).first()
-                        if p:
-                            move_on_edge(p, edge, departure_time, is_forward=True)
-                            if player.id == p.id:
-                                player = p
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-                elif player.current_state == edge.head:
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-                else:
-                    team_lock.is_locked = False
-                    team_lock.save()
-                    logger.warning(serialize_error('4083'))
-                    raise ParseError(serialize_error('4083'))
-            except Exception as e:
-                team_lock.is_locked = False
-                team_lock.save()
-                raise e
+                logger.warning(serialize_error('4083'))
+                raise ParseError(serialize_error('4083'))
         else:
             return InternalServerError('Not implemented Yet😎')
 
