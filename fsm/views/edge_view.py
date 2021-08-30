@@ -1,4 +1,5 @@
 import logging
+import time
 
 import redis
 from django.db import transaction
@@ -16,7 +17,7 @@ from fsm.models import Edge, FSM, PlayerHistory, TeamLock
 from fsm.permissions import IsEdgeModifier
 from fsm.serializers.fsm_serializers import EdgeSerializer, KeySerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
-from fsm.views.functions import get_player
+from fsm.views.functions import get_player, move_on_edge
 from workshop_backend.settings.production import REDIS_PORT, REDIS_HOST
 
 
@@ -41,11 +42,67 @@ class EdgeViewSet(ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action in ['create', 'retrieve', 'list', 'go_forward']:
+        if self.action in ['create', 'retrieve', 'list', 'go_forward', 'go_backward']:
             permission_classes = [permissions.IsAuthenticated]
         else:
             permission_classes = [IsEdgeModifier]
         return [permission() for permission in permission_classes]
+
+    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
+    @transaction.atomic
+    @action(detail=True, methods=['post'], serializer_class=KeySerializer)
+    def go_backward(self, request, pk):
+        edge = self.get_object()
+        fsm = edge.tail.fsm
+        user = request.user
+        player = get_player(user, fsm)
+        if player is None:
+            raise ParseError(serialize_error('4082'))
+        # todo check back enable
+        if fsm.fsm_p_type == FSM.FSMPType.Team:
+            team = player.team
+            try:
+                team_lock = team.lock
+            except:
+                team_lock = TeamLock.objects.create(team=team)
+            if team_lock.is_locked:
+                raise ParseError(serialize_error('4084'))
+            else:
+                team_lock.is_locked = True
+                team_lock.save()
+            try:
+                if player.current_state == edge.head:
+                    departure_time = timezone.now()
+                    for member in team.members.all():
+                        p = member.players.filter(fsm=fsm).first()
+                        if p:
+                            move_on_edge(p, edge, departure_time, is_forward=False)
+                        if player.id == p.id:
+                            player = p
+
+                    team_lock.is_locked = False
+                    team_lock.save()
+                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                    status=status.HTTP_200_OK)
+
+                elif player.current_state == edge.tail:
+                    team_lock.is_locked = False
+                    team_lock.save()
+                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                    status=status.HTTP_200_OK)
+                else:
+                    team_lock.is_locked = False
+                    team_lock.save()
+                    raise ParseError(serialize_error('4083'))
+            except Exception as e:
+                team_lock.is_locked = False
+                team_lock.save()
+                raise e
+
+
+
+        else:
+            return InternalServerError('Not implemented Yet😎')
 
     @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
     @transaction.atomic
@@ -86,18 +143,8 @@ class EdgeViewSet(ModelViewSet):
                     departure_time = timezone.now()
                     for member in team.members.all():
                         p = member.players.filter(fsm=fsm).first()
-                        p.current_state = edge.head
-                        p.last_visit = departure_time
-                        p.save()
-
-                        last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail).last()
-                        last_state_history.end_time = departure_time
-                        last_state_history.save()
-
-                        serializer = PlayerHistorySerializer(data={'player': p.id, 'state': p.current_state.id,
-                                                                   'start_time': departure_time})
-                        if serializer.is_valid(raise_exception=True):
-                            serializer.save()
+                        if p:
+                            move_on_edge(p, edge, departure_time, is_forward=True)
 
                     team_lock.is_locked = False
                     team_lock.save()
@@ -117,4 +164,4 @@ class EdgeViewSet(ModelViewSet):
                 team_lock.save()
                 raise e
         else:
-            return InternalServerError('Not implemented Yet')
+            return InternalServerError('Not implemented Yet😎')

@@ -4,6 +4,7 @@ from fsm.models import *
 from django.utils import timezone
 
 from fsm.serializers.paper_serializers import EdgeSimpleSerializer
+from fsm.serializers.player_serializer import PlayerHistorySerializer
 from fsm.serializers.serializers import PlayerStateGetSerializer
 from fsm.serializers.widget_serializers import WidgetSerializer
 from fsm.serializers.answer_serializers import AnswerSerializer
@@ -22,6 +23,22 @@ def get_receipt(user, fsm):
 
 def get_player(user, fsm):
     return user.players.filter(fsm=fsm, is_active=True).first()
+
+
+def move_on_edge(p, edge, departure_time, is_forward):
+    p.current_state = edge.head if is_forward else edge.tail
+    p.last_visit = departure_time
+    p.save()
+    last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
+    if last_state_history is None:
+        raise ParseError(serialize_error('4086'))
+    last_state_history.end_time = departure_time
+    last_state_history.save()
+
+    serializer = PlayerHistorySerializer(data={'player': p.id, 'state': p.current_state.id, 'entered_by_edge': edge.id,
+                                               'start_time': departure_time, 'reverse_enter': not is_forward})
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
 
 
 def team_change_current_state(team, state):

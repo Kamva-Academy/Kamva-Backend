@@ -287,16 +287,23 @@ class Player(models.Model):
     class Meta:
         unique_together = ('user', 'fsm')
 
+    def __str__(self):
+        return f'{self.user.full_name} in {self.fsm.name}'
+
 
 class State(Paper):
     name = models.TextField(null=True, blank=True)
     fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
 
+    @transaction.atomic
     def delete(self):
-        if self.my_fsm:
-            fsm = self.fsm
-            fsm.first_state = fsm.states.exclude(id=self.id).first()
-            fsm.save()
+        try:
+            if self.my_fsm:
+                fsm = self.fsm
+                fsm.first_state = fsm.states.exclude(id=self.id).first()
+                fsm.save()
+        except:
+            pass
         return super(State, self).delete()
 
     def __str__(self):
@@ -362,7 +369,9 @@ class PlayerHistory(models.Model):
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='player_histories')
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
-    inward_edge = models.ForeignKey(Edge, default=None, null=True, on_delete=models.SET_NULL)
+    entered_by_edge = models.ForeignKey(Edge, related_name='histories', default=None, null=True, blank=True,
+                                        on_delete=models.SET_NULL)
+    reverse_enter = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.player.id}-{self.state.name}'
@@ -379,8 +388,9 @@ class Widget(PolymorphicModel):
         MultiChoiceProblem = 'MultiChoiceProblem'
         UploadFileProblem = 'UploadFileProblem'
 
+# TODO - change paper on delete to cascade
     name = models.CharField(max_length=100, null=True, blank=True)
-    paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='widgets')
+    paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.SET_NULL, related_name='widgets')
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices, null=False, blank=False)
     creator = models.ForeignKey('accounts.User', related_name='widgets', null=True, blank=True,
                                 on_delete=models.SET_NULL)
