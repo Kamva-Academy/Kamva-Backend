@@ -127,11 +127,13 @@ class PlayerAdmin(admin.ModelAdmin):
 
 class FSMAdmin(admin.ModelAdmin):
     model = FSM
-    list_display = ['name', 'first_state', 'is_active', 'mentors']
+    list_display = ['name', 'first_state', 'is_active', 'mentors_num','mentors_list']
 
-    def mentors(self, obj):
-        logger.warning(','.join(m.full_name for m in obj.mentors.all()))
+    def mentors_list(self, obj):
         return ','.join(m.full_name for m in obj.mentors.all())
+
+    def mentors_num(self, obj):
+        return len(obj.mentors.all())
 
 
 class TeamAdmin(admin.ModelAdmin):
