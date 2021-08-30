@@ -124,6 +124,14 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = ['user', 'receipt', 'fsm', 'current_state', 'last_visit']
     list_filter = ['last_visit', 'fsm', 'current_state']
 
+class TeamAdmin(admin.ModelAdmin):
+    model = Team
+    list_display = ['id', 'name', 'team_head', 'members']
+
+    def members(self, obj):
+        return ','.join(member.user.full_name for member in obj.members.all())
+
+
 
 admin.site.register(Paper)
 admin.site.register(RegistrationForm, RegistrationFormAdmin)
@@ -132,7 +140,7 @@ admin.site.register(AnswerSheet)
 admin.site.register(RegistrationReceipt, RegistrationReceiptsAdmin)
 admin.site.register(ChoiceSelection)
 admin.site.register(StateAnswerSheet)
-admin.site.register(Team)
+admin.site.register(Team, TeamAdmin)
 admin.site.register(Invitation)
 
 admin.site.register(FSM)
