@@ -60,6 +60,7 @@ class FSMViewSet(viewsets.ModelViewSet):
         key = self.request.data.get('key', None)
         fsm = self.get_object()
         user = self.request.user
+        logger.info(f'user {user.full_name} trying to enter fsm {fsm.name}')
         # TODO - add for hybrid and individual
         if fsm.fsm_p_type == FSM.FSMPType.Team:
             receipt = get_receipt(user, fsm)
@@ -90,6 +91,8 @@ class FSMViewSet(viewsets.ModelViewSet):
                 # player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
                 # if player_history is None:
                 #     raise NotFound(serialize_error('4081'))
+            if not player or not player.current_state:
+                logger.info(f'{player} - {player.current_state if player else None}')
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                             status=status.HTTP_200_OK)
         return Response('not implemented yet')
