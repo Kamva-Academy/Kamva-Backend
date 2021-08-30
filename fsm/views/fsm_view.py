@@ -81,15 +81,15 @@ class FSMViewSet(viewsets.ModelViewSet):
                                               context=self.get_serializer_context())
                 if serializer.is_valid(raise_exception=True):
                     player = serializer.save()
-                serializer = PlayerHistorySerializer(data={'player': player.id, 'state': player.current_state.id,
-                                                           'start_time': player.last_visit},
-                                                     context=self.get_serializer_context())
-                if serializer.is_valid(raise_exception=True):
-                    player_history = serializer.save()
-            else:
-                player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
-                if player_history is None:
-                    raise NotFound(serialize_error('4081'))
+            #     serializer = PlayerHistorySerializer(data={'player': player.id, 'state': player.current_state.id,
+            #                                                'start_time': player.last_visit},
+            #                                          context=self.get_serializer_context())
+            #     if serializer.is_valid(raise_exception=True):
+            #         player_history = serializer.save()
+            # else:
+                # player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
+                # if player_history is None:
+                #     raise NotFound(serialize_error('4081'))
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                             status=status.HTTP_200_OK)
         return Response('not implemented yet')
