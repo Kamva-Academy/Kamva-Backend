@@ -144,6 +144,11 @@ class TeamAdmin(admin.ModelAdmin):
         return ','.join(member.user.full_name for member in obj.members.all())
 
 
+class StateAdmin(admin.ModelAdmin):
+    model = State
+    list_display = ['id', 'name', 'fsm']
+
+
 admin.site.register(Paper)
 admin.site.register(RegistrationForm, RegistrationFormAdmin)
 admin.site.register(Problem)
@@ -156,7 +161,7 @@ admin.site.register(Invitation)
 
 admin.site.register(FSM, FSMAdmin)
 admin.site.register(Edge, EdgeAdmin)
-admin.site.register(State)
+admin.site.register(State, StateAdmin)
 admin.site.register(Hint)
 admin.site.register(Widget, WidgetAdmin)
 admin.site.register(Video)
