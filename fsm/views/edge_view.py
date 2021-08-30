@@ -77,8 +77,8 @@ class EdgeViewSet(ModelViewSet):
                         p = member.players.filter(fsm=fsm).first()
                         if p:
                             move_on_edge(p, edge, departure_time, is_forward=False)
-                        if player.id == p.id:
-                            player = p
+                            if player.id == p.id:
+                                player = p
 
                     team_lock.is_locked = False
                     team_lock.save()
@@ -147,8 +147,8 @@ class EdgeViewSet(ModelViewSet):
                         p = member.players.filter(fsm=fsm).first()
                         if p:
                             move_on_edge(p, edge, departure_time, is_forward=True)
-                        if player.id == p.id:
-                            player = p
+                            if player.id == p.id:
+                                player = p
                     team_lock.is_locked = False
                     team_lock.save()
                     return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
@@ -186,8 +186,8 @@ class EdgeViewSet(ModelViewSet):
                         p = member.players.filter(fsm=fsm).first()
                         if p:
                             move_on_edge(p, edge, departure_time, is_forward=True)
-                        if player.id == p.id:
-                            player = p
+                            if player.id == p.id:
+                                player = p
                     return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                     status=status.HTTP_200_OK)
                 elif player.current_state == edge.head:
@@ -215,8 +215,8 @@ class EdgeViewSet(ModelViewSet):
                         p = member.players.filter(fsm=fsm).first()
                         if p:
                             move_on_edge(p, edge, departure_time, is_forward=False)
-                        if player.id == p.id:
-                            player = p
+                            if player.id == p.id:
+                                player = p
                     return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                     status=status.HTTP_200_OK)
                 elif player.current_state == edge.tail:
