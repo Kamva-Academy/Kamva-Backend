@@ -42,7 +42,7 @@ class EventViewSet(ModelViewSet):
     @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
     @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def get_mentored_fsms(self, request, pk=None):
-        event_fsms = self.get_object().fsms.filter()
+        event_fsms = self.get_object().fsms.all()
         user = self.request.user
         fs = []
         for f in event_fsms:

@@ -127,7 +127,10 @@ class PlayerAdmin(admin.ModelAdmin):
 
 class FSMAdmin(admin.ModelAdmin):
     model = FSM
-    list_display = ['name', 'first_state', 'is_active']
+    list_display = ['name', 'first_state', 'is_active', 'mentors']
+
+    def mentors(self, obj):
+        return len(obj.mentors.all())
 
 
 class TeamAdmin(admin.ModelAdmin):
