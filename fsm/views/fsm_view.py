@@ -17,7 +17,7 @@ from rest_framework import permissions
 from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
-from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging
+from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer, \
     TeamGetSerializer
@@ -34,7 +34,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     my_tags = ['fsm']
 
     def get_permissions(self):
-        if self.action in ['update', 'destroy', 'add_mentor', 'get_states', 'get_edges','get_player_from_team']:
+        if self.action in ['update', 'destroy', 'add_mentor', 'get_states', 'get_edges','get_player_from_team', 'activate']:
             permission_classes = [MentorPermission]
         elif self.action in ['enter', 'get_self']:
             permission_classes = [HasActiveRegistration]
@@ -147,6 +147,20 @@ class FSMViewSet(viewsets.ModelViewSet):
             player = get_a_player_from_team(team, fsm)
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
+
+
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def activate(self, request, pk=None):
+        f = self.get_object()
+        previous_players = len(f.players.all())
+        for r in RegistrationReceipt.objects.filter(is_participating=True):
+            if len(Player.objects.filter(user=r.user, fsm=f, receipt=r)) <= 0:
+                Player.objects.create(user=r.user, fsm=f, receipt=r, current_state=f.first_state,
+                                      last_visit=timezone.now())
+
+        return Response(data={'new_players_count': len(f.players.all()), 'previous_players_count': previous_players},
+                        status=status.HTTP_200_OK)
 
 
 class PlayerViewSet(viewsets.GenericViewSet, RetrieveModelMixin):

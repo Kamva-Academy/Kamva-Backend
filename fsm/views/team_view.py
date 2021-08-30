@@ -7,6 +7,7 @@ from rest_framework import mixins
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import Teamm
@@ -15,6 +16,7 @@ from errors.error_codes import serialize_error
 from fsm import permissions as customPermissions
 from fsm.models import Team, Invitation, RegistrationReceipt, RegistrationForm
 from fsm.permissions import IsInvitationInvitee
+from fsm.serializers.answer_sheet_serializers import ReceiptGetSerializer
 from fsm.serializers.team_serializer import TeamSerializer, InvitationSerializer, InvitationResponseSerializer
 
 logger = logging.getLogger(__name__)
@@ -68,6 +70,19 @@ class TeamViewSet(viewsets.ModelViewSet):
             serializer.validated_data['team'] = team
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], serializer_class=ReceiptGetSerializer, permission_classes=[IsAuthenticated])
+    def make_team_head(self, request, pk=None):
+        team = self.get_object()
+        serializer = ReceiptGetSerializer(data=self.request.data)
+        if serializer.is_valid(raise_exception=True):
+            receipt = serializer.validated_data['recipt']
+            if receipt in team.members.all():
+                team.team_head = receipt
+                team.save()
+            else:
+                raise ParseError(serialize_error('4090'))
+            return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team), status=status.HTTP_200_OK)
 
 
 class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.ListModelMixin):

@@ -97,6 +97,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4087': 'unable to move on a hidden edge, only mentors can move you on hidden edges, contact them!',
                '4088': 'no one in this team has entered this fsm',
                '4089': 'only team head can move team',
+               '4090': 'given receipt is not a member of this team',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

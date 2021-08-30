@@ -106,3 +106,7 @@ class RegistrationPerCitySerializer(serializers.Serializer):
 
 class RegistrationStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=RegistrationReceipt.RegistrationStatus.choices)
+
+class ReceiptGetSerializer(serializers.Serializer):
+    receipt = serializers.PrimaryKeyRelatedField(queryset=RegistrationReceipt.objects.filter(is_participating=True),
+                                                 required=True)
