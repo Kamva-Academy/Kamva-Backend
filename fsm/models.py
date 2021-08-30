@@ -160,11 +160,6 @@ class Team(models.Model):
         return f'{self.name}:{",".join(member.user.full_name for member in self.members.all())}'
 
 
-class TeamLock(models.Model):
-    team = models.OneToOneField(Team, related_name='lock', on_delete=models.CASCADE)
-    is_locked = models.BooleanField(default=False)
-
-
 class Invitation(models.Model):
     invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')

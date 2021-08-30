@@ -19,11 +19,4 @@ class Command(BaseCommand):
                 if len(Player.objects.filter(user=r.user, fsm=f, receipt=r)) <= 0:
                     Player.objects.create(user=r.user, fsm=f, receipt=r, current_state=f.first_state, last_visit=timezone.now())
 
-        #
-        #
-        # data = {'user': r.user.id, 'fsm': fsm.id, 'receipt': r.id,
-        #         'current_state': fsm.first_state.id, 'last_visit': timezone.now()}
-
-
                     self.stdout.write(self.style.SUCCESS(f'created_for {r.user.username} & {f.name}'))
-

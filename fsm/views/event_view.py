@@ -21,7 +21,7 @@ class EventViewSet(ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create' or 'get_mentored_fsms']:
             permission_classes = [permissions.IsAuthenticated]
         elif self.action == 'retrieve' or self.action == 'list':
             permission_classes = [permissions.AllowAny]
@@ -37,3 +37,16 @@ class EventViewSet(ModelViewSet):
     def get_fsms(self, request, pk=None):
         return Response(data=FSMSerializer(self.get_object().fsms.filter(is_active=True), many=True,
                                            context=self.get_serializer_context()).data, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def get_mentored_fsms(self, request, pk=None):
+        event_fsms = self.get_object().fsms.filter()
+        user = self.request.user
+        fs = []
+        for f in event_fsms:
+            if user in f.mentors.all():
+                fs.append(f)
+        return Response(data=FSMSerializer(fs, many=True, context=self.get_serializer_context()).data,
+                        status=status.HTTP_200_OK)
