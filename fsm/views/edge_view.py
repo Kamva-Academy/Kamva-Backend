@@ -57,6 +57,7 @@ class EdgeViewSet(ModelViewSet):
         user = request.user
         player = get_player(user, fsm)
         if player is None:
+            logger.warning(serialize_error('4082'))
             raise ParseError(serialize_error('4082'))
         # todo check back enable
         if fsm.fsm_p_type == FSM.FSMPType.Team:
@@ -66,6 +67,7 @@ class EdgeViewSet(ModelViewSet):
             except:
                 team_lock = TeamLock.objects.create(team=team)
             if team_lock.is_locked:
+                logger.warning(serialize_error('4084'))
                 raise ParseError(serialize_error('4084'))
             else:
                 team_lock.is_locked = True
@@ -93,6 +95,7 @@ class EdgeViewSet(ModelViewSet):
                 else:
                     team_lock.is_locked = False
                     team_lock.save()
+                    logger.warning(serialize_error('4083'))
                     raise ParseError(serialize_error('4083'))
             except Exception as e:
                 team_lock.is_locked = False
@@ -114,6 +117,7 @@ class EdgeViewSet(ModelViewSet):
         user = request.user
         player = get_player(user, fsm)
         if player is None:
+            logger.warning(serialize_error('4082'))
             raise ParseError(serialize_error('4082'))
         if not edge.is_hidden: # todo - eslah dis!
             raise PermissionDenied(serialize_error('4087'))
@@ -124,6 +128,7 @@ class EdgeViewSet(ModelViewSet):
             except:
                 team_lock = TeamLock.objects.create(team=team)
             if team_lock.is_locked:
+                logger.warning(serialize_error('4084'))
                 raise ParseError(serialize_error('4084'))
             else:
                 team_lock.is_locked = True
@@ -134,10 +139,12 @@ class EdgeViewSet(ModelViewSet):
                         if not key:
                             team_lock.is_locked = False
                             team_lock.save()
+                            logger.warning(serialize_error('4085'))
                             raise PermissionDenied(serialize_error('4085'))
                         elif edge.lock != key:
                             team_lock.is_locked = False
                             team_lock.save()
+                            logger.warning(serialize_error('4084'))
                             raise PermissionDenied(serialize_error('4084'))
 
                     # todo - handle scoring things - not needed now
@@ -161,6 +168,7 @@ class EdgeViewSet(ModelViewSet):
                 else:
                     team_lock.is_locked = False
                     team_lock.save()
+                    logger.warning(serialize_error('4083'))
                     raise ParseError(serialize_error('4083'))
             except Exception as e:
                 team_lock.is_locked = False
