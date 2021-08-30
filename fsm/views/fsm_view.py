@@ -144,7 +144,7 @@ class FSMViewSet(viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             team = serializer.validated_data['team']
             player = get_a_player_from_team(team, fsm)
-            logger.info(f'salammmmmmmmmmmmmmmmmmmmmm{player.user.fullname}')
+            logger.info(f'salammmmmmmmmmmmmmmmmmmmmm {player.user.full_name}')
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
 
