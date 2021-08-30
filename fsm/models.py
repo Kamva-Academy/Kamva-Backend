@@ -357,7 +357,7 @@ class Edge(models.Model):
     priority = models.IntegerField(null=True, blank=True)
     lock = models.CharField(max_length=10, null=True, blank=True)
     has_lock = models.BooleanField(default=False)
-    is_hidden = models.BooleanField(default=False)
+    is_visible = models.BooleanField(default=False)
     text = models.TextField(null=True, blank=True)
 
     objects = EdgeManager()

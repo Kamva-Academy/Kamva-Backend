@@ -98,8 +98,8 @@ class EdgeViewSet(ModelViewSet):
         player = get_player(user, fsm)
         if player is None:
             raise ParseError(serialize_error('4082'))
-        # if not edge.is_hidden: # todo - eslah dis!
-        #     raise PermissionDenied(serialize_error('4087'))
+        if not edge.is_visible:
+            raise PermissionDenied(serialize_error('4087'))
         if fsm.fsm_p_type == FSM.FSMPType.Team:
             team = player.team
             if player.receipt.id != team.team_head.id:
