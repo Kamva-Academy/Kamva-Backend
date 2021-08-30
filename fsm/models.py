@@ -15,6 +15,16 @@ class Paper(PolymorphicModel):
     creator = models.ForeignKey('accounts.User', related_name='papers', null=True, blank=True,
                                 on_delete=models.SET_NULL)
 
+    def delete(self):
+        for w in Widget.objects.filter(paper=self):
+            try:
+                print('hiya')
+                w.delete()
+            except:
+                w.paper = None
+                w.save()
+        return super(Paper, self).delete()
+
 
 class AnswerSheet(PolymorphicModel):
     class AnswerSheetType(models.TextChoices):
