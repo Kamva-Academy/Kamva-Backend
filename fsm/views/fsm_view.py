@@ -156,8 +156,9 @@ class FSMViewSet(viewsets.ModelViewSet):
         previous_players = len(f.players.all())
         for r in RegistrationReceipt.objects.filter(is_participating=True):
             if len(Player.objects.filter(user=r.user, fsm=f, receipt=r)) <= 0:
-                Player.objects.create(user=r.user, fsm=f, receipt=r, current_state=f.first_state,
+                p = Player.objects.create(user=r.user, fsm=f, receipt=r, current_state=f.first_state,
                                       last_visit=timezone.now())
+                PlayerHistory.objects.create(player=p, state=f.first_state, start_time=p.last_visit)
 
         return Response(data={'new_players_count': len(f.players.all()), 'previous_players_count': previous_players},
                         status=status.HTTP_200_OK)
