@@ -52,7 +52,5 @@ class EventViewSet(ModelViewSet):
         for f in event_fsms:
             if user in f.mentors.all():
                 fs.append(f)
-
-        logger.info(fs)
         return Response(data=FSMSerializer(fs, many=True, context=self.get_serializer_context()).data,
                         status=status.HTTP_200_OK)
