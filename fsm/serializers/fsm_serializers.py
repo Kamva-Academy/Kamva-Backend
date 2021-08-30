@@ -48,7 +48,16 @@ class EventSerializer(serializers.ModelSerializer):
         representation['participants_size'] = len(instance.participants)
         representation['registration_receipt'] = registration.id if registration else None
         if registration and registration.is_participating and instance.event_type == Event.EventType.Team:
-            representation['team'] = registration.team.id if registration.team else 'TeamNotCreatedYet'
+            if registration.team:
+                representation['team'] = registration.team.id
+                if registration.team.team_head:
+                    representation['team_head_name'] = registration.team.team_head.user.full_name
+                    representation['is_team_head'] = registration.team.team_head.id == registration.id
+            else:
+                representation['team'] = 'TeamNotCreatedYet'
+                representation['team_head_name'] = None
+                representation['is_team_head'] = False
+    
         return representation
 
     class Meta:
@@ -121,6 +130,15 @@ class FSMSerializer(serializers.ModelSerializer):
         representation['player'] = player.id if player else 'NotStarted'
         representation['state'] = player.current_state.name if player and player.current_state else None
         representation['last_visit'] = player.last_visit if player else 'NotStarted'
+        if player.receipt.team:
+            representation['team'] = player.receipt.team.id
+            if player.receipt.team.team_head:
+                representation['team_head_name'] = player.receipt.team.team_head.user.full_name
+                representation['is_team_head'] = player.receipt.team.team_head.id == player.receipt.id
+        else:
+            representation['team'] = 'TeamNotCreatedYet'
+            representation['team_head_name'] = None
+            representation['is_team_head'] = False
         return representation
 
     class Meta:
