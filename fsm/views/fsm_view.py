@@ -17,7 +17,7 @@ from rest_framework import permissions
 from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
-from fsm.models import FSM, State, PlayerHistory, Player, Edge
+from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer, \
     TeamGetSerializer
@@ -25,6 +25,7 @@ from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerial
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
 from fsm.views.functions import get_player, get_receipt, get_a_player_from_team
 
+logger = logging.getLogger(__name__)
 
 class FSMViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -143,6 +144,7 @@ class FSMViewSet(viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             team = serializer.validated_data['team']
             player = get_a_player_from_team(team, fsm)
+            logger.info(f'salammmmmmmmmmmmmmmmmmmmmm{player.user.fullname}')
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
 
