@@ -10,6 +10,10 @@ from fsm.serializers.fsm_serializers import EventSerializer, FSMSerializer
 from fsm.permissions import IsEventModifier, HasActiveRegistration
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class EventViewSet(ModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
@@ -21,7 +25,7 @@ class EventViewSet(ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action in ['create' or 'get_mentored_fsms']:
+        if self.action in ['create', 'get_mentored_fsms']:
             permission_classes = [permissions.IsAuthenticated]
         elif self.action == 'retrieve' or self.action == 'list':
             permission_classes = [permissions.AllowAny]
@@ -48,5 +52,7 @@ class EventViewSet(ModelViewSet):
         for f in event_fsms:
             if user in f.mentors.all():
                 fs.append(f)
+
+        logger.info(fs)
         return Response(data=FSMSerializer(fs, many=True, context=self.get_serializer_context()).data,
                         status=status.HTTP_200_OK)
