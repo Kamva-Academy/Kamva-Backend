@@ -29,22 +29,24 @@ def move_on_edge(p, edge, departure_time, is_forward):
     p.current_state = edge.head if is_forward else edge.tail
     p.last_visit = departure_time
     p.save()
-    last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
-    if last_state_history is None:
-        raise ParseError(serialize_error('4086'))
-    last_state_history.end_time = departure_time
-    last_state_history.save()
+    # last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
+    # if last_state_history is None:
+    #     logger.info('no player moved on edge')
+    #     raise ParseError(serialize_error('4086'))
+    # last_state_history.end_time = departure_time
+    # last_state_history.save()
 
-    serializer = PlayerHistorySerializer(data={'player': p.id, 'state': p.current_state.id, 'entered_by_edge': edge.id,
-                                               'start_time': departure_time, 'reverse_enter': not is_forward})
-    if serializer.is_valid(raise_exception=True):
-        serializer.save()
+    # serializer = PlayerHistorySerializer(data={'player': p.id, 'state': p.current_state.id, 'entered_by_edge': edge.id,
+    #                                            'start_time': departure_time, 'reverse_enter': not is_forward})
+    # if serializer.is_valid(raise_exception=True):
+    #     serializer.save()
 
 
 def get_a_player_from_team(team, fsm):
     head_receipt = team.team_head
     players = Player.objects.filter(fsm=fsm, receipt__in=team.members.all())
     if len(players) <= 0:
+        logger.info('no player found for any member of team')
         raise ParseError(serialize_error('4088'))
     else:
         player = players.filter(receipt=head_receipt).first()
