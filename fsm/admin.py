@@ -130,6 +130,7 @@ class FSMAdmin(admin.ModelAdmin):
     list_display = ['name', 'first_state', 'is_active', 'mentors']
 
     def mentors(self, obj):
+        logger.warning(','.join(m.full_name for m in obj.mentors.all()))
         return ','.join(m.full_name for m in obj.mentors.all())
 
 
