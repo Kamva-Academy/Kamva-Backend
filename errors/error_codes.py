@@ -1,6 +1,10 @@
+import logging
+
 from rest_framework.exceptions import ValidationError
 
 from workshop_backend.settings.base import SMS_CODE_LENGTH
+
+logger = logging.getLogger(__name__)
 
 errors_dict = {'4000': 'phone number must be digit',
                '4001': 'phone number must have at least 10 digits',
@@ -103,8 +107,10 @@ errors_dict = {'4000': 'phone number must be digit',
 def serialize_error(code, params=dict(), is_field_error=True):
     msg = errors_dict.get(code, None)
     if type(msg) == str:
+        logger.warning(f'{code}')
         returned = {'code': code, 'detail': msg, **params}
     else:
+        logger.warning(f'{code}')
         returned = {'code': code, 'detail': ''}
 
     if is_field_error:
