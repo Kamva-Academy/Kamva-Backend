@@ -94,18 +94,19 @@ class FSMViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_200_OK)
         return Response('not implemented yet')
 
-    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
-    @transaction.atomic
-    @action(detail=True, methods=['get'])
-    def get_self(self, request, pk=None):
-        fsm = self.get_object()
-        user = self.request.user
-        player = get_player(user, fsm)
-        if player:
-            return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                            status=status.HTTP_200_OK)
-        else:
-            raise NotFound(serialize_error('4081'))
+    # @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
+    # @transaction.atomic
+    # @action(detail=True, methods=['get'])
+    # def get_self(self, request, pk=None):
+    #     fsm = self.get_object()
+    #     user = self.request.user
+    #     player = get_player(user, fsm)
+    #     if player:
+    #         return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+    #                         status=status.HTTP_200_OK)
+    #     else:
+    #         raise NotFound(serialize_error('4081'))
+
 
     @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
     @transaction.atomic

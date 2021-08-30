@@ -29,18 +29,14 @@ def move_on_edge(p, edge, departure_time, is_forward):
     p.current_state = edge.head if is_forward else edge.tail
     p.last_visit = departure_time
     p.save()
-    return p
-    # last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
-    # if last_state_history is None:
-    #     logger.info('no player moved on edge')
-    #     raise ParseError(serialize_error('4086'))
-    # last_state_history.end_time = departure_time
-    # last_state_history.save()
+    last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
+    if last_state_history:
+        last_state_history.end_time = departure_time
+        last_state_history.save()
+    PlayerHistory.objects.create(player=p, state=edge.head if is_forward else edge.tail, entered_by_edge=edge,
+                                 start_time=departure_time, reverse_enter=not is_forward)
 
-    # serializer = PlayerHistorySerializer(data={'player': p.id, 'state': p.current_state.id, 'entered_by_edge': edge.id,
-    #                                            'start_time': departure_time, 'reverse_enter': not is_forward})
-    # if serializer.is_valid(raise_exception=True):
-    #     serializer.save()
+    return p
 
 
 def get_a_player_from_team(team, fsm):

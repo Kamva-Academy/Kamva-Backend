@@ -13,13 +13,12 @@ from rest_framework.viewsets import ModelViewSet
 
 from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
-from fsm.models import Edge, FSM, PlayerHistory, TeamLock
+from fsm.models import Edge, FSM, PlayerHistory
 from fsm.permissions import IsEdgeModifier
 from fsm.serializers.fsm_serializers import EdgeSerializer, KeySerializer, TeamGetSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
 from fsm.views.functions import get_player, move_on_edge, get_a_player_from_team
 from workshop_backend.settings.production import REDIS_PORT, REDIS_HOST
-
 
 logger = logging.getLogger(__name__)
 
@@ -57,56 +56,36 @@ class EdgeViewSet(ModelViewSet):
         user = request.user
         player = get_player(user, fsm)
         if player is None:
-            logger.warning(serialize_error('4082'))
             raise ParseError(serialize_error('4082'))
         # todo check back enable
         if fsm.fsm_p_type == FSM.FSMPType.Team:
             team = player.team
-            # try:
-            #     team_lock = team.lock
-            # except:
-            #     team_lock = TeamLock.objects.create(team=team)
-            # if team_lock.is_locked:
-            #     logger.warning(serialize_error('4084'))
-            #     raise ParseError(serialize_error('4084'))
-            # else:
-            #     team_lock.is_locked = True
-            #     team_lock.save()
-            # try:
-            if player.current_state == edge.head:
-                departure_time = timezone.now()
-                player = move_on_edge(player, edge, departure_time, is_forward=False)
-                # for member in team.members.all():
-                #     p = member.players.filter(fsm=fsm).first()
-                #     if p:
-                #         move_on_edge(p, edge, departure_time, is_forward=False)
-                #         if player.id == p.id:
-                #             player = p
+            if player.receipt.id != team.team_head.id:
+                raise ParseError(serialize_error('4089'))
 
-                # team_lock.is_locked = False
-                # team_lock.save()
+            if player.current_state == edge.head:
+
+                departure_time = timezone.now()
+                for member in team.members.all():
+                    p = member.players.filter(fsm=fsm).first()
+                    if p:
+                        p = move_on_edge(p, edge, departure_time, is_forward=False)
+                        if player.id == p.id:
+                            player = p
+
                 return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
 
             elif player.current_state == edge.tail:
-                # team_lock.is_locked = False
-                # team_lock.save()
+
                 return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
             else:
-                # team_lock.is_locked = False
-                # team_lock.save()
-                logger.warning(serialize_error('4083'))
+
                 raise ParseError(serialize_error('4083'))
-            # except Exception as e:
-            #     team_lock.is_locked = False
-            #     team_lock.save()
-            #     raise e
-
-
 
         else:
-            return InternalServerError('Not implemented Yet😎')
+            raise InternalServerError('Not implemented Yet😎')
 
     @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
     @transaction.atomic
@@ -118,35 +97,30 @@ class EdgeViewSet(ModelViewSet):
         user = request.user
         player = get_player(user, fsm)
         if player is None:
-            logger.warning(serialize_error('4082'))
             raise ParseError(serialize_error('4082'))
         # if not edge.is_hidden: # todo - eslah dis!
         #     raise PermissionDenied(serialize_error('4087'))
         if fsm.fsm_p_type == FSM.FSMPType.Team:
             team = player.team
-
+            if player.receipt.id != team.team_head.id:
+                raise ParseError(serialize_error('4089'))
 
             if player.current_state == edge.tail:
-                # if edge.lock and len(edge.lock) > 0:
-                #     if not key:
-                #
-                #         logger.warning(serialize_error('4085'))
-                #         raise PermissionDenied(serialize_error('4085'))
-                #     elif edge.lock != key:
-                #
-                #         logger.warning(serialize_error('4084'))
-                #         raise PermissionDenied(serialize_error('4084'))
+                if edge.lock and len(edge.lock) > 0:
+                    if not key:
+                        raise PermissionDenied(serialize_error('4085'))
+                    elif edge.lock != key:
+                        raise PermissionDenied(serialize_error('4084'))
 
-                # todo - handle scoring things - not needed now
+                # todo - handle scoring things
 
                 departure_time = timezone.now()
-                player = move_on_edge(player, edge, departure_time, is_forward=True)
-                # for member in team.members.all():
-                #     p = member.players.filter(fsm=fsm).first()
-                #     if p:
-                #         move_on_edge(p, edge, departure_time, is_forward=True)
-                #         if player.id == p.id:
-                #             player = p
+                for member in team.members.all():
+                    p = member.players.filter(fsm=fsm).first()
+                    if p:
+                        p = move_on_edge(p, edge, departure_time, is_forward=True)
+                        if player.id == p.id:
+                            player = p
 
                 return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
@@ -158,7 +132,7 @@ class EdgeViewSet(ModelViewSet):
                 logger.warning(serialize_error('4083'))
                 raise ParseError(serialize_error('4083'))
         else:
-            return InternalServerError('Not implemented Yet😎')
+            raise InternalServerError('Not implemented Yet😎')
 
     @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['mentor'])
     @transaction.atomic
@@ -170,22 +144,19 @@ class EdgeViewSet(ModelViewSet):
             edge = self.get_object()
             fsm = edge.tail.fsm
             player = get_a_player_from_team(team, fsm)
+
             if fsm.fsm_p_type == FSM.FSMPType.Team:
-                if player.current_state == edge.tail:
-                    departure_time = timezone.now()
-                    for member in team.members.all():
-                        p = member.players.filter(fsm=fsm).first()
-                        if p:
-                            move_on_edge(p, edge, departure_time, is_forward=True)
-                            if player.id == p.id:
-                                player = p
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-                elif player.current_state == edge.head:
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-                else:
-                    raise ParseError(serialize_error('4083'))
+
+                departure_time = timezone.now()
+                for member in team.members.all():
+                    p = member.players.filter(fsm=fsm).first()
+                    if p:
+                        p = move_on_edge(p, edge, departure_time, is_forward=True)
+                        if player.id == p.id:
+                            player = p
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+
             else:
                 raise InternalServerError('Not implemented Yet😎')
 
@@ -199,21 +170,18 @@ class EdgeViewSet(ModelViewSet):
             edge = self.get_object()
             fsm = edge.tail.fsm
             player = get_a_player_from_team(team, fsm)
+
             if fsm.fsm_p_type == FSM.FSMPType.Team:
-                if player.current_state == edge.head:
-                    departure_time = timezone.now()
-                    for member in team.members.all():
-                        p = member.players.filter(fsm=fsm).first()
-                        if p:
-                            move_on_edge(p, edge, departure_time, is_forward=False)
-                            if player.id == p.id:
-                                player = p
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-                elif player.current_state == edge.tail:
-                    return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                    status=status.HTTP_200_OK)
-                else:
-                    raise ParseError(serialize_error('4083'))
+
+                departure_time = timezone.now()
+                for member in team.members.all():
+                    p = member.players.filter(fsm=fsm).first()
+                    if p:
+                        p = move_on_edge(p, edge, departure_time, is_forward=False)
+                        if player.id == p.id:
+                            player = p
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+
             else:
                 raise InternalServerError('Not implemented Yet😎')
