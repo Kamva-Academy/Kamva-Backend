@@ -133,7 +133,6 @@ class TeamAdmin(admin.ModelAdmin):
         return ','.join(member.user.full_name for member in obj.members.all())
 
 
-
 admin.site.register(Paper)
 admin.site.register(RegistrationForm, RegistrationFormAdmin)
 admin.site.register(Problem)
@@ -166,4 +165,3 @@ admin.site.register(Event)
 admin.site.register(UploadFileAnswer, AnswerAdmin)
 admin.site.register(UploadFileProblem)
 admin.site.register(PlayerHistory, PlayerHistoryAdmin)
-
