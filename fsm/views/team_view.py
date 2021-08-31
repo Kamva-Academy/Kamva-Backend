@@ -76,7 +76,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         team = self.get_object()
         serializer = ReceiptGetSerializer(data=self.request.data)
         if serializer.is_valid(raise_exception=True):
-            receipt = serializer.validated_data['recipt']
+            receipt = serializer.validated_data['receipt']
             if receipt in team.members.all():
                 team.team_head = receipt
                 team.save()
