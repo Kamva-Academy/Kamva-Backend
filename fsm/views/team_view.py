@@ -45,7 +45,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'make_team_head']:
             permission_classes = [permissions.IsAuthenticated]
         elif self.action == 'get_invitations' or self.action == 'retrieve':
             permission_classes = [customPermissions.IsTeamMember]
