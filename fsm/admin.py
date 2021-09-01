@@ -141,11 +141,16 @@ class FSMAdmin(admin.ModelAdmin):
 
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['id', 'name', 'team_head', 'members']
+    list_display = ['id', 'name', 'team_head', 'members', 'has_been_online_in_last_hour']
 
     def members(self, obj):
         return ','.join(member.user.full_name for member in obj.members.all())
 
+    def has_been_online_in_last_hour(self, obj):
+        for m in obj.members.all():
+            if m.players.filter(last_visit__gt=timezone.now() - timedelta(hours=1)).first():
+                return True
+        return False
 
 class StateAdmin(admin.ModelAdmin):
     model = State
