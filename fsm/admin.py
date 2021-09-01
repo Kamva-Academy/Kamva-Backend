@@ -127,7 +127,7 @@ class PlayerAdmin(admin.ModelAdmin):
 
 class FSMAdmin(admin.ModelAdmin):
     model = FSM
-    list_display = ['name', 'first_state', 'is_active', 'mentors_num', 'mentors_list', 'online_users']
+    list_display = ['name', 'first_state', 'is_active', 'mentors_num', 'mentors_list', 'online_teams_in_last_hour']
 
     def mentors_list(self, obj):
         return ','.join(m.full_name for m in obj.mentors.all())
@@ -135,8 +135,8 @@ class FSMAdmin(admin.ModelAdmin):
     def mentors_num(self, obj):
         return len(obj.mentors.all())
 
-    def online_users(self, obj):
-        return len(obj.players.filter(last_visit__gt=timezone.now() - timedelta(hours=1)))
+    def online_teams_in_last_hour(self, obj):
+        return len(obj.players.filter(last_visit__gt=timezone.now() - timedelta(hours=1))) / obj.team_size if obj.team_size > 0 else 1
 
 
 class TeamAdmin(admin.ModelAdmin):
