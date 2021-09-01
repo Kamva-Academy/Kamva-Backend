@@ -136,7 +136,7 @@ class FSMAdmin(admin.ModelAdmin):
         return len(obj.mentors.all())
 
     def online_teams_in_last_hour(self, obj):
-        return len(obj.players.filter(last_visit__gt=timezone.now() - timedelta(hours=1))) / obj.team_size if obj.team_size > 0 else 1
+        return len(obj.players.filter(last_visit__gt=timezone.now() - timedelta(hours=1))) // obj.team_size if obj.team_size > 0 else 1
 
 
 class TeamAdmin(admin.ModelAdmin):
