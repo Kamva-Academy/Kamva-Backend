@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views.answer_view import UploadAnswerViewSet
+from .views.answer_view import UploadAnswerViewSet, AnswerViewSet
 from .views.event_view import EventViewSet
 from .views.fsm_view import *
 from .views.fsmstateview import *
@@ -87,4 +87,5 @@ router.register(r'edge', EdgeViewSet, basename='edges')
 router.register(r'hint', HintViewSet, basename='hints')
 router.register(r'widget', WidgetViewSet, basename='widgets')
 router.register(r'player', PlayerViewSet, basename='players')
+router.register(r'answers', AnswerViewSet, basename='answers')
 urlpatterns += router.urls

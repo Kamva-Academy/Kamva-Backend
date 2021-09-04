@@ -124,6 +124,24 @@ class IsEdgeModifier(permissions.BasePermission):
         return request.user in obj.tail.fsm.mentors.all() or request.user in obj.head.fsm.mentors.all()
 
 
+class IsAnswerModifier(permissions.BasePermission):
+    """
+    Permission for modifying answers
+    """
+    message = 'you are not this answer\'s modifier'
+
+    def has_object_permission(self, request, view, obj):
+        if request.user == obj.submitted_by:
+            return True
+        if obj.problem is not None and obj.problem.paper is not None and obj.problem.paper is not None \
+                and obj.problem.paper.players is not None:
+            submitted_by = obj.problem.paper.players.filter(user=obj.submitted_by).first()
+            if submitted_by.team and submitted_by.team.members.filter(user=request.user).first():
+                return True
+        return False
+
+
+
 class HasActiveRegistration(permissions.BasePermission):
     """
     Permission for checking registration of users in events / fsms
