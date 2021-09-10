@@ -110,6 +110,19 @@ def delete_registration_receipts(modeladmin, request, queryset):
     for obj in queryset:
         obj.delete()
 
+import json
+def get_users_data():
+    for registerrec in RegistrationReceipt.objects.all():
+        datas = []
+        if registerrec.is_participating:
+            data = {}
+            data['password'] = registerrec.user.password
+            data['team'] = registerrec.team.id
+            data['first_name'] = registerrec.user.first_name
+            data['last_name'] = registerrec.user.last_name
+            data['phone_number'] = registerrec.user.username
+            datas.append(data)
+    return json.dumps(datas, ensure_ascii=False)
 
 class RegistrationReceiptsAdmin(admin.ModelAdmin):
     list_display = ['user', 'name', 'answer_sheet_of', 'status', 'is_participating', 'team']
