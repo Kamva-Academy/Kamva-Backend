@@ -490,7 +490,7 @@ class CustomUserAdmin(admin.ModelAdmin):
                           messages.SUCCESS)
 
     model = User
-    list_display = ['id', 'username', 'first_name', 'last_name', 'gender', 'province', 'city', 'date_joined']
+    list_display = ['id', 'username', 'first_name', 'last_name', 'gender', 'province', 'city', 'password']
     actions = [verify_school_documents]
     ordering = ['-date_joined']
 
