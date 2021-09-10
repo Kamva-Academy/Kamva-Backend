@@ -117,7 +117,10 @@ def get_users_data():
         if registerrec.is_participating:
             data = {}
             data['password'] = registerrec.user.password
-            data['team'] = registerrec.team.id
+            try:
+                data['team'] = registerrec.team.id
+            except:
+                data['team'] = None
             data['first_name'] = registerrec.user.first_name
             data['last_name'] = registerrec.user.last_name
             data['phone_number'] = registerrec.user.username
