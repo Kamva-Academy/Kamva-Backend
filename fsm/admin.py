@@ -1,9 +1,10 @@
 import os
+import csv
 from gettext import ngettext
 
 from django.contrib import admin, messages
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
 from .models import *
@@ -157,6 +158,64 @@ class StateAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'fsm']
 
 
+class SmallAnswerProblemAdmin(admin.ModelAdmin):
+
+    def solution_csv(self, request, queryset):
+    
+        file = open('small-answers.csv', 'w', encoding="utf-8")
+        writer = csv.writer(file)
+        writer.writerow(['problem_name', 'problem_body', 'text', 'submitted_by'])
+        problem_obj = queryset[0]
+        answers = SmallAnswer.objects.filter(problem=problem_obj)
+        ctr = 0
+        for i in answers:
+            if ctr == 0:
+                writer.writerow([i.problem.name, i.problem.text, i.text, i.submitted_by])
+
+            else:
+                writer.writerow([i.problem.name, None, i.text, i.submitted_by])
+            
+            ctr += 1
+
+        file.close()
+
+        f = open('small-answers.csv', 'r')
+        response = HttpResponse(f, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=small-answers.csv'
+        return response
+    
+    actions = [solution_csv]
+
+
+class BigAnswerProblemAdmin(admin.ModelAdmin):
+    
+    def solution_csv(self, request, queryset):
+
+        file = open('big-answers.csv', 'w', encoding="utf-8")
+        writer = csv.writer(file)
+        writer.writerow(['problem_name', 'problem_body', 'text', 'submitted_by'])
+        problem_obj = queryset[0]
+        answers = BigAnswer.objects.filter(problem=problem_obj)
+        ctr = 0
+        for i in answers:
+            if ctr == 0:
+                writer.writerow([i.problem.name, i.problem.text, i.text, i.submitted_by])
+
+            else:
+                writer.writerow([i.problem.name, None, i.text, i.submitted_by])
+            
+            ctr += 1
+
+        file.close()
+
+        f = open('big-answers.csv', 'r')
+        response = HttpResponse(f, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=big-answers.csv'
+        return response
+    
+    actions = [solution_csv]
+
+
 admin.site.register(Paper)
 admin.site.register(RegistrationForm, RegistrationFormAdmin)
 admin.site.register(Problem)
@@ -176,9 +235,9 @@ admin.site.register(Video)
 admin.site.register(Image)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(Game)
-admin.site.register(SmallAnswerProblem)
+admin.site.register(SmallAnswerProblem, SmallAnswerProblemAdmin)
 admin.site.register(SmallAnswer)
-admin.site.register(BigAnswerProblem)
+admin.site.register(BigAnswerProblem, BigAnswerProblemAdmin)
 admin.site.register(BigAnswer)
 admin.site.register(MultiChoiceProblem)
 admin.site.register(MultiChoiceAnswer)
