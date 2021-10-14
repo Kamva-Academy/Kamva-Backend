@@ -2,7 +2,7 @@ from django.db.models import Count, F, Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -105,9 +105,21 @@ class RegistrationViewSet(ModelViewSet):
         serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt',
                                                          **request.data}, context=context)
         if serializer.is_valid(raise_exception=True):
-            serializer.validated_data['answer_sheet_of'] = self.get_object()
-            registration_receipt = serializer.save()
-            if registration_receipt.does_pass_conditions():
+            register_permission_status = self.get_object().user_permission_status(serializer.validated_data.get('user', None))
+            if register_permission_status == RegistrationForm.RegisterPermissionStatus.RegistrationDeadlineMissed:
+                raise ParseError(serialize_error('4036'))
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.StudentshipDataIncomplete:
+                raise PermissionDenied(serialize_error('4057'))
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotPermitted:
+                raise PermissionDenied(serialize_error('4032'))
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.GradeNotAvailable:
+                raise ParseError(serialize_error('4033'))
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.StudentshipDataNotApprovedYet:
+                raise ParseError(serialize_error('4034'))
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.Permitted:
+                serializer.validated_data['answer_sheet_of'] = self.get_object()
+                registration_receipt = serializer.save()
+
                 form = registration_receipt.answer_sheet_of
                 event = form.event
                 # TODO - handle fsm sign up

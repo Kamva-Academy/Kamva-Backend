@@ -141,7 +141,6 @@ class IsAnswerModifier(permissions.BasePermission):
         return False
 
 
-
 class HasActiveRegistration(permissions.BasePermission):
     """
     Permission for checking registration of users in events / fsms

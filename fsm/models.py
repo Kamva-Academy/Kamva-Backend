@@ -51,6 +51,14 @@ class RegistrationForm(Paper):
         BothPartitioned = 'BothPartitioned'
         BothNonPartitioned = 'BothNonPartitioned'
 
+    class RegisterPermissionStatus(models.TextChoices):
+        RegistrationDeadlineMissed = "RegistrationDeadlineMissed"
+        StudentshipDataIncomplete = "StudentshipDataIncomplete"
+        NotPermitted = "NotPermitted"
+        GradeNotAvailable = "GradeNotAvailable"
+        StudentshipDataNotApproved = "StudentshipDataNotApproved"
+        Permitted = "Permitted"
+
     min_grade = models.IntegerField(default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
     max_grade = models.IntegerField(default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
     deadline = models.DateTimeField(null=True)
@@ -74,6 +82,27 @@ class RegistrationForm(Paper):
                     return self.fsm
             except:
                 raise InternalServerError(serialize_error('5002'))
+
+    def user_permission_status(self, user):
+        # if exec(self.answer_sheet_of.conditions):
+        #     return True
+        # TODO - handle for academic studentship too
+        studentship = user.school_studentship
+        if studentship:
+            if studentship.grade:
+                if self.min_grade <= studentship.grade <= self.max_grade:
+                    if studentship.school is not None or studentship.document is not None:
+                        if self.deadline and datetime.now(self.deadline.tzinfo) > self.deadline:
+                            return self.RegisterPermissionStatus.RegistrationDeadlineMissed
+                        return self.RegisterPermissionStatus.Permitted
+                    else:
+                        return self.RegisterPermissionStatus.StudentshipDataIncomplete
+                else:
+                    return self.RegisterPermissionStatus.NotPermitted
+            else:
+                return self.RegisterPermissionStatus.GradeNotAvailable
+        else:
+            return self.RegisterPermissionStatus.StudentshipDataNotApproved
 
     def __str__(self):
         return f'<{self.id}-{self.paper_type}>:{self.event_or_fsm.name if self.event_or_fsm else None}'
@@ -125,25 +154,6 @@ class RegistrationReceipt(AnswerSheet):
                 return self.CorrectionStatus.ManualCorrectionRequired
         return self.CorrectionStatus.Correct
 
-    def does_pass_conditions(self):
-        # if exec(self.answer_sheet_of.conditions):
-        #     return True
-        # TODO - handle for academic studentship too
-        form = self.answer_sheet_of
-        studentship = self.user.school_studentship
-        if studentship:
-            if studentship.grade:
-                if form.min_grade <= studentship.grade <= form.max_grade:
-                    if studentship.school is None or studentship.document is None:
-                        raise PermissionDenied(serialize_error('4057'))
-                    return True
-                else:
-                    raise PermissionDenied(serialize_error('4032'))
-            else:
-                raise ParseError(serialize_error('4033'))
-        else:
-            raise ParseError(serialize_error('4034'))
-
     def __str__(self):
         return f'{self.id}:{self.user.full_name}{"+" if self.is_participating else "x"}'
 
@@ -171,8 +181,8 @@ class Invitation(models.Model):
 
 class Event(models.Model):
     class EventType(models.TextChoices):
-        Team = 'Team'
-        Individual = 'Individual'
+        Team = "Team"
+        Individual = "Individual"
 
     merchandise = models.OneToOneField('accounts.Merchandise', related_name='event', on_delete=models.SET_NULL,
                                        null=True, blank=True)
@@ -193,6 +203,7 @@ class Event(models.Model):
     event_type = models.CharField(max_length=40, default=EventType.Individual, choices=EventType.choices)
     team_size = models.IntegerField(default=3)
     maximum_participant = models.IntegerField(null=True, blank=True)
+    accessible_after_closure = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

@@ -42,11 +42,17 @@ class EventSerializer(serializers.ModelSerializer):
         representation = super(EventSerializer, self).to_representation(instance)
         user = self.context.get('user', None)
         registration = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
-        representation['user_registration_status'] = registration.status if registration else 'NotRegistered'
-        representation['is_paid'] = registration.is_paid if registration else False
-        representation['is_user_participating'] = registration.is_participating if registration else False
         representation['participants_size'] = len(instance.participants)
-        representation['registration_receipt'] = registration.id if registration else None
+        if registration:
+            representation['user_registration_status'] = registration.status
+            representation['is_paid'] = registration.is_paid
+            representation['is_user_participating'] = registration.is_participating
+            representation['registration_receipt'] = registration.id
+        else:
+            representation['user_registration_status'] = instance.registration_form.user_permission_status(user) if instance.registration_form else None
+            representation['is_paid'] = False
+            representation['is_user_participating'] = False
+            representation['registration_receipt'] = None
         if registration and registration.is_participating and instance.event_type == Event.EventType.Team:
             if registration.team:
                 representation['team'] = registration.team.id
@@ -57,7 +63,7 @@ class EventSerializer(serializers.ModelSerializer):
                 representation['team'] = 'TeamNotCreatedYet'
                 representation['team_head_name'] = None
                 representation['is_team_head'] = False
-    
+
         return representation
 
     class Meta:
