@@ -1,6 +1,7 @@
 import logging
 
 from django.db import transaction
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
 from rest_framework.decorators import action
@@ -23,6 +24,8 @@ class InstituteViewSet(ModelViewSet):
     serializer_action_classes = {
         'add_admin': AccountSerializer
     }
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['city']
     my_tags = ['institutes']
 
     def get_serializer_class(self):
@@ -30,6 +33,14 @@ class InstituteViewSet(ModelViewSet):
             return self.serializer_action_classes[self.action]
         except(KeyError, AttributeError):
             return super().get_serializer_class()
+
+    def get_queryset(self):
+        queryset = EducationalInstitute.objects.all()
+        city = self.request.query_params.get('city', None)
+        if city:
+            queryset = queryset.filter(city=city)
+
+        return queryset
 
     def get_permissions(self):
         if self.action == 'create' or self.action == 'retrieve' or self.action == 'list':

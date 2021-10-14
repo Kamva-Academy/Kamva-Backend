@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'scoring',
     'polymorphic',
     'django_extensions',
+    'django_filters',
     'guardian'
 ]
 
