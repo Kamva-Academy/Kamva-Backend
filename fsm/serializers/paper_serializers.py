@@ -6,6 +6,7 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from fsm.models import *
+from fsm.permissions import is_form_modifier
 from fsm.serializers.widget_serializers import WidgetPolymorphicSerializer, WidgetSerializer
 
 
@@ -179,3 +180,31 @@ class PaperPolymorphicSerializer(PolymorphicSerializer):
 
 class ChangeWidgetOrderSerializer(serializers.Serializer):
     order = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=True)
+
+
+class CertificateTemplateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CertificateTemplate
+        fields = '__all__'
+        read_only_fields = ['id']
+
+    def validate(self, attrs):
+        registration_form = attrs.get('registration_form', None)
+        template_file = attrs.get('template_file', None)
+        name_X = attrs.get('name_X', None)
+        name_Y = attrs.get('name_Y', None)
+        user = self.context.get('user', None)
+        if not is_form_modifier(registration_form, user):
+            raise PermissionDenied(serialize_error('4091'))
+        # TODO - add size validation
+        return super(CertificateTemplateSerializer, self).validate(attrs)
+
+    def to_representation(self, instance):
+        representation = super(CertificateTemplateSerializer, self).to_representation(instance)
+        template_file = representation['template_file']
+        if template_file.startswith('/api/'):
+            domain = self.context.get('domain', None)
+            if domain:
+                representation['template_file'] = domain + template_file
+        return representation

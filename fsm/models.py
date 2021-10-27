@@ -130,6 +130,7 @@ class RegistrationReceipt(AnswerSheet):
     status = models.CharField(max_length=25, blank=False, default='Waiting', choices=RegistrationStatus.choices)
     is_participating = models.BooleanField(default=False)
     team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL, related_name='members', null=True, blank=True)
+    certificate = models.FileField(upload_to='certificates/', null=True, blank=True, default=None)
 
     @property
     def purchases(self):
@@ -404,7 +405,7 @@ class Widget(PolymorphicModel):
         MultiChoiceProblem = 'MultiChoiceProblem'
         UploadFileProblem = 'UploadFileProblem'
 
-# TODO - change paper on delete to cascade
+    # TODO - change paper on delete to cascade
     name = models.CharField(max_length=100, null=True, blank=True)
     paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.SET_NULL, related_name='widgets')
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices, null=False, blank=False)
@@ -558,6 +559,14 @@ class UploadFileAnswer(Answer):
     problem = models.ForeignKey('fsm.UploadFileProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
     answer_file = models.FileField(upload_to='answers', max_length=4000, blank=False)
+
+
+class CertificateTemplate(models.Model):
+    certificate_type = models.CharField(max_length=50, null=True, blank=True)  # i.e. gold, silver, etc.
+    template_file = models.FileField(upload_to='certificate_templates/', null=True, blank=True)
+    name_X = models.IntegerField(null=True, blank=True, default=None)
+    name_Y = models.IntegerField(null=True, blank=True, default=None)
+    registration_form = models.ForeignKey(RegistrationForm, on_delete=models.CASCADE, related_name='certificate_templates')
 
 
 # ---------

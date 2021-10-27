@@ -3,18 +3,20 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.mixins import RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin, CreateModelMixin
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from accounts.models import User
 from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
     RegistrationPerCitySerializer
 from fsm.serializers.paper_serializers import RegistrationFormSerializer, \
-    ChangeWidgetOrderSerializer
-from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation
-from fsm.permissions import IsRegistrationFormModifier
+    ChangeWidgetOrderSerializer, CertificateTemplateSerializer
+from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation, CertificateTemplate
+from fsm.permissions import IsRegistrationFormModifier, IsCertificateTemplateModifier
 from fsm.serializers.team_serializer import InvitationSerializer
 
 
@@ -43,6 +45,14 @@ class RegistrationViewSet(ModelViewSet):
         else:
             permission_classes = [IsRegistrationFormModifier]
         return [permission() for permission in permission_classes]
+
+    @swagger_auto_schema(responses={200: CertificateTemplateSerializer})
+    @action(detail=True, methods=['get'])
+    def view_certificate_templates(self, request, pk=None):
+        registration_form = self.get_object()
+        return Response(
+            data=CertificateTemplateSerializer(registration_form.certificate_templates.all(), many=True,
+                                               context=self.get_serializer_context()).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: RegistrationInfoSerializer})
     @action(detail=True, methods=['get'])
@@ -105,7 +115,8 @@ class RegistrationViewSet(ModelViewSet):
         serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt',
                                                          **request.data}, context=context)
         if serializer.is_valid(raise_exception=True):
-            register_permission_status = self.get_object().user_permission_status(serializer.validated_data.get('user', None))
+            register_permission_status = self.get_object().user_permission_status(
+                serializer.validated_data.get('user', None))
             if register_permission_status == RegistrationForm.RegisterPermissionStatus.RegistrationDeadlineMissed:
                 raise ParseError(serialize_error('4036'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.StudentshipDataIncomplete:
@@ -142,3 +153,24 @@ class RegistrationViewSet(ModelViewSet):
                         raise ParseError(serialize_error('4035'))
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CertificateTemplateViewSet(ModelViewSet):
+    serializer_class = CertificateTemplateSerializer
+    queryset = CertificateTemplate.objects.all()
+    permission_classes = [IsCertificateTemplateModifier, ]
+    parser_classes = [MultiPartParser, ]
+    my_tags = ['registration']
+
+    def get_permissions(self):
+        if self.action == 'create':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsCertificateTemplateModifier]
+        return [permission() for permission in permission_classes]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'user': self.request.user})
+        context.update({'domain': self.request.build_absolute_uri('/api/')[:-5]})
+        return context

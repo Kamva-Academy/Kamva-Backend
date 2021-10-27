@@ -13,7 +13,7 @@ urlpatterns = [
     path('accounts/verification_code/', SendVerificationCode.as_view(), name="send_verification_code"),
     path('accounts/login/', Login.as_view(), name='create_token'),
     path('accounts/refresh/', TokenRefreshView.as_view(), name='refresh_token'),
-    path('accounts/change_pass/', ChangePassword.as_view(), name="logout"),
+    path('accounts/change_pass/', ChangePassword.as_view(), name="change_pass"),
 
     # path('registration-info/', RegistrationInfo.as_view(), name="registration_info"),
 

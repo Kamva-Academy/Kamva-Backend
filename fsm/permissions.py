@@ -6,7 +6,7 @@ from fsm.models import RegistrationReceipt, Event, RegistrationForm, FSM
 
 class IsEventModifier(permissions.BasePermission):
     """
-    Permission for event's admin to update event
+    Permission for evet's admin to update event
     """
     message = 'You are not this event\'s modifier'
 
@@ -14,14 +14,30 @@ class IsEventModifier(permissions.BasePermission):
         return request.user in obj.modifiers
 
 
+def is_form_modifier(form, user):
+    return (form.event_or_fsm and user in form.event_or_fsm.modifiers) or user == form.creator
+
+
 class IsRegistrationFormModifier(permissions.BasePermission):
     """
-    Permission for event's admin to update event
+    Permission for form's admin to update form
     """
     message = 'You are not this registration_form\'s modifier'
 
     def has_object_permission(self, request, view, obj):
-        return (obj.event_or_fsm and request.user in obj.event_or_fsm.modifiers) or request.user == obj.creator
+        return is_form_modifier(obj, request.user)
+
+
+class IsCertificateTemplateModifier(permissions.BasePermission):
+    """
+    Permission for certificate template modifiers
+    """
+
+    message = 'You are not this certificate template\'s registration_form modifier'
+
+    def has_object_permission(self, request, view, obj):
+        form = obj.registration_form
+        return form and is_form_modifier(form, request.user)
 
 
 class IsRegistrationReceiptOwner(permissions.BasePermission):

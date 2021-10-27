@@ -98,6 +98,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4088': 'no one in this team has entered this fsm',
                '4089': 'only team head can move team',
                '4090': 'given receipt is not a member of this team',
+               '4091': 'you are not this form\'s modifier and hence can\'t add any certificate templates',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

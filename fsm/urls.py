@@ -7,7 +7,7 @@ from .views.fsm_view import *
 from .views.fsmstateview import *
 from .views.edge_view import *
 from .views.registration_receipt_view import RegistrationReceiptViewSet
-from .views.registration_view import RegistrationViewSet
+from .views.registration_view import RegistrationViewSet, CertificateTemplateViewSet
 from .views.state_view import StateViewSet, HintViewSet
 from .views.widget_view import *
 from .views.teamhistoryview import *
@@ -76,6 +76,7 @@ urlpatterns = [
 ]
 
 router.register(r'registration', RegistrationViewSet, basename='registration')
+router.register(r'certificates', CertificateTemplateViewSet, basename='certificates')
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
 router.register(r'team', TeamViewSet, basename='teams')
