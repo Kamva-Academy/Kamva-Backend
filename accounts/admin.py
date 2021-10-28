@@ -486,13 +486,39 @@ class CustomUserAdmin(admin.ModelAdmin):
         documents = queryset.values_list('school_studentship', flat=True)
 
         updated = SchoolStudentship.objects.filter(pk__in=documents).update(is_document_verified=True)
-        self.message_user(request, ngettext('%d document verified.', '%d documents verified.', updated, ) % updated,
-                          messages.SUCCESS)
+        self.message_user(request, f'{updated} document verified.', messages.SUCCESS)
+
+    def school(self, obj):
+        return obj.school_studentship.school
 
     model = User
-    list_display = ['id', 'username', 'first_name', 'last_name', 'gender', 'province', 'city', 'password']
+    list_display = ['id', 'username', 'first_name', 'last_name', 'gender', 'province', 'city', 'school', 'password']
     actions = [verify_school_documents]
     ordering = ['-date_joined']
+
+
+class CustomSchoolAdmin(admin.ModelAdmin):
+    def merge_schools(self, request, queryset):
+        schools = len(queryset)
+        first = queryset.first()
+        for school in queryset.filter(~Q(id=first.id)):
+            for fsm in school.fsms.all():
+                fsm.holder = first
+                fsm.save()
+            for event in school.events.all():
+                event.holder = first
+                event.save()
+            for studentship in school.students.all():
+                studentship.school = first
+                studentship.save()
+            school.delete()
+
+        self.message_user(request, f'{schools} schools merged.', messages.SUCCESS)
+
+    model = School
+    list_display = ['id', 'name', 'province', 'city', 'school_type', 'postal_code', 'address']
+    actions = [merge_schools]
+    ordering = ['id']
 
 
 def export_selected_objects(model_admin, request, queryset):
@@ -504,7 +530,7 @@ def export_selected_objects(model_admin, request, queryset):
 
 admin.site.add_action(export_selected_objects, 'export_selected')
 admin.site.register(User, CustomUserAdmin)
-admin.site.register(School)
+admin.site.register(School, CustomSchoolAdmin)
 admin.site.register(EducationalInstitute)
 admin.site.register(University)
 # admin.site.register(Participant, ParticipantInline)
