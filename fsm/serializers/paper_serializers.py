@@ -1,13 +1,15 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import transaction
+from pikepdf import Pdf
 from rest_framework import serializers
-from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.exceptions import ParseError, PermissionDenied, ValidationError
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from fsm.models import *
 from fsm.permissions import is_form_modifier
 from fsm.serializers.widget_serializers import WidgetPolymorphicSerializer, WidgetSerializer
+from PIL import Image
 
 
 class PaperSerializer(serializers.ModelSerializer):
@@ -158,7 +160,6 @@ class StateSerializer(PaperSerializer):
 
 
 class StateSimpleSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = State
         fields = ['id', 'name', 'fsm']
@@ -192,12 +193,23 @@ class CertificateTemplateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         registration_form = attrs.get('registration_form', None)
         template_file = attrs.get('template_file', None)
+        if 'image' in template_file.content_type:
+            width, height = Image.open(template_file.file).size
+        elif 'pdf' in template_file.content_type:
+            pdf_file = Pdf.open(template_file.file)
+            if len(pdf_file.pages) == 1:
+                width, height = tuple(pdf_file.pages.p(1).mediabox.as_list()[2:])
+            else:
+                raise ParseError(serialize_error('4092'))
+        else:
+            raise ValidationError(serialize_error('4093'))
         name_X = attrs.get('name_X', None)
         name_Y = attrs.get('name_Y', None)
+        if name_X > width or name_Y > height:
+            raise ParseError(serialize_error('4094'))
         user = self.context.get('user', None)
         if not is_form_modifier(registration_form, user):
             raise PermissionDenied(serialize_error('4091'))
-        # TODO - add size validation
         return super(CertificateTemplateSerializer, self).validate(attrs)
 
     def to_representation(self, instance):
