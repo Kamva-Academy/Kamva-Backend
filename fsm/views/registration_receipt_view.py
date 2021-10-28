@@ -84,7 +84,7 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
         if not receipt.certificate:
             certificate_templates = receipt.answer_sheet_of.certificate_templates.all()
             # filter templates accordingly to user performance
-            if len(certificate_templates) > 1:
+            if len(certificate_templates) > 0:
                 receipt.certificate = create_certificate(certificate_templates.first(), request.user.full_name)
                 receipt.save()
             else:
