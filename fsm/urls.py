@@ -77,7 +77,7 @@ urlpatterns = [
 ]
 
 router.register(r'registration', RegistrationViewSet, basename='registration')
-router.register(r'certificates', CertificateTemplateViewSet, basename='certificates')
+router.register(r'certificate_templates', CertificateTemplateViewSet, basename='certificate_templates')
 router.register(r'fonts', FontViewSet, basename='fonts')
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
