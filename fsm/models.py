@@ -71,6 +71,9 @@ class RegistrationForm(Paper):
     gender_partition_status = models.CharField(max_length=25, default='BothPartitioned',
                                                choices=GenderPartitionStatus.choices)
 
+    has_certificate = models.BooleanField(default=True)
+    certificates_ready = models.BooleanField(default=False)
+
     @property
     def event_or_fsm(self):
         try:
@@ -561,12 +564,22 @@ class UploadFileAnswer(Answer):
     answer_file = models.FileField(upload_to='answers', max_length=4000, blank=False)
 
 
+class Font(models.Model):
+    font_file = models.FileField(upload_to='fonts/', blank=False)
+
+    @property
+    def name(self):
+        return self.font_file.name if not self.font_file.name.startswith('fonts/') else self.font_file.name[6:]
+
+
 class CertificateTemplate(models.Model):
     certificate_type = models.CharField(max_length=50, null=True, blank=True)  # i.e. gold, silver, etc.
     template_file = models.FileField(upload_to='certificate_templates/', null=True, blank=True)
     name_X = models.IntegerField(null=True, blank=True, default=None)
     name_Y = models.IntegerField(null=True, blank=True, default=None)
     registration_form = models.ForeignKey(RegistrationForm, on_delete=models.CASCADE, related_name='certificate_templates')
+    font = models.ForeignKey(Font, on_delete=models.SET_NULL, related_name='templates', null=True)
+    font_size = models.IntegerField(default=100)
 
 
 # ---------

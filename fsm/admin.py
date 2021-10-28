@@ -226,6 +226,7 @@ admin.site.register(StateAnswerSheet)
 admin.site.register(Team, TeamAdmin)
 admin.site.register(Invitation)
 admin.site.register(CertificateTemplate)
+admin.site.register(Font)
 
 admin.site.register(FSM, FSMAdmin)
 admin.site.register(Edge, EdgeAdmin)

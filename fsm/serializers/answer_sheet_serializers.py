@@ -49,8 +49,9 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
 
     class Meta:
         model = RegistrationReceipt
-        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'answers', 'status', 'is_participating', 'team']
-        read_only_fields = ['id', 'user', 'status', 'answer_sheet_of', 'is_participating', 'team']
+        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'answers', 'status', 'is_participating', 'team',
+                  'certificate']
+        read_only_fields = ['id', 'user', 'status', 'answer_sheet_of', 'is_participating', 'team', 'certificate']
 
     def create(self, validated_data):
         return super(RegistrationReceiptSerializer, self).create({'user': self.context.get('user', None),
@@ -70,8 +71,10 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
 class RegistrationInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistrationReceipt
-        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team']
-        read_only_fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team']
+        fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team',
+                  'certificate']
+        read_only_fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team',
+                            'certificate']
 
     def to_representation(self, instance):
         representation = super(RegistrationInfoSerializer, self).to_representation(instance)
@@ -104,6 +107,7 @@ class RegistrationPerCitySerializer(serializers.Serializer):
 
 class RegistrationStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=RegistrationReceipt.RegistrationStatus.choices)
+
 
 class ReceiptGetSerializer(serializers.Serializer):
     receipt = serializers.PrimaryKeyRelatedField(queryset=RegistrationReceipt.objects.filter(is_participating=True),

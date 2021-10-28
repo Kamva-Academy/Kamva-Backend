@@ -1,20 +1,18 @@
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
-from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError, PermissionDenied
-from rest_framework.mixins import RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin
+from rest_framework.exceptions import PermissionDenied, NotFound, ParseError
+from rest_framework.mixins import RetrieveModelMixin, DestroyModelMixin
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import GenericViewSet
 
-from accounts.models import User
 from errors.error_codes import serialize_error
-from fsm.models import RegistrationReceipt, RegistrationForm
+from fsm.models import RegistrationReceipt
 from fsm.permissions import IsRegistrationReceiptOwner, IsReceiptsFormModifier
-from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
-    RegistrationStatusSerializer
+from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationStatusSerializer
+from fsm.serializers.certificate_serializer import create_certificate
 
 
 class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyModelMixin):
@@ -27,7 +25,7 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
     }
 
     def get_permissions(self):
-        if self.action == 'destroy':
+        if self.action in ['destroy', 'get_certificate']:
             permission_classes = [IsRegistrationReceiptOwner]
         elif self.action == 'retrieve':
             permission_classes = [IsRegistrationReceiptOwner | IsReceiptsFormModifier]
@@ -73,4 +71,23 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
                 receipt.is_participating = False
             receipt.status = registration_status
             receipt.save()
-            return Response(RegistrationReceiptSerializer().to_representation(receipt), status=status.HTTP_200_OK)
+            return Response(
+                RegistrationReceiptSerializer(context=self.get_serializer_context()).to_representation(receipt),
+                status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(tags=my_tags + ['certificates'])
+    @action(detail=True, methods=['get'])
+    def get_certificate(self, request, pk=None):
+        receipt = self.get_object()
+        if not receipt.answer_sheet_of.has_certificate or not receipt.answer_sheet_of.certificates_ready:
+            raise ParseError(serialize_error('4098'))
+        if not receipt.certificate:
+            certificate_templates = receipt.answer_sheet_of.certificate_templates.all()
+            # filter templates accordingly to user performance
+            if len(certificate_templates) > 1:
+                receipt.certificate = create_certificate(certificate_templates.first(), request.user.full_name)
+                receipt.save()
+            else:
+                raise NotFound(serialize_error('4095'))
+        return Response(RegistrationReceiptSerializer(context=self.get_serializer_context()).to_representation(receipt),
+                        status=status.HTTP_200_OK)

@@ -1,15 +1,13 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import transaction
-from pikepdf import Pdf
 from rest_framework import serializers
-from rest_framework.exceptions import ParseError, PermissionDenied, ValidationError
+from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
-from fsm.models import *
-from fsm.permissions import is_form_modifier
-from fsm.serializers.widget_serializers import WidgetPolymorphicSerializer, WidgetSerializer
-from PIL import Image
+from fsm.models import Event, FSM, RegistrationForm, Article, Hint, Edge, State
+from fsm.serializers.certificate_serializer import CertificateTemplateSerializer
+from fsm.serializers.widget_serializers import WidgetPolymorphicSerializer
 
 
 class PaperSerializer(serializers.ModelSerializer):
@@ -35,6 +33,7 @@ class RegistrationFormSerializer(PaperSerializer):
     max_grade = serializers.IntegerField(required=False, validators=[MaxValueValidator(12), MinValueValidator(0)])
     event = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all(), required=False, allow_null=True)
     fsm = serializers.PrimaryKeyRelatedField(queryset=FSM.objects.all(), required=False, allow_null=True)
+    certificate_templates = CertificateTemplateSerializer(many=True, read_only=True)
     widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
 
     @transaction.atomic
@@ -78,7 +77,7 @@ class RegistrationFormSerializer(PaperSerializer):
         model = RegistrationForm
         ref_name = 'registration_form'
         fields = ['id', 'min_grade', 'max_grade', 'deadline', 'conditions', 'widgets', 'event', 'fsm', 'paper_type',
-                  'creator', 'accepting_status']
+                  'creator', 'accepting_status', 'certificate_templates']
         read_only_fields = ['id', 'creator']
 
 
@@ -182,41 +181,3 @@ class PaperPolymorphicSerializer(PolymorphicSerializer):
 class ChangeWidgetOrderSerializer(serializers.Serializer):
     order = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=True)
 
-
-class CertificateTemplateSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = CertificateTemplate
-        fields = '__all__'
-        read_only_fields = ['id']
-
-    def validate(self, attrs):
-        registration_form = attrs.get('registration_form', None)
-        template_file = attrs.get('template_file', None)
-        if 'image' in template_file.content_type:
-            width, height = Image.open(template_file.file).size
-        elif 'pdf' in template_file.content_type:
-            pdf_file = Pdf.open(template_file.file)
-            if len(pdf_file.pages) == 1:
-                width, height = tuple(pdf_file.pages.p(1).mediabox.as_list()[2:])
-            else:
-                raise ParseError(serialize_error('4092'))
-        else:
-            raise ValidationError(serialize_error('4093'))
-        name_X = attrs.get('name_X', None)
-        name_Y = attrs.get('name_Y', None)
-        if name_X > width or name_Y > height:
-            raise ParseError(serialize_error('4094'))
-        user = self.context.get('user', None)
-        if not is_form_modifier(registration_form, user):
-            raise PermissionDenied(serialize_error('4091'))
-        return super(CertificateTemplateSerializer, self).validate(attrs)
-
-    def to_representation(self, instance):
-        representation = super(CertificateTemplateSerializer, self).to_representation(instance)
-        template_file = representation['template_file']
-        if template_file.startswith('/api/'):
-            domain = self.context.get('domain', None)
-            if domain:
-                representation['template_file'] = domain + template_file
-        return representation

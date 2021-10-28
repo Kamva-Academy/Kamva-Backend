@@ -3,20 +3,18 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError, PermissionDenied
-from rest_framework.mixins import RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin, CreateModelMixin
-from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import User
 from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
     RegistrationPerCitySerializer
-from fsm.serializers.paper_serializers import RegistrationFormSerializer, \
-    ChangeWidgetOrderSerializer, CertificateTemplateSerializer
-from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation, CertificateTemplate
-from fsm.permissions import IsRegistrationFormModifier, IsCertificateTemplateModifier
+from fsm.serializers.paper_serializers import RegistrationFormSerializer, ChangeWidgetOrderSerializer
+from fsm.serializers.certificate_serializer import CertificateTemplateSerializer
+from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation
+from fsm.permissions import IsRegistrationFormModifier
 from fsm.serializers.team_serializer import InvitationSerializer
 
 
@@ -46,7 +44,7 @@ class RegistrationViewSet(ModelViewSet):
             permission_classes = [IsRegistrationFormModifier]
         return [permission() for permission in permission_classes]
 
-    @swagger_auto_schema(responses={200: CertificateTemplateSerializer})
+    @swagger_auto_schema(responses={200: CertificateTemplateSerializer}, tags=my_tags + ['certificates'])
     @action(detail=True, methods=['get'])
     def view_certificate_templates(self, request, pk=None):
         registration_form = self.get_object()
@@ -153,24 +151,3 @@ class RegistrationViewSet(ModelViewSet):
                         raise ParseError(serialize_error('4035'))
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class CertificateTemplateViewSet(ModelViewSet):
-    serializer_class = CertificateTemplateSerializer
-    queryset = CertificateTemplate.objects.all()
-    permission_classes = [IsCertificateTemplateModifier, ]
-    parser_classes = [MultiPartParser, ]
-    my_tags = ['registration']
-
-    def get_permissions(self):
-        if self.action == 'create':
-            permission_classes = [IsAuthenticated]
-        else:
-            permission_classes = [IsCertificateTemplateModifier]
-        return [permission() for permission in permission_classes]
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({'user': self.request.user})
-        context.update({'domain': self.request.build_absolute_uri('/api/')[:-5]})
-        return context
