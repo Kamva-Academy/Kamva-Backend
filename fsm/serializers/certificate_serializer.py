@@ -4,7 +4,6 @@ import arabic_reshaper
 from PIL import Image, ImageFont, ImageDraw
 from bidi.algorithm import get_display
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from pikepdf import Pdf
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError, ValidationError, PermissionDenied
 
@@ -43,12 +42,12 @@ class CertificateTemplateSerializer(serializers.ModelSerializer):
         template_file = attrs.get('template_file', None)
         if 'image' in template_file.content_type:
             width, height = Image.open(template_file.file).size
-        elif 'pdf' in template_file.content_type:
-            pdf_file = Pdf.open(template_file.file)
-            if len(pdf_file.pages) == 1:
-                width, height = tuple(pdf_file.pages.p(1).mediabox.as_list()[2:])
-            else:
-                raise ParseError(serialize_error('4092'))
+        # elif 'pdf' in template_file.content_type:
+        #     pdf_file = Pdf.open(template_file.file)
+        #     if len(pdf_file.pages) == 1:
+        #         width, height = tuple(pdf_file.pages.p(1).mediabox.as_list()[2:])
+        #     else:
+        #         raise ParseError(serialize_error('4092'))
         else:
             raise ValidationError(serialize_error('4093'))
         name_X = attrs.get('name_X', None)
