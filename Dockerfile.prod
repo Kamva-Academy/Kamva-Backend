@@ -25,7 +25,7 @@ RUN apk update \
     && pip install --upgrade incremental
 
 # install zlib for pillow
-RUN apk add --no-cache jpeg-dev zlib-dev build-base
+RUN apk add --no-cache g++ freetype-dev jpeg-dev zlib-dev build-base
 
 # install dependencies
 RUN pip install --upgrade pip setuptools
