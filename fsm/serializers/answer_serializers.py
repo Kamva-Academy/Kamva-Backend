@@ -10,7 +10,18 @@ from fsm.serializers.validators import multi_choice_answer_validator
 class AnswerSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
-        return super().create({'submitted_by': self.context.get('user', None), **validated_data})
+        user = self.context.get('user', None)
+        validated_data.get('problem').unfinalize_older_answer(user)
+        return super().create({'submitted_by': user, **validated_data})
+
+    def update(self, instance, validated_data):
+        user = self.context.get('user', None)
+        if 'problem' not in validated_data.keys():
+            validated_data['problem'] = instance.problem
+        elif validated_data.get('problem', None) != instance.problem:
+            raise ParseError(serialize_error('4102'))
+        instance.problem.unfinalize_older_answers(user)
+        return super(AnswerSerializer, self).update(instance, {'is_final_answer': True, **validated_data})
 
     def validate(self, attrs):
         problem = attrs.get('problem', None)
@@ -25,7 +36,6 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 class SmallAnswerSerializer(AnswerSerializer):
     def create(self, validated_data):
-        print(validated_data)
         return super().create({'answer_type': 'SmallAnswer', **validated_data})
 
     class Meta:
@@ -66,7 +76,7 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
     def create(self, validated_data):
         choices = validated_data.pop('choices')
 
-        instance = super(MultiChoiceAnswerSerializer, self).create(validated_data)
+        instance = super(MultiChoiceAnswerSerializer, self).create({'answer_type': 'MultiChoiceAnswer', **validated_data})
         instance.choices.add(*choices)
         instance.save()
         self.context['choices'] = choices

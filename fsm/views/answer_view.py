@@ -1,13 +1,10 @@
-from django.db import transaction
-from rest_framework.decorators import action
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
-
 from fsm.models import Answer, UploadFileAnswer
-from fsm.permissions import IsAnswerModifier
-from fsm.serializers.answer_serializers import AnswerSerializer, UploadFileAnswerSerializer, AnswerPolymorphicSerializer
+from fsm.permissions import IsAnswerModifier, MentorCorrectionPermission
+from fsm.serializers.answer_serializers import UploadFileAnswerSerializer, AnswerPolymorphicSerializer
 
 
 class UploadAnswerViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin):
@@ -35,8 +32,8 @@ class AnswerViewSet(GenericViewSet, UpdateModelMixin, RetrieveModelMixin, ListMo
         return context
 
     def get_permissions(self):
-        if self.action in ['destroy', 'update']:
+        if self.action in ['update', 'partial_update']:
             permission_classes = [IsAnswerModifier]
         else:
-            permission_classes = [IsAuthenticated]
+            permission_classes = [MentorCorrectionPermission]
         return [permission() for permission in permission_classes]

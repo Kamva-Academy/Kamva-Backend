@@ -102,6 +102,21 @@ class MentorPermission(permissions.BasePermission):
         return request.user in obj.mentors.all()
 
 
+class MentorCorrectionPermission(permissions.BasePermission):
+    """
+    Permission for mentor correcting answers
+    """
+    message = 'you can\'t correct this answer'
+
+    def has_object_permission(self, request, view, obj):
+        if isinstance(obj.problem.paper, State):
+            return request.user in obj.problem.paper.fsm.mentors.all()
+        elif isinstance(obj.problem.paper, RegistrationForm):
+            return is_form_modifier(obj.problem.paper, request.user)
+        else:
+            return request.user.is_staff or request.user.is_superuser
+
+
 class PlayerViewerPermission(permissions.BasePermission):
     """
     Permission for viewing player
@@ -149,9 +164,7 @@ class IsAnswerModifier(permissions.BasePermission):
     message = 'you are not this answer\'s modifier'
 
     def has_object_permission(self, request, view, obj):
-        if request.user == obj.submitted_by:
-            return True
-        return False
+        return request.user == obj.submitted_by
 
 
 class HasActiveRegistration(permissions.BasePermission):

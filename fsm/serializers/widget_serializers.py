@@ -8,9 +8,9 @@ from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
 from fsm.models import Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
-    Paper, Widget
+    Paper, Widget, Team
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
-    UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
+    UploadFileAnswerSerializer, MultiChoiceSolutionSerializer, AnswerPolymorphicSerializer
 from fsm.serializers.validators import multi_choice_answer_validator
 
 
@@ -36,6 +36,14 @@ class WidgetSerializer(serializers.ModelSerializer):
         representation = super(WidgetSerializer, self).to_representation(instance)
         if 'solution' in representation.keys() and instance.paper.is_exam:
             representation.pop('solution')
+        if isinstance(instance, Problem):
+            user = self.context.get('user', None)
+            if user:
+                teammates = Team.objects.get_teammates_from_widget(user, instance)
+                latest_answer = instance.answers.filter(submitted_by__in=teammates, is_final_answer=True).last()
+                if latest_answer:
+                    representation['last_submitted_answer'] = AnswerPolymorphicSerializer(
+                        instance=latest_answer).to_representation(latest_answer)
         return representation
 
     # class Meta:
@@ -230,7 +238,8 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
 
 class UploadFileProblemSerializer(WidgetSerializer):
-    solution = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=False, allow_null=False)
+    solution = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=False,
+                                                  allow_null=False)
 
     class Meta:
         model = UploadFileProblem

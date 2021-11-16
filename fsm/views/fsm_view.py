@@ -27,6 +27,7 @@ from fsm.views.functions import get_player, get_receipt, get_a_player_from_team
 
 logger = logging.getLogger(__name__)
 
+
 class FSMViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = FSM.objects.all()
@@ -34,7 +35,8 @@ class FSMViewSet(viewsets.ModelViewSet):
     my_tags = ['fsm']
 
     def get_permissions(self):
-        if self.action in ['update', 'destroy', 'add_mentor', 'get_states', 'get_edges','get_player_from_team', 'activate']:
+        if self.action in ['partial_update', 'update', 'destroy', 'add_mentor', 'get_states', 'get_edges',
+                           'get_player_from_team', 'activate']:
             permission_classes = [MentorPermission]
         elif self.action in ['enter', 'get_self']:
             permission_classes = [HasActiveRegistration]
@@ -88,9 +90,9 @@ class FSMViewSet(viewsets.ModelViewSet):
             #     if serializer.is_valid(raise_exception=True):
             #         player_history = serializer.save()
             # else:
-                # player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
-                # if player_history is None:
-                #     raise NotFound(serialize_error('4081'))
+            # player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
+            # if player_history is None:
+            #     raise NotFound(serialize_error('4081'))
             if not player or not player.current_state:
                 logger.info(f'{player} - {player.current_state if player else None}')
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
@@ -109,7 +111,6 @@ class FSMViewSet(viewsets.ModelViewSet):
     #                         status=status.HTTP_200_OK)
     #     else:
     #         raise NotFound(serialize_error('4081'))
-
 
     @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
     @transaction.atomic
@@ -149,8 +150,7 @@ class FSMViewSet(viewsets.ModelViewSet):
             team = serializer.validated_data['team']
             player = get_a_player_from_team(team, fsm)
             return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                                status=status.HTTP_200_OK)
-
+                            status=status.HTTP_200_OK)
 
     @transaction.atomic
     @action(detail=True, methods=['get'])
@@ -160,7 +160,7 @@ class FSMViewSet(viewsets.ModelViewSet):
         for r in RegistrationReceipt.objects.filter(is_participating=True):
             if len(Player.objects.filter(user=r.user, fsm=f, receipt=r)) <= 0:
                 p = Player.objects.create(user=r.user, fsm=f, receipt=r, current_state=f.first_state,
-                                      last_visit=timezone.now())
+                                          last_visit=timezone.now())
                 PlayerHistory.objects.create(player=p, state=f.first_state, start_time=p.last_visit)
 
         return Response(data={'new_players_count': len(f.players.all()), 'previous_players_count': previous_players},
