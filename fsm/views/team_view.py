@@ -9,9 +9,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from accounts.models import Teamm
-from accounts.serializers import TeammSerializer
 from errors.error_codes import serialize_error
 from fsm import permissions as customPermissions
 from fsm.models import Team, Invitation, RegistrationReceipt, RegistrationForm

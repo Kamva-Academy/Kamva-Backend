@@ -7,7 +7,10 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
-from .models import *
+from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
+    Invitation, CertificateTemplate, Font, FSM, State, Hint, Widget, Video, Image, Player, Game, SmallAnswerProblem, \
+    SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
+    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone
 
 
 class EdgeAdmin(admin.ModelAdmin):
@@ -33,38 +36,6 @@ class AnswerAdmin(admin.ModelAdmin):
     # def name(self, obj):
     #     name = obj.problem.name
     #     return name
-
-
-class SubmittedAnswerAdmin(admin.ModelAdmin):
-    model = UploadFileAnswer
-    list_display = ['name', 'answer_file', 'team_name']
-
-    def name(self, obj):
-        name = obj.problem.name
-        return name
-
-    def answer_file(self, obj):
-        ans_file = obj.answer.uploadfileanswer.answer_file
-
-    def team_name(self, obj):
-        return str(obj.player.team.group_name)
-
-
-class PlayerWorkshopAdmin(admin.ModelAdmin):
-    model = PlayerWorkshop
-    list_display = ['player', 'workshop', 'current_state', 'last_visit']
-    list_filter = ['last_visit', 'workshop', 'current_state']
-
-    # def name(self, obj):
-    #     name = obj.problem.name
-    #     return name
-    #
-    # def answer_file(self, obj):
-    #     ans_file = obj.answer.uploadfileanswer.answer_file
-    #
-    #
-    # def team_name(self, obj):
-    #     return str(obj.player.team.group_name)
 
 
 class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
@@ -95,6 +66,11 @@ class WidgetAdmin(admin.ModelAdmin):
     list_display = ['id', 'widget_type', 'paper', 'name']
 
 
+class PaperAdmin(admin.ModelAdmin):
+    model = Paper
+    list_display = ['id', 'since', 'till', 'is_exam']
+
+
 class RegistrationFormAdmin(admin.ModelAdmin):
 
     def get_registration_status_for_users(self, request, queryset):
@@ -103,7 +79,7 @@ class RegistrationFormAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(f'/api/admin/export_registration_data/?q={selected}')
 
     model = RegistrationForm
-    list_display = ['id', 'accepting_status', 'min_grade', 'max_grade', 'deadline']
+    list_display = ['id', 'accepting_status', 'min_grade', 'max_grade', 'since', 'till']
     actions = [get_registration_status_for_users]
 
 
@@ -137,7 +113,8 @@ class FSMAdmin(admin.ModelAdmin):
         return len(obj.mentors.all())
 
     def online_teams_in_last_hour(self, obj):
-        return round(len(obj.players.filter(last_visit__gt=timezone.now() - timedelta(hours=1))) / obj.team_size if obj.team_size > 0 else 1)
+        return round(len(obj.players.filter(
+            last_visit__gt=timezone.now() - timedelta(hours=1))) / obj.team_size if obj.team_size > 0 else 1)
 
 
 class TeamAdmin(admin.ModelAdmin):
@@ -153,6 +130,7 @@ class TeamAdmin(admin.ModelAdmin):
                 return True
         return False
 
+
 class StateAdmin(admin.ModelAdmin):
     model = State
     list_display = ['id', 'name', 'fsm']
@@ -161,7 +139,7 @@ class StateAdmin(admin.ModelAdmin):
 class SmallAnswerProblemAdmin(admin.ModelAdmin):
 
     def solution_csv(self, request, queryset):
-    
+
         file = open('small-answers.csv', 'w', encoding="utf-8")
         writer = csv.writer(file)
         writer.writerow(['problem_name', 'problem_body', 'text', 'submitted_by'])
@@ -174,7 +152,7 @@ class SmallAnswerProblemAdmin(admin.ModelAdmin):
 
             else:
                 writer.writerow([i.problem.name, None, i.text, i.submitted_by])
-            
+
             ctr += 1
 
         file.close()
@@ -183,12 +161,12 @@ class SmallAnswerProblemAdmin(admin.ModelAdmin):
         response = HttpResponse(f, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=small-answers.csv'
         return response
-    
+
     actions = [solution_csv]
 
 
 class BigAnswerProblemAdmin(admin.ModelAdmin):
-    
+
     def solution_csv(self, request, queryset):
 
         file = open('big-answers.csv', 'w', encoding="utf-8")
@@ -203,7 +181,7 @@ class BigAnswerProblemAdmin(admin.ModelAdmin):
 
             else:
                 writer.writerow([i.problem.name, None, i.text, i.submitted_by])
-            
+
             ctr += 1
 
         file.close()
@@ -212,17 +190,16 @@ class BigAnswerProblemAdmin(admin.ModelAdmin):
         response = HttpResponse(f, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=big-answers.csv'
         return response
-    
+
     actions = [solution_csv]
 
 
-admin.site.register(Paper)
+admin.site.register(Paper, PaperAdmin)
 admin.site.register(RegistrationForm, RegistrationFormAdmin)
 admin.site.register(Problem)
 admin.site.register(AnswerSheet)
 admin.site.register(RegistrationReceipt, RegistrationReceiptsAdmin)
 admin.site.register(ChoiceSelection)
-admin.site.register(StateAnswerSheet)
 admin.site.register(Team, TeamAdmin)
 admin.site.register(Invitation)
 admin.site.register(CertificateTemplate)

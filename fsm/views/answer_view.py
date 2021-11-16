@@ -1,9 +1,9 @@
 from django.db import transaction
 from rest_framework.decorators import action
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from fsm.models import Answer, UploadFileAnswer
 from fsm.permissions import IsAnswerModifier
@@ -23,7 +23,7 @@ class UploadAnswerViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin):
         return context
 
 
-class AnswerViewSet(ModelViewSet):
+class AnswerViewSet(GenericViewSet, UpdateModelMixin, RetrieveModelMixin, ListModelMixin):
     serializer_class = AnswerPolymorphicSerializer
     queryset = Answer.objects.all()
     my_tags = ['answers']

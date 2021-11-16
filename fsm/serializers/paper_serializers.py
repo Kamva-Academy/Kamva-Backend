@@ -76,8 +76,8 @@ class RegistrationFormSerializer(PaperSerializer):
     class Meta:
         model = RegistrationForm
         ref_name = 'registration_form'
-        fields = ['id', 'min_grade', 'max_grade', 'deadline', 'conditions', 'widgets', 'event', 'fsm', 'paper_type',
-                  'creator', 'accepting_status', 'certificate_templates']
+        fields = ['id', 'min_grade', 'max_grade', 'since', 'till', 'duration', 'is_exam', 'conditions', 'widgets',
+                  'event', 'fsm', 'paper_type', 'creator', 'accepting_status', 'certificate_templates']
         read_only_fields = ['id', 'creator']
 
 
@@ -154,15 +154,16 @@ class StateSerializer(PaperSerializer):
     class Meta:
         model = State
         ref_name = 'state'
-        fields = ['id', 'widgets', 'name', 'creator', 'fsm', 'hints', 'inward_edges', 'outward_edges']
+        fields = ['id', 'widgets', 'name', 'creator', 'fsm', 'hints', 'inward_edges', 'outward_edges', 'since', 'till',
+                  'duration', 'is_exam']
         read_only_fields = ['id', 'creator', 'hints', 'inward_edges', 'outward_edges']
 
 
 class StateSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = State
-        fields = ['id', 'name', 'fsm']
-        read_only_Fields = ['id', 'name', 'fsm']
+        fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
+        read_only_fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
 
 
 class PaperPolymorphicSerializer(PolymorphicSerializer):
@@ -180,4 +181,3 @@ class PaperPolymorphicSerializer(PolymorphicSerializer):
 
 class ChangeWidgetOrderSerializer(serializers.Serializer):
     order = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=True)
-

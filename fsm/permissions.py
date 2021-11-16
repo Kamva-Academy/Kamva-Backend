@@ -1,7 +1,9 @@
+from datetime import timezone, datetime
+
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
-from accounts.models import Member, Teamm, Participant
-from fsm.models import RegistrationReceipt, Event, RegistrationForm, FSM
+from fsm.models import RegistrationReceipt, Event, RegistrationForm, FSM, Problem, State, Team
 
 
 class IsEventModifier(permissions.BasePermission):
@@ -149,11 +151,6 @@ class IsAnswerModifier(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user == obj.submitted_by:
             return True
-        if obj.problem is not None and obj.problem.paper is not None and obj.problem.paper is not None \
-                and obj.problem.paper.players is not None:
-            submitted_by = obj.problem.paper.players.filter(user=obj.submitted_by).first()
-            if submitted_by.team and submitted_by.team.members.filter(user=request.user).first():
-                return True
         return False
 
 
@@ -176,6 +173,41 @@ class HasActiveRegistration(permissions.BasePermission):
                 return len(
                     RegistrationReceipt.objects.filter(user=request.user, answer_sheet_of=obj.registration_form,
                                                        is_participating=True))
+
+
+class CanAnswerWidget(permissions.BasePermission):
+    """
+    Permission to check whether user can submit an answer to this widget or not.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        if isinstance(obj, Problem):
+            if isinstance(obj.paper, State):
+                registration_form = obj.paper.fsm.registration_form or obj.paper.fsm.event.registration_form
+                receipt = RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=request.user,
+                                                             is_participating=True).first()
+                if receipt is not None:
+                    if len(receipt.players.filter(fsm=obj.paper.fsm, current_state=obj.paper)) < 1:
+                        return False
+                else:
+                    return False
+
+            if (obj.paper.since and datetime.now(obj.paper.since.tzinfo) < obj.paper.since) or \
+                    (obj.paper.till and datetime.now(obj.paper.till.tzinfo) > obj.paper.till):
+                return False
+
+            # TODO - check for max corrections
+            if obj.max_corrections:
+                pass
+                # if isinstance(obj.paper, State):
+                #     registration_form = obj.paper.fsm.registration_form or obj.paper.fsm.event.registration_form
+                #     team = Team.objects.filter(registration_form=registration_form, members__user=request.user).first()
+                #     teammates = team.members.values_list('user', flat=True) if team is not None else [request.user]
+                #     if len(Corrections.objects.filter(answer__problem=obj, answer__submitted_by__in=teammates) > obj.max_corrections:
+                #         return False
+            return True
+        else:
+            return False
 
         # -------------
 

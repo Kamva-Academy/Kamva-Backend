@@ -10,15 +10,6 @@ from fsm.serializers.validators import multi_choice_answer_validator
 class AnswerSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
-        user = self.context.get('user', None)
-        problem = validated_data.get('problem', None)
-        answer_sheet = validated_data.get('answer_sheet', None)
-        previous_answers = Answer.objects.filter(submitted_by=user, answer_sheet=answer_sheet).filter(
-            Q(SmallAnswer___problem__id=problem.id) | Q(BigAnswer___problem__id=problem.id) | Q(
-                UploadFileAnswer___problem__id=problem.id) | Q(MultiChoiceAnswer___problem__id=problem.id))
-        for a in previous_answers:
-            a.is_final_answer = False
-            a.save()
         return super().create({'submitted_by': self.context.get('user', None), **validated_data})
 
     def validate(self, attrs):
@@ -33,6 +24,10 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 
 class SmallAnswerSerializer(AnswerSerializer):
+    def create(self, validated_data):
+        print(validated_data)
+        return super().create({'answer_type': 'SmallAnswer', **validated_data})
+
     class Meta:
         model = SmallAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
@@ -41,6 +36,9 @@ class SmallAnswerSerializer(AnswerSerializer):
 
 
 class BigAnswerSerializer(AnswerSerializer):
+    def create(self, validated_data):
+        return super().create({'answer_type': 'BigAnswer', **validated_data})
+
     class Meta:
         model = BigAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
@@ -191,3 +189,10 @@ class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'choices']
         read_only_fields = ['id', 'submitted_by']
+
+
+class MockAnswerSerializer(serializers.Serializer):
+    SmallAnswerSerializer = SmallAnswerSerializer(required=False)
+    BigAnswerSerializer = BigAnswerSerializer(required=False)
+    MultiChoiceAnswerSerializer = MultiChoiceAnswerSerializer(required=False)
+    UploadFileAnswerSerializer = UploadFileAnswerSerializer(required=False)

@@ -115,8 +115,10 @@ class RegistrationViewSet(ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             register_permission_status = self.get_object().user_permission_status(
                 serializer.validated_data.get('user', None))
-            if register_permission_status == RegistrationForm.RegisterPermissionStatus.RegistrationDeadlineMissed:
+            if register_permission_status == RegistrationForm.RegisterPermissionStatus.DeadlineMissed:
                 raise ParseError(serialize_error('4036'))
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.RegistrationNotStarted:
+                raise ParseError(serialize_error('4100'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.StudentshipDataIncomplete:
                 raise PermissionDenied(serialize_error('4057'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotPermitted:

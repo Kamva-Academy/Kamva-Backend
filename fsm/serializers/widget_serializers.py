@@ -18,8 +18,6 @@ class WidgetSerializer(serializers.ModelSerializer):
     widget_type = serializers.ChoiceField(choices=Widget.WidgetTypes.choices, required=True)
 
     def create(self, validated_data):
-        # if 'widget_type' not in validated_data.keys():
-        #     raise InternalServerError('sag to in zendegi')
         return super().create({'creator': self.context.get('user', None), **validated_data})
 
     def validate(self, attrs):
@@ -33,6 +31,12 @@ class WidgetSerializer(serializers.ModelSerializer):
                 raise ParseError(serialize_error('4075'))
 
         return super(WidgetSerializer, self).validate(attrs)
+
+    def to_representation(self, instance):
+        representation = super(WidgetSerializer, self).to_representation(instance)
+        if 'solution' in representation.keys() and instance.paper.is_exam:
+            representation.pop('solution')
+        return representation
 
     # class Meta:
     #     model = Widget
@@ -219,7 +223,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        if instance.solution:
+        if instance.solution and not instance.paper.is_exam:
             representation['solution'] = MultiChoiceSolutionSerializer(instance.solution).to_representation(
                 instance.solution)
         return representation
@@ -255,7 +259,7 @@ class UploadFileProblemSerializer(WidgetSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        if instance.solution:
+        if instance.solution and not instance.paper.is_exam:
             representation['solution'] = UploadFileAnswerSerializer().to_representation(instance.solution)
         return representation
 

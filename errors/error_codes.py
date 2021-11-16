@@ -107,6 +107,8 @@ errors_dict = {'4000': 'phone number must be digit',
                '4097': 'you have to activate certificate for your event/fsm in order to create a certificate template',
                '4098': 'either this event/fsm doesn\'t have any certificates or they are not ready yet',
                '4099': 'pdf certificate generation is not supported yet',
+               '4100': 'registration not started yet.',
+               '4101': 'widget and answer problem must be the same',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

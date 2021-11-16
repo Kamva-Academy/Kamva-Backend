@@ -209,7 +209,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super(ProfileSerializer, self).to_representation(instance)
-        del representation['password']
+        representation.pop('password')
         return representation
 
     class Meta:

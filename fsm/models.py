@@ -14,11 +14,14 @@ class Paper(PolymorphicModel):
     paper_type = models.CharField(max_length=25, blank=False, choices=PaperType.choices)
     creator = models.ForeignKey('accounts.User', related_name='papers', null=True, blank=True,
                                 on_delete=models.SET_NULL)
+    since = models.DateTimeField(null=True, blank=True)
+    till = models.DateTimeField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True, default=None)
+    is_exam = models.BooleanField(default=False)
 
     def delete(self):
         for w in Widget.objects.filter(paper=self):
             try:
-                print('hiya')
                 w.delete()
             except:
                 w.paper = None
@@ -52,7 +55,8 @@ class RegistrationForm(Paper):
         BothNonPartitioned = 'BothNonPartitioned'
 
     class RegisterPermissionStatus(models.TextChoices):
-        RegistrationDeadlineMissed = "RegistrationDeadlineMissed"
+        DeadlineMissed = "DeadlineMissed"
+        NotStarted = "NotStarted"
         StudentshipDataIncomplete = "StudentshipDataIncomplete"
         NotPermitted = "NotPermitted"
         GradeNotAvailable = "GradeNotAvailable"
@@ -61,7 +65,6 @@ class RegistrationForm(Paper):
 
     min_grade = models.IntegerField(default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
     max_grade = models.IntegerField(default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
-    deadline = models.DateTimeField(null=True)
 
     # TODO - add filter for audience type
 
@@ -95,8 +98,10 @@ class RegistrationForm(Paper):
             if studentship.grade:
                 if self.min_grade <= studentship.grade <= self.max_grade:
                     if studentship.school is not None or studentship.document is not None:
-                        if self.deadline and datetime.now(self.deadline.tzinfo) > self.deadline:
-                            return self.RegisterPermissionStatus.RegistrationDeadlineMissed
+                        if self.till and datetime.now(self.till.tzinfo) > self.till:
+                            return self.RegisterPermissionStatus.DeadlineMissed
+                        if self.since and datetime.now(self.since.tzinfo) < self.since:
+                            return self.RegisterPermissionStatus.NotStarted
                         return self.RegisterPermissionStatus.Permitted
                     else:
                         return self.RegisterPermissionStatus.StudentshipDataIncomplete
@@ -162,6 +167,13 @@ class RegistrationReceipt(AnswerSheet):
         return f'{self.id}:{self.user.full_name}{"+" if self.is_participating else "x"}'
 
 
+class TeamManager(models.Manager):
+    def get_teammates_from_widget(self, user, widget):
+        form = widget.paper.fsm.registration_form or widget.paper.fsm.event.registration_form
+        team = Team.objects.filter(registration_form=form, members__user=user).first()
+        return team.members.values_list('user', flat=True) if team is not None else [user]
+
+
 class Team(models.Model):
     id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200, null=True, blank=True)
@@ -169,6 +181,8 @@ class Team(models.Model):
                                           on_delete=models.SET_NULL)
     team_head = models.OneToOneField(RegistrationReceipt, related_name='headed_team', null=True, blank=True,
                                      on_delete=models.SET_NULL)
+
+    objects = TeamManager()
 
     def __str__(self):
         return f'{self.name}:{",".join(member.user.full_name for member in self.members.all())}'
@@ -330,10 +344,10 @@ class State(Paper):
         return f'{self.name} in {str(self.fsm)}'
 
 
-class StateAnswerSheet(AnswerSheet):
-    answer_sheet_of = models.ForeignKey(State, related_name='answer_sheets', on_delete=models.CASCADE)
-    player = models.ForeignKey(Player, related_name='answer_sheets', on_delete=models.CASCADE)
-
+# class StateAnswerSheet(AnswerSheet):
+#     answer_sheet_of = models.ForeignKey(State, related_name='answer_sheets', on_delete=models.CASCADE)
+#     player = models.ForeignKey(Player, related_name='answer_sheets', on_delete=models.CASCADE)
+#
 
 class Hint(Paper):
     reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='hints')
@@ -454,6 +468,7 @@ class Problem(Widget):
     help_text = models.TextField(null=True, blank=True)
     max_score = models.FloatField(null=True, blank=True)
     required = models.BooleanField(default=False)
+    max_corrections = models.IntegerField(null=True, blank=True)
 
     @property
     def solution(self):
@@ -577,9 +592,18 @@ class CertificateTemplate(models.Model):
     template_file = models.FileField(upload_to='certificate_templates/', null=True, blank=True)
     name_X = models.IntegerField(null=True, blank=True, default=None)
     name_Y = models.IntegerField(null=True, blank=True, default=None)
-    registration_form = models.ForeignKey(RegistrationForm, on_delete=models.CASCADE, related_name='certificate_templates')
+    registration_form = models.ForeignKey(RegistrationForm, on_delete=models.CASCADE,
+                                          related_name='certificate_templates')
     font = models.ForeignKey(Font, on_delete=models.SET_NULL, related_name='templates', null=True)
     font_size = models.IntegerField(default=100)
+
+
+PROBLEM_ANSWER_MAPPING = {
+    'SmallAnswerProblem': SmallAnswer,
+    'BigAnswerProblem': BigAnswer,
+    'MultiChoiceProblem': MultiChoiceAnswer,
+    'UploadFileProblem': UploadFileAnswer,
+}
 
 
 # ---------
