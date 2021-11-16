@@ -11,7 +11,7 @@ class AnswerSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context.get('user', None)
-        validated_data.get('problem').unfinalize_older_answer(user)
+        validated_data.get('problem').unfinalize_older_answers(user)
         return super().create({'submitted_by': user, **validated_data})
 
     def update(self, instance, validated_data):
