@@ -37,13 +37,6 @@ class EventViewSet(ModelViewSet):
         return [permission() for permission in permission_classes]
 
     @transaction.atomic
-    @swagger_auto_schema(responses={200: FSMSerializer})
-    @action(detail=True, methods=['get'], permission_classes=[HasActiveRegistration])
-    def get_fsms(self, request, pk=None):
-        return Response(data=FSMSerializer(self.get_object().fsms.filter(is_active=True), many=True,
-                                           context=self.get_serializer_context()).data, status=status.HTTP_200_OK)
-
-    @transaction.atomic
     @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
     @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def get_mentored_fsms(self, request, pk=None):

@@ -1,6 +1,7 @@
 import logging
 
 from django.db import transaction
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework import mixins
@@ -23,6 +24,8 @@ class TeamViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
+    filter_backends = [DjangoFilterBackend, ]
+    filterset_fields = ['registration_form']
     my_tags = ['teams']
 
     serializer_action_classes = {

@@ -3,6 +3,7 @@ from datetime import datetime
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -32,6 +33,8 @@ class FSMViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['event']
     my_tags = ['fsm']
 
     def get_permissions(self):

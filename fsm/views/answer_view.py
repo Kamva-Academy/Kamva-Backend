@@ -1,7 +1,11 @@
+from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, UpdateModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
+
+from fsm.filtersets import AnswerFilterSet
 from fsm.models import Answer, UploadFileAnswer
 from fsm.permissions import IsAnswerModifier, MentorCorrectionPermission
 from fsm.serializers.answer_serializers import UploadFileAnswerSerializer, AnswerPolymorphicSerializer
@@ -22,8 +26,10 @@ class UploadAnswerViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin):
 
 class AnswerViewSet(GenericViewSet, UpdateModelMixin, RetrieveModelMixin, ListModelMixin):
     serializer_class = AnswerPolymorphicSerializer
-    queryset = Answer.objects.all()
     my_tags = ['answers']
+    queryset = Answer.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AnswerFilterSet
     permission_classes = [IsAuthenticated, ]
 
     def get_serializer_context(self):

@@ -526,6 +526,10 @@ class Answer(PolymorphicModel):
     is_final_answer = models.BooleanField(default=False)
     is_solution = models.BooleanField(default=False)
 
+    @property
+    def problem(self):
+        return self.problem
+
 
 class SmallAnswer(Answer):
     problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True, blank=True, on_delete=models.CASCADE,
