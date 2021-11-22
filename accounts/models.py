@@ -15,7 +15,6 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags, strip_spaces_between_tags
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from guardian.shortcuts import assign_perm
 from polymorphic.managers import PolymorphicManager
 from polymorphic.models import PolymorphicModel
 
@@ -27,7 +26,7 @@ import re
 
 from accounts.validators import percentage_validator
 from errors.error_codes import serialize_error
-from errors.exceptions import ServiceUnavailable, InternalServerError
+from errors.exceptions import InternalServerError
 from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
     DISCOUNT_CODE_LENGTH, PURCHASE_UNIQ_CODE_LENGTH
 

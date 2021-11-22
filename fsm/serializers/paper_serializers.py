@@ -64,12 +64,12 @@ class RegistrationFormSerializer(PaperSerializer):
         return attrs
 
     def validate_event(self, event):
-        if event is not None and not self.context.get('user', None) in event.modifiers:
+        if event is not None and self.context.get('user', None) not in event.modifiers:
             raise PermissionDenied(serialize_error('4026'))
         return event
 
     def validate_fsm(self, fsm):
-        if fsm is not None and self.context.get('user', None) in fsm.modifiers:
+        if fsm is not None and self.context.get('user', None) not in fsm.modifiers:
             raise PermissionDenied(serialize_error('4026'))
         return fsm
 
@@ -77,7 +77,8 @@ class RegistrationFormSerializer(PaperSerializer):
         model = RegistrationForm
         ref_name = 'registration_form'
         fields = ['id', 'min_grade', 'max_grade', 'since', 'till', 'duration', 'is_exam', 'conditions', 'widgets',
-                  'event', 'fsm', 'paper_type', 'creator', 'accepting_status', 'certificate_templates']
+                  'event', 'fsm', 'paper_type', 'creator', 'accepting_status', 'certificate_templates',
+                  'has_certificate', 'certificates_ready']
         read_only_fields = ['id', 'creator']
 
 
