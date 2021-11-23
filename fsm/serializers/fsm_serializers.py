@@ -159,7 +159,7 @@ class FSMSerializer(serializers.ModelSerializer):
                 representation['is_user_participating'] = False
                 representation['registration_receipt'] = None
 
-            return representation
+        return representation
 
     class Meta:
         model = FSM
