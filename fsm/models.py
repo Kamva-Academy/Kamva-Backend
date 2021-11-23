@@ -87,7 +87,7 @@ class RegistrationForm(Paper):
                 if self.fsm:
                     return self.fsm
             except:
-                return None
+                raise InternalServerError(serialize_error('5002'))
 
     def user_permission_status(self, user):
         # if exec(self.answer_sheet_of.conditions):
