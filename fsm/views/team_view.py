@@ -112,9 +112,8 @@ class TeamViewSet(viewsets.ModelViewSet):
                 is_participating=True,
                 team=team
             )
-            return Response(
-                RegistrationReceiptSerializer(context=self.get_serializer_context()).to_representation(receipt),
-                status=status.HTTP_200_OK)
+            return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
+                            status=status.HTTP_200_OK)
 
 
 class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.ListModelMixin):
