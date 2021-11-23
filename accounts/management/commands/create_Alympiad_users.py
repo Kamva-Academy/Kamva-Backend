@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.management import BaseCommand
 from django.shortcuts import get_object_or_404
 
-from accounts.models import User, School, SchoolStudentship, Studentship
+from accounts.models import User, School, SchoolStudentship, Studentship, AcademicStudentship
 from fsm.models import FSM, RegistrationReceipt, Team
 
 logger = logging.getLogger(__file__)
@@ -79,15 +79,21 @@ class Command(BaseCommand):
                         username=member['username'],
                         gender=GENDER_MAPPING[member['gender']],
                     )
-                    studentship = SchoolStudentship.objects.create(
+                    school_studentship = SchoolStudentship.objects.create(
                         school=school,
                         studentship_type=Studentship.StudentshipType.School,
                         user=user,
                         major=MAJOR_MAPPING[member['major']] if 'major' in member.keys() else MAJOR_MAPPING['ریاضی فیزیک'],
-                        grade=GRADE_MAPPING[member['grade']]
+                        grade=GRADE_MAPPING[member['grade']],
+                        is_document_verified=True,
+                    )
+                    academic_studentship = AcademicStudentship.objects.create(
+                        studentship_type=Studentship.StudentshipType.Academic,
+                        user=user,
                     )
                     receipts.append(RegistrationReceipt.objects.create(
                         answer_sheet_of=fsm.registration_form,
+                        answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
                         user=user,
                         status=RegistrationReceipt.RegistrationStatus.Accepted,
                         is_participating=True,

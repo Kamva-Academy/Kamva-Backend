@@ -87,8 +87,8 @@ class RegistrationInfoSerializer(serializers.ModelSerializer):
             domain = self.context.get('domain', None)
             if domain:
                 representation['profile_picture'] = domain + representation['profile_picture']
-        representation['school_studentship'] = StudentshipSerializer().to_representation(user.school_studentship)
-        representation['academic_studentship'] = StudentshipSerializer().to_representation(user.academic_studentship)
+        representation['school_studentship'] = StudentshipSerializer().to_representation(user.school_studentship) if user.school_studentship else None
+        representation['academic_studentship'] = StudentshipSerializer().to_representation(user.academic_studentship) if user.academic_studentship else None
         return representation
 
 

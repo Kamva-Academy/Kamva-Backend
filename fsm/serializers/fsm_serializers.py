@@ -134,7 +134,7 @@ class FSMSerializer(serializers.ModelSerializer):
         user = self.context.get('user', None)
         player = user.players.filter(is_active=True, fsm=instance).first()
         representation['player'] = player.id if player else 'NotStarted'
-        representation['state'] = player.current_state.name if player and player.current_state else None
+        representation['state'] = player.current_state.name if player and player.current_state else 'NotStarted'
         representation['last_visit'] = player.last_visit if player else 'NotStarted'
         if player and player.receipt.team:
             representation['team'] = player.receipt.team.id

@@ -20,14 +20,15 @@ logger = logging.getLogger(__name__)
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=True, validators=[phone_number_validator])
-    code_type = serializers.ChoiceField(choices=['changePass', 'verify'])
+    code_type = serializers.ChoiceField(choices=['changePass', 'verify'], required=False)
 
     def validate(self, attrs):
+        code_type = attrs.get('code_type', None)
         if User.objects.filter(phone_number__exact=attrs.get('phone_number')).count() <= 0:
-            if attrs.get('code_type') == 'change_pass':
+            if code_type in ['change_pass', None]:
                 raise NotFound(serialize_error('4008'))
         else:
-            if attrs.get('code_type') == 'verify':
+            if code_type == 'verify':
                 raise ParseError(serialize_error('4004', params={'param1': attrs.get('phone_number')}))
 
         return attrs

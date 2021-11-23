@@ -10,11 +10,14 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from accounts.serializers import PhoneNumberSerializer
+from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm import permissions as customPermissions
-from fsm.models import Team, Invitation, RegistrationReceipt, RegistrationForm
+from fsm.models import Team, Invitation, RegistrationReceipt, RegistrationForm, AnswerSheet
 from fsm.permissions import IsInvitationInvitee
-from fsm.serializers.answer_sheet_serializers import ReceiptGetSerializer
+from fsm.serializers.answer_sheet_serializers import ReceiptGetSerializer, RegistrationReceiptSerializer
 from fsm.serializers.team_serializer import TeamSerializer, InvitationSerializer, InvitationResponseSerializer
 
 logger = logging.getLogger(__name__)
@@ -45,7 +48,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action in ['create', 'make_team_head']:
+        if self.action in ['create', 'make_team_head', 'register_and_join']:
             permission_classes = [permissions.IsAuthenticated]
         elif self.action in ['get_invitations', 'retrieve']:
             permission_classes = [customPermissions.IsTeamMember]
@@ -65,7 +68,8 @@ class TeamViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[customPermissions.IsTeamHead])
     def invite_member(self, request, pk=None):
         team = self.get_object()
-        serializer = InvitationSerializer(data=self.request.data, context={'team': team, **self.get_serializer_context()})
+        serializer = InvitationSerializer(data=self.request.data,
+                                          context={'team': team, **self.get_serializer_context()})
         if serializer.is_valid(raise_exception=True):
             serializer.validated_data['team'] = team
             serializer.save()
@@ -74,7 +78,7 @@ class TeamViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], serializer_class=ReceiptGetSerializer, permission_classes=[IsAuthenticated])
     def make_team_head(self, request, pk=None):
         team = self.get_object()
-        serializer = ReceiptGetSerializer(data=self.request.data)
+        serializer = ReceiptGetSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             receipt = serializer.validated_data['receipt']
             if receipt in team.members.all():
@@ -82,7 +86,28 @@ class TeamViewSet(viewsets.ModelViewSet):
                 team.save()
             else:
                 raise ParseError(serialize_error('4090'))
-            return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team), status=status.HTTP_200_OK)
+            return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
+                            status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], serializer_class=PhoneNumberSerializer, permission_classes=[IsAuthenticated])
+    def register_and_join(self, request, pk=None):
+        team = self.get_object()
+        serializer = PhoneNumberSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            user = find_user(serializer.validated_data)
+            if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) > 0:
+                raise ParseError(serialize_error('4103'))
+            receipt = RegistrationReceipt.objects.create(
+                answer_sheet_of=team.registration_form,
+                user=user,
+                answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                status=RegistrationReceipt.RegistrationStatus.Accepted,
+                is_participating=True,
+                team=team
+            )
+            return Response(
+                RegistrationReceiptSerializer(context=self.get_serializer_context()).to_representation(receipt),
+                status=status.HTTP_200_OK)
 
 
 class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.ListModelMixin):
@@ -131,5 +156,6 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
                 invitation.save()
                 invitee.team = team
                 invitee.save()
-            return Response(data=InvitationSerializer(context=self.get_serializer_context()).to_representation(invitation),
-                            status=status.HTTP_200_OK)
+            return Response(
+                data=InvitationSerializer(context=self.get_serializer_context()).to_representation(invitation),
+                status=status.HTTP_200_OK)

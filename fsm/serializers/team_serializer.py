@@ -76,6 +76,8 @@ class TeamSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         team = super(TeamSerializer, self).create(validated_data)
         user = self.context.get('user', None)
+        if user in team.registration_form.event_or_fsm.modifiers:
+            return team
         user_registration = team.registration_form.registration_receipts.filter(user=user).first()
         context = {'team': team, **self.context}
         invitation_serializer = InvitationSerializer(data={'invitee': user_registration.id}, context=context)
@@ -93,6 +95,8 @@ class TeamSerializer(serializers.ModelSerializer):
         registration_form = attrs.get('registration_form', None)
         user = self.context.get('user', None)
         user_registration = registration_form.registration_receipts.filter(user=user).first()
+        if user in registration_form.event_or_fsm.modifiers:
+            return attrs
         if not user_registration or not user_registration.is_participating:
             raise PermissionDenied(serialize_error('4050'))
         if Invitation.objects.filter(invitee=user_registration, team__registration_form=registration_form,
