@@ -35,6 +35,13 @@ class TeamViewSet(viewsets.ModelViewSet):
         'invite_member': InvitationSerializer
     }
 
+    @property
+    def paginator(self):
+        self._paginator = super(TeamViewSet, self).paginator
+        if self.action == 'list':
+            self._paginator = None
+        return self._paginator
+
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
