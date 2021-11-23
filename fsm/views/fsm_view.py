@@ -18,6 +18,7 @@ from rest_framework import permissions
 from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
+from fsm.filtersets import FSMFilterSet
 from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer, \
@@ -34,7 +35,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['event']
+    filterset_class = FSMFilterSet
     my_tags = ['fsm']
 
     def get_permissions(self):

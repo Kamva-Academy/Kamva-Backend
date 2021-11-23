@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ParseError
 
@@ -18,7 +19,7 @@ def find_user(data):
         else:
             raise ParseError(serialize_error('4007'))
 
-    return get_object_or_404(User, username=username)
+    return get_object_or_404(User, Q(username=username) | Q(phone_number=phone_number) | Q(email=email))
 
 
 def find_registration_receipt(user, registration_form):

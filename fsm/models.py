@@ -142,11 +142,14 @@ class RegistrationReceipt(AnswerSheet):
 
     @property
     def purchases(self):
-        return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
+        if self.answer_sheet_of.event_or_fsm.merchandise:
+            return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
+        return Purchase.objects.none()
 
     @property
     def is_paid(self):
-        return len(self.purchases.filter(status=Purchase.Status.Success)) > 0
+        return len(self.purchases.filter(
+            status=Purchase.Status.Success)) > 0 if self.answer_sheet_of.event_or_fsm.merchandise else True
 
     class Meta:
         unique_together = ('answer_sheet_of', 'user',)
