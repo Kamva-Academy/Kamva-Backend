@@ -492,8 +492,8 @@ class CustomUserAdmin(admin.ModelAdmin):
         return obj.school_studentship.school
 
     model = User
-    list_display = ['id', 'username', 'phone_number', 'national_code','first_name', 'last_name', 'gender', 'province', 'city', 'school',
-                    'password']
+    list_display = ['id', 'username', 'phone_number', 'national_code', 'first_name', 'last_name', 'gender', 'province',
+                    'city', 'school']
     actions = [verify_school_documents]
     ordering = ['-date_joined']
 
