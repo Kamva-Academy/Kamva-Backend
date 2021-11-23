@@ -7,7 +7,7 @@ from django.core.management import BaseCommand
 from django.shortcuts import get_object_or_404
 
 from accounts.models import User, School, SchoolStudentship, Studentship, AcademicStudentship
-from fsm.models import FSM, RegistrationReceipt, Team
+from fsm.models import FSM, RegistrationReceipt, Team, AnswerSheet
 
 logger = logging.getLogger(__file__)
 
@@ -39,11 +39,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('filename', nargs='+', type=str)
-        parser.add_argument('fsm', nargs='+', type=str)
+        parser.add_argument('registration_form', nargs='+', type=str)
 
     def handle(self, *args, **options):
-        fsm_name = options['fsm'][0]
-        fsm = get_object_or_404(FSM, name=fsm_name)
+        registration_form = options['registration_form'][0]
         filename = options['filename'][0]
         with open(filename, 'r', encoding='utf-8') as file:
             for data in csv.DictReader(file):
@@ -92,7 +91,7 @@ class Command(BaseCommand):
                         user=user,
                     )
                     receipts.append(RegistrationReceipt.objects.create(
-                        answer_sheet_of=fsm.registration_form,
+                        answer_sheet_of=registration_form,
                         answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
                         user=user,
                         status=RegistrationReceipt.RegistrationStatus.Accepted,
@@ -101,7 +100,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f'Successfully created user {user.phone_number}'))
                 team = Team.objects.create(name=data['team_code'],
                                            team_head=receipts[0],
-                                           registration_form=fsm.registration_form)
+                                           registration_form=registration_form)
                 for x in receipts:
                     x.team = team
                     x.save()
