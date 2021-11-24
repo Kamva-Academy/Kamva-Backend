@@ -45,6 +45,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('filename', nargs='+', type=str)
         parser.add_argument('registration_form', nargs='+', type=str)
+        parser.add_argument('admin', nargs='+', type=str)
 
     def handle(self, *args, **options):
         form_id = options['registration_form'][0]
