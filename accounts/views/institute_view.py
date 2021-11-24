@@ -27,6 +27,7 @@ class InstituteViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['city']
     my_tags = ['institutes']
+    pagination_class = None
 
     def get_serializer_class(self):
         try:

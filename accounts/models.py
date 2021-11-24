@@ -193,7 +193,7 @@ class Merchandise(models.Model):
                 if self.fsm:
                     return self.fsm
             except:
-                raise InternalServerError(serialize_error('5003'))
+                return None
 
 
 # class Code(models.Model):
