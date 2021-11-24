@@ -494,6 +494,7 @@ class CustomUserAdmin(admin.ModelAdmin):
     model = User
     list_display = ['id', 'username', 'phone_number', 'national_code', 'first_name', 'last_name', 'gender', 'province',
                     'city', 'school']
+    search_fields = ['username', 'phone_number', 'national_code']
     actions = [verify_school_documents]
     ordering = ['-date_joined']
 
