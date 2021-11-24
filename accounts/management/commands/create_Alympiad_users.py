@@ -50,6 +50,7 @@ class Command(BaseCommand):
         form_id = options['registration_form'][0]
         registration_form = RegistrationForm.objects.get(id=form_id)
         filename = options['filename'][0]
+        admin_user = User.objects.get(username=options['admin'][0])
         older_users = []
         with open(filename, 'r', encoding='utf-8') as file:
             for data in csv.DictReader(file):
@@ -69,7 +70,8 @@ class Command(BaseCommand):
                         school = schools.first()
                     else:
                         school = School.objects.create(name=member['institute'], institute_type='School',
-                                                       city=member['city'], province=member['province'])
+                                                       city=member['city'], province=member['province'],
+                                                       creator=admin_user)
                         self.stdout.write(self.style.SUCCESS(f'Successfully created school {school.name}'))
                     if 'phone_number' not in member.keys():
                         continue
