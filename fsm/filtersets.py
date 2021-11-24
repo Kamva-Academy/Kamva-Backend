@@ -32,4 +32,4 @@ class FSMFilterSet(FilterSet):
 
     class Meta:
         model = FSM
-        fields = ['event', 'registrable']
+        fields = ['event', 'registrable', 'is_active']

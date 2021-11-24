@@ -30,6 +30,7 @@ MAJOR_MAPPING = {
     'عمومی': SchoolStudentship.Major.Others
 }
 
+
 def convert(string):
     return string.replace('۰', '0').replace('۱', '1').replace('۲', '2').replace('۳', '3').replace('۴', '4').replace('۵', '5').replace('۶', '6').replace('۷', '7').replace('۸', '8').replace('۹', '9')
 
@@ -67,15 +68,16 @@ class Command(BaseCommand):
                     if 'phone_number' not in member.keys():
                         continue
                     phone_number = convert(member['phone_number'])
+                    national_code = member['national_code']
                     user = User.objects.create(
                         phone_number=phone_number,
                         first_name=member['first_name'],
                         last_name=member['last_name'],
                         city=member['city'],
                         password=make_password(phone_number),
-                        national_code=member['national_code'],
+                        national_code=national_code,
                         province=member['province'],
-                        username=member['username'],
+                        username=national_code,
                         gender=GENDER_MAPPING[member['gender']],
                     )
                     school_studentship = SchoolStudentship.objects.create(
