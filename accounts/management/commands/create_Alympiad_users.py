@@ -97,8 +97,7 @@ class Command(BaseCommand):
                         older_users.append(user)
                     else:
                         user = User.objects.filter(username=national_code).first()
-                    if len(SchoolStudentship.objects.filter(school=school,
-                                                            user=user)) <= 0 and user.school_studentship is None:
+                    if len(SchoolStudentship.objects.filter(user=user)) <= 0:
                         school_studentship = SchoolStudentship.objects.create(
                             school=school,
                             studentship_type=Studentship.StudentshipType.School,
@@ -110,7 +109,7 @@ class Command(BaseCommand):
                         )
                     else:
                         school_studentship = SchoolStudentship.objects.filter(school=school, user=user).first()
-                    if len(AcademicStudentship.objects.filter(user=user)) <= 0 and user.academic_studentship is None:
+                    if len(AcademicStudentship.objects.filter(user=user)) <= 0:
                         academic_studentship = AcademicStudentship.objects.create(
                             studentship_type=Studentship.StudentshipType.Academic,
                             user=user,
