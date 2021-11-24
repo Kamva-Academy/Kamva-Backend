@@ -76,7 +76,7 @@ class EducationalInstitute(PolymorphicModel):
         University = 'University'
         Other = 'Other'
 
-    name = models.CharField(max_length=50, null=False, blank=False)
+    name = models.CharField(max_length=100, null=False, blank=False)
     institute_type = models.CharField(max_length=10, null=False, blank=False, choices=InstituteType.choices)
     address = models.CharField(max_length=100, null=True, blank=True)
     province = models.CharField(max_length=50, null=True, blank=True)
