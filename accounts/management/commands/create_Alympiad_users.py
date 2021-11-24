@@ -97,19 +97,20 @@ class Command(BaseCommand):
                         older_users.append(user)
                     else:
                         user = User.objects.filter(username=national_code).first()
-                    if len(SchoolStudentship.objects.filter(school=school, user=user)) <= 0:
+                    if len(SchoolStudentship.objects.filter(school=school,
+                                                            user=user)) <= 0 and user.school_studentship is None:
                         school_studentship = SchoolStudentship.objects.create(
                             school=school,
                             studentship_type=Studentship.StudentshipType.School,
                             user=user,
                             major=MAJOR_MAPPING[member['major']] if 'major' in member.keys() else MAJOR_MAPPING[
-                                'ریاضی فیزیک'],
+                                'ریاضی'],
                             grade=GRADE_MAPPING[member['grade']],
                             is_document_verified=True,
                         )
                     else:
                         school_studentship = SchoolStudentship.objects.filter(school=school, user=user).first()
-                    if len(AcademicStudentship.objects.filter(user=user)) <= 0:
+                    if len(AcademicStudentship.objects.filter(user=user)) <= 0 and user.academic_studentship is None:
                         academic_studentship = AcademicStudentship.objects.create(
                             studentship_type=Studentship.StudentshipType.Academic,
                             user=user,
