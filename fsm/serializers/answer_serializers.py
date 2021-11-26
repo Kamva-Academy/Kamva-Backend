@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
@@ -158,6 +160,15 @@ class UploadFileAnswerSerializer(AnswerSerializer):
                   'problem', 'answer_file', 'file_name']
         read_only_fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_solution']
         write_only_fields = ['file_name']
+
+    def validate(self, attrs):
+        problem = attrs.get('problem', None)
+        if problem:
+            if problem.paper:
+                if (problem.paper.since and datetime.now(problem.paper.since.tzinfo) < problem.paper.since) or \
+                        (problem.paper.till and datetime.now(problem.paper.till.tzinfo) > problem.paper.till):
+                    raise ParseError(serialize_error('4104'))
+        return attrs
 
     def create(self, validated_data):
         answer_file = validated_data.get('answer_file', None)

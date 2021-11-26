@@ -111,6 +111,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4101': 'widget and answer problem must be the same',
                '4102': 'you can\'t edit an answer\'s problem once it is created',
                '4103': 'user has already been registered',
+               '4104': 'it\'s not the time to upload an answer for this problem',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',
