@@ -22,3 +22,5 @@ class Command(BaseCommand):
                     answer_file = a.answer_file
                     suffix = answer_file.name[answer_file.name.rfind('.'):]
                     answer_file.name = f'{problem_id}-{team_head_id}{suffix}'
+                    answer_file.save()
+                    self.stdout.write(self.style.SUCCESS(f'Successfully rename to {answer_file.name}'))
