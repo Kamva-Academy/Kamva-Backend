@@ -18,7 +18,7 @@ class Command(BaseCommand):
         for t in registration_form.teams.all():
             team_head_id = t.team_head.id
             for m in t.members.all():
-                for a in upload_problem.anwers.filter(is_final_answer=True, submitted_by=m.user):
+                for a in upload_problem.answers.filter(is_final_answer=True, submitted_by=m.user):
                     answer_file = a.answer_file
                     suffix = answer_file.name[answer_file.name.rfind('.'):]
                     answer_file.name = f'{problem_id}-{team_head_id}{suffix}'
