@@ -524,7 +524,8 @@ class Answer(PolymorphicModel):
     answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices, null=False, blank=False)
     answer_sheet = models.ForeignKey(AnswerSheet, related_name='answers', null=True, blank=True,
                                      on_delete=models.SET_NULL)
-    submitted_by = models.ForeignKey('accounts.User', null=True, blank=True, on_delete=models.SET_NULL)
+    submitted_by = models.ForeignKey('accounts.User', related_name='submitted_answers',
+                                     null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     is_final_answer = models.BooleanField(default=False)
     is_solution = models.BooleanField(default=False)
