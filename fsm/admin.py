@@ -32,6 +32,7 @@ class EdgeAdmin(admin.ModelAdmin):
 class AnswerAdmin(admin.ModelAdmin):
     model = UploadFileAnswer
     list_display = ['id', 'answer_file', ]
+    search_fields = ['answer_file']
 
     # def name(self, obj):
     #     name = obj.problem.name

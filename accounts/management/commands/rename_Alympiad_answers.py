@@ -17,7 +17,6 @@ class Command(BaseCommand):
         upload_problem = UploadFileProblem.objects.get(id=problem_id)
         for a in upload_problem.answers.filter(is_final_answer=True):
             team = Team.objects.get_team_from_widget(a.submitted_by, upload_problem)
-            print(team)
             answer_file = a.answer_file
             suffix = answer_file.name[answer_file.name.rfind('.'):]
             old = answer_file.path
