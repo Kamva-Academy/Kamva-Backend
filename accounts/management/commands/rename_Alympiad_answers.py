@@ -1,3 +1,6 @@
+import os
+
+from django.conf import settings
 from django.core.management import BaseCommand
 
 from fsm.models import RegistrationForm, Problem, UploadFileProblem
@@ -21,6 +24,9 @@ class Command(BaseCommand):
                 for a in upload_problem.answers.filter(is_final_answer=True, submitted_by=m.user):
                     answer_file = a.answer_file
                     suffix = answer_file.name[answer_file.name.rfind('.'):]
-                    answer_file.name = f'{problem_id}-{team_head_id}{suffix}'
-                    answer_file.save()
+                    old = answer_file.path
+                    answer_file.name = f'/answers/{problem_id}-{team_head_id}{suffix}'
+                    new = settings.MEDIA_ROOT + answer_file.name
+                    os.rename(old, new)
+                    a.save()
                     self.stdout.write(self.style.SUCCESS(f'Successfully rename to {answer_file.name}'))
