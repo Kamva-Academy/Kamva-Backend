@@ -171,10 +171,15 @@ class RegistrationReceipt(AnswerSheet):
 
 
 class TeamManager(models.Manager):
-    def get_teammates_from_widget(self, user, widget):
+
+    def get_team_from_widget(self, user, widget):
         form = widget.paper.fsm.registration_form or widget.paper.fsm.event.registration_form
-        team = Team.objects.filter(registration_form=form, members__user=user).first()
+        return Team.objects.filter(registration_form=form, members__user=user).first()
+
+    def get_teammates_from_widget(self, user, widget):
+        team = self.get_team_from_widget(user, widget)
         return team.members.values_list('user', flat=True) if team is not None else [user]
+
 
 
 class Team(models.Model):
