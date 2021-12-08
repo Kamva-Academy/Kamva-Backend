@@ -81,13 +81,14 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
         receipt = self.get_object()
         if not receipt.answer_sheet_of.has_certificate or not receipt.answer_sheet_of.certificates_ready:
             raise ParseError(serialize_error('4098'))
-        if not receipt.certificate:
-            certificate_templates = receipt.answer_sheet_of.certificate_templates.all()
-            # filter templates accordingly to user performance
-            if len(certificate_templates) > 0:
-                receipt.certificate = create_certificate(certificate_templates.first(), request.user.full_name)
-                receipt.save()
-            else:
-                raise NotFound(serialize_error('4095'))
+        if receipt.certificate:
+            receipt.certificate.storage.delete(receipt.certificate.name)
+        certificate_templates = receipt.answer_sheet_of.certificate_templates.all()
+        # filter templates accordingly to user performance
+        if len(certificate_templates) > 0:
+            receipt.certificate = create_certificate(certificate_templates.first(), request.user.full_name)
+            receipt.save()
+        else:
+            raise NotFound(serialize_error('4095'))
         return Response(RegistrationReceiptSerializer(context=self.get_serializer_context()).to_representation(receipt),
                         status=status.HTTP_200_OK)
