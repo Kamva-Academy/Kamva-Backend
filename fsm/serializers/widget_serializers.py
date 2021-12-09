@@ -38,7 +38,7 @@ class WidgetSerializer(serializers.ModelSerializer):
             representation.pop('solution')
         if isinstance(instance, Problem):
             user = self.context.get('user', None)
-            if user:
+            if user and isinstance(instance.paper, State):
                 teammates = Team.objects.get_teammates_from_widget(user, instance)
                 latest_answer = instance.answers.filter(submitted_by__in=teammates, is_final_answer=True).last()
                 if latest_answer:
