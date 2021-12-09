@@ -93,7 +93,8 @@ def create_certificate(certificate_template, full_name):
         bidi_text = get_display(reshaped_text)  # correct its direction
 
         draw = ImageDraw.Draw(image)
-        draw.text((certificate_template.name_X, certificate_template.name_Y), bidi_text, (0, 0, 0), font=font)
+        x = certificate_template.name_X - font.getsize(full_name)[0] + 2 * font.getmetrics()[0]
+        draw.text((x, certificate_template.name_Y), bidi_text, (0, 0, 0), font=font)
         draw = ImageDraw.Draw(image)
 
         image_io = BytesIO()

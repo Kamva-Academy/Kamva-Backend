@@ -43,6 +43,10 @@ class EventSerializer(serializers.ModelSerializer):
         user = self.context.get('user', None)
         receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
         representation['participants_size'] = len(instance.participants)
+        representation['has_certificate'] = instance.registration_form.has_certificate
+        representation['certificates_ready'] = instance.registration_form.certificates_ready
+        representation['registration_since'] = instance.registration_form.since
+        representation['registration_till'] = instance.registration_form.till
         if receipt:
             representation['user_registration_status'] = receipt.status
             representation['is_paid'] = receipt.is_paid
@@ -147,6 +151,10 @@ class FSMSerializer(serializers.ModelSerializer):
             representation['is_team_head'] = False
 
         if instance.registration_form:
+            representation['has_certificate'] = instance.registration_form.has_certificate
+            representation['certificates_ready'] = instance.registration_form.certificates_ready
+            representation['registration_since'] = instance.registration_form.since
+            representation['registration_till'] = instance.registration_form.till
             receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
             if receipt:
                 representation['user_registration_status'] = receipt.status
