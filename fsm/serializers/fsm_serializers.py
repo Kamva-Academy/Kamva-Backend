@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import serializers
@@ -41,12 +42,14 @@ class EventSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super(EventSerializer, self).to_representation(instance)
         user = self.context.get('user', None)
-        receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
+        if not isinstance(user, AnonymousUser):
+            receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
         representation['participants_size'] = len(instance.participants)
         representation['has_certificate'] = instance.registration_form.has_certificate
         representation['certificates_ready'] = instance.registration_form.certificates_ready
         representation['registration_since'] = instance.registration_form.since
         representation['registration_till'] = instance.registration_form.till
+        representation['audience_type'] = instance.registration_form.audience_type
         if receipt:
             representation['user_registration_status'] = receipt.status
             representation['is_paid'] = receipt.is_paid
@@ -155,6 +158,7 @@ class FSMSerializer(serializers.ModelSerializer):
             representation['certificates_ready'] = instance.registration_form.certificates_ready
             representation['registration_since'] = instance.registration_form.since
             representation['registration_till'] = instance.registration_form.till
+            representation['audience_type'] = instance.registration_form.audience_type
             receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
             if receipt:
                 representation['user_registration_status'] = receipt.status

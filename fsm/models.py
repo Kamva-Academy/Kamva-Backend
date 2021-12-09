@@ -63,6 +63,11 @@ class RegistrationForm(Paper):
         StudentshipDataNotApproved = "StudentshipDataNotApproved"
         Permitted = "Permitted"
 
+    class AudienceType(models.TextChoices):
+        Student = 'Student'
+        Academic = 'Academic'
+        All = 'All'
+
     min_grade = models.IntegerField(default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
     max_grade = models.IntegerField(default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
 
@@ -73,6 +78,7 @@ class RegistrationForm(Paper):
     accepting_status = models.CharField(max_length=15, default='AutoAccept', choices=AcceptingStatus.choices)
     gender_partition_status = models.CharField(max_length=25, default='BothPartitioned',
                                                choices=GenderPartitionStatus.choices)
+    audience_type = models.CharField(max_length=50, default='Student', choices=AudienceType.choices)
 
     has_certificate = models.BooleanField(default=True)
     certificates_ready = models.BooleanField(default=False)
@@ -90,27 +96,38 @@ class RegistrationForm(Paper):
                 return None
 
     def user_permission_status(self, user):
+        if self.till and datetime.now(self.till.tzinfo) > self.till:
+            return self.RegisterPermissionStatus.DeadlineMissed
+        if self.since and datetime.now(self.since.tzinfo) < self.since:
+            return self.RegisterPermissionStatus.NotStarted
+
         # if exec(self.answer_sheet_of.conditions):
         #     return True
         # TODO - handle for academic studentship too
-        studentship = user.school_studentship
-        if studentship:
-            if studentship.grade:
-                if self.min_grade <= studentship.grade <= self.max_grade:
-                    if studentship.school is not None or studentship.document is not None:
-                        if self.till and datetime.now(self.till.tzinfo) > self.till:
-                            return self.RegisterPermissionStatus.DeadlineMissed
-                        if self.since and datetime.now(self.since.tzinfo) < self.since:
-                            return self.RegisterPermissionStatus.NotStarted
-                        return self.RegisterPermissionStatus.Permitted
-                    else:
-                        return self.RegisterPermissionStatus.StudentshipDataIncomplete
-                else:
-                    return self.RegisterPermissionStatus.NotPermitted
+        if self.audience_type == self.AudienceType.Academic:
+            studentship = user.academic_studentship
+            if studentship:
+                if not studentship.university:
+                    return self.RegisterPermissionStatus.StudentshipDataIncomplete
             else:
-                return self.RegisterPermissionStatus.GradeNotAvailable
-        else:
-            return self.RegisterPermissionStatus.StudentshipDataNotApproved
+                return self.RegisterPermissionStatus.StudentshipDataNotApproved
+        elif self.audience_type == self.AudienceType.Student:
+            studentship = user.school_studentship
+            if studentship:
+                if studentship.grade:
+                    if self.min_grade <= studentship.grade <= self.max_grade:
+                        if studentship.school is not None or studentship.document is not None:
+
+                            return self.RegisterPermissionStatus.Permitted
+                        else:
+                            return self.RegisterPermissionStatus.StudentshipDataIncomplete
+                    else:
+                        return self.RegisterPermissionStatus.NotPermitted
+                else:
+                    return self.RegisterPermissionStatus.GradeNotAvailable
+            else:
+                return self.RegisterPermissionStatus.StudentshipDataNotApproved
+        return self.RegisterPermissionStatus.Permitted
 
     def __str__(self):
         return f'<{self.id}-{self.paper_type}>:{self.event_or_fsm.name if self.event_or_fsm else None}'

@@ -78,7 +78,7 @@ class RegistrationFormSerializer(PaperSerializer):
         ref_name = 'registration_form'
         fields = ['id', 'min_grade', 'max_grade', 'since', 'till', 'duration', 'is_exam', 'conditions', 'widgets',
                   'event', 'fsm', 'paper_type', 'creator', 'accepting_status', 'certificate_templates',
-                  'has_certificate', 'certificates_ready']
+                  'has_certificate', 'certificates_ready', 'audience_type']
         read_only_fields = ['id', 'creator']
 
 
