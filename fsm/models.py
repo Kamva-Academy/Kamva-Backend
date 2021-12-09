@@ -500,12 +500,13 @@ class Problem(Widget):
         return self.answers.filter(is_solution=True).first()
 
     def unfinalize_older_answers(self, user):
-        teammates = Team.objects.get_teammates_from_widget(user=user, widget=self)
-        older_answers = PROBLEM_ANSWER_MAPPING[self.widget_type].objects.filter(problem=self, is_final_answer=True,
-                                                                                submitted_by__in=teammates)
-        for a in older_answers:
-            a.is_final_answer = False
-            a.save()
+        if isinstance(self.paper, State):
+            teammates = Team.objects.get_teammates_from_widget(user=user, widget=self)
+            older_answers = PROBLEM_ANSWER_MAPPING[self.widget_type].objects.filter(problem=self, is_final_answer=True,
+                                                                                    submitted_by__in=teammates)
+            for a in older_answers:
+                a.is_final_answer = False
+                a.save()
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
