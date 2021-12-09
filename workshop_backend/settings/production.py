@@ -120,3 +120,5 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+SWAGGER_URL = 'backend.rastaiha.ir/api/'

@@ -13,8 +13,8 @@ schema_view = get_schema_view(
         title="Rasta Workshop API",
         default_version='v2',
         # description="Test description",
-
     ),
+    url=settings.SWAGGER_URL,
     public=True,
     permission_classes=(permissions.AllowAny,),
 )

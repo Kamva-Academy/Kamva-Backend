@@ -2,7 +2,6 @@ from workshop_backend.settings.base import *
 import sys
 import django_heroku
 from datetime import timedelta
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff('
 
@@ -100,3 +99,4 @@ PAYMENT = {
     'FRONT_HOST_SUCCESS': 'https://academy.rastaiha.ir/message/payment/success',
     'FRONT_HOST_FAILURE': 'https://academy.rastaiha.ir/message/payment/failure',
 }
+SWAGGER_URL = None
