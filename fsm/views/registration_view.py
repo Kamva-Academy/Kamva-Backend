@@ -116,7 +116,7 @@ class RegistrationViewSet(ModelViewSet):
             register_permission_status = self.get_object().user_permission_status(context.get('user', None))
             if register_permission_status == RegistrationForm.RegisterPermissionStatus.DeadlineMissed:
                 raise ParseError(serialize_error('4036'))
-            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.RegistrationNotStarted:
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotStarted:
                 raise ParseError(serialize_error('4100'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.StudentshipDataIncomplete:
                 raise PermissionDenied(serialize_error('4057'))
