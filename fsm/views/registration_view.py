@@ -113,8 +113,7 @@ class RegistrationViewSet(ModelViewSet):
         serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt',
                                                          **request.data}, context=context)
         if serializer.is_valid(raise_exception=True):
-            register_permission_status = self.get_object().user_permission_status(
-                serializer.validated_data.get('user', None))
+            register_permission_status = self.get_object().user_permission_status(context.get('user', None))
             if register_permission_status == RegistrationForm.RegisterPermissionStatus.DeadlineMissed:
                 raise ParseError(serialize_error('4036'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.RegistrationNotStarted:
