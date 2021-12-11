@@ -64,7 +64,6 @@ class EdgeViewSet(ModelViewSet):
                 raise ParseError(serialize_error('4089'))
 
             if player.current_state == edge.head:
-
                 departure_time = timezone.now()
                 for member in team.members.all():
                     p = member.players.filter(fsm=fsm).first()
@@ -72,18 +71,24 @@ class EdgeViewSet(ModelViewSet):
                         p = move_on_edge(p, edge, departure_time, is_forward=False)
                         if player.id == p.id:
                             player = p
-
                 return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
-
             elif player.current_state == edge.tail:
-
                 return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
             else:
-
                 raise ParseError(serialize_error('4083'))
-
+        elif fsm.fsm_p_type in [FSM.FSMPType.Individual, FSM.FSMPType.Hybrid]:
+            if player.current_state == edge.head:
+                departure_time = timezone.now()
+                player = move_on_edge(player, edge, departure_time, is_forward=False)
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+            elif player.current_state == edge.tail:
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+            else:
+                raise ParseError(serialize_error('4083'))
         else:
             raise InternalServerError('Not implemented Yet😎')
 
@@ -131,6 +136,17 @@ class EdgeViewSet(ModelViewSet):
 
                 logger.warning(serialize_error('4083'))
                 raise ParseError(serialize_error('4083'))
+        elif fsm.fsm_p_type in [FSM.FSMPType.Individual, FSM.FSMPType.Hybrid]:
+            if player.current_state == edge.tail:
+                departure_time = timezone.now()
+                player = move_on_edge(player, edge, departure_time, is_forward=True)
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+            elif player.current_state == edge.head:
+                return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                                status=status.HTTP_200_OK)
+            else:
+                raise ParseError(serialize_error('4083'))
         else:
             raise InternalServerError('Not implemented Yet😎')
 
@@ -156,7 +172,6 @@ class EdgeViewSet(ModelViewSet):
                             player = p
                 return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                                 status=status.HTTP_200_OK)
-
             else:
                 raise InternalServerError('Not implemented Yet😎')
 
