@@ -124,7 +124,7 @@ class RegistrationViewSet(ModelViewSet):
                 raise PermissionDenied(serialize_error('4032'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.GradeNotAvailable:
                 raise ParseError(serialize_error('4033'))
-            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.StudentshipDataNotApprovedYet:
+            elif register_permission_status == RegistrationForm.RegisterPermissionStatus.StudentshipDataNotApproved:
                 raise ParseError(serialize_error('4034'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.Permitted:
                 serializer.validated_data['answer_sheet_of'] = self.get_object()
