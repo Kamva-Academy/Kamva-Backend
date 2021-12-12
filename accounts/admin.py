@@ -503,7 +503,7 @@ class CustomSchoolAdmin(admin.ModelAdmin):
     def merge_schools(self, request, queryset):
         schools = len(queryset)
         first = queryset.first()
-        for school in queryset.filter(~Q(id=first.id)):
+        for school in queryset.exclude(id=first.id):
             for fsm in school.fsms.all():
                 fsm.holder = first
                 fsm.save()
