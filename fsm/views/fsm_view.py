@@ -67,41 +67,39 @@ class FSMViewSet(viewsets.ModelViewSet):
         fsm = self.get_object()
         user = self.request.user
         logger.info(f'user {user.full_name} trying to enter fsm {fsm.name}')
+        receipt = get_receipt(user, fsm)
+        player = get_player(user, fsm)
+        if receipt is None:
+            raise ParseError(serialize_error('4079'))
         # TODO - add for hybrid and individual
-        if fsm.fsm_p_type == FSM.FSMPType.Team:
-            receipt = get_receipt(user, fsm)
-            player = get_player(user, fsm)
-            if receipt is None:
-                raise ParseError('4079')
+        if fsm.fsm_p_type in [FSM.FSMPType.Team, FSM.FSMPType.Hybrid]:
             if receipt.team is None:
                 raise ParseError(serialize_error('4078'))
 
-            # first time entering fsm
-            if not player:
-                if fsm.lock and len(fsm.lock) > 0:
-                    if not key:
-                        raise PermissionDenied(serialize_error('4085'))
-                    elif key != fsm.lock:
-                        raise PermissionDenied(serialize_error('4080'))
-                serializer = PlayerSerializer(data={'user': user.id, 'fsm': fsm.id, 'receipt': receipt.id,
-                                                    'current_state': fsm.first_state.id, 'last_visit': timezone.now()},
-                                              context=self.get_serializer_context())
+        # first time entering fsm
+        if not player:
+            if fsm.lock and len(fsm.lock) > 0:
+                if not key:
+                    raise PermissionDenied(serialize_error('4085'))
+                elif key != fsm.lock:
+                    raise PermissionDenied(serialize_error('4080'))
+            serializer = PlayerSerializer(data={'user': user.id, 'fsm': fsm.id, 'receipt': receipt.id,
+                                                'current_state': fsm.first_state.id, 'last_visit': timezone.now()},
+                                          context=self.get_serializer_context())
+            if serializer.is_valid(raise_exception=True):
+                player = serializer.save()
+                serializer = PlayerHistorySerializer(data={'player': player.id, 'state': player.current_state.id,
+                                                           'start_time': player.last_visit},
+                                                     context=self.get_serializer_context())
                 if serializer.is_valid(raise_exception=True):
-                    player = serializer.save()
-            #     serializer = PlayerHistorySerializer(data={'player': player.id, 'state': player.current_state.id,
-            #                                                'start_time': player.last_visit},
-            #                                          context=self.get_serializer_context())
-            #     if serializer.is_valid(raise_exception=True):
-            #         player_history = serializer.save()
-            # else:
-            # player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
-            # if player_history is None:
+                    player_history = serializer.save()
+        else:
+            player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
+            if player_history is None:
+                logger.info(f'user {user.full_name} has player [id:{player.id}] without corresponding history')
             #     raise NotFound(serialize_error('4081'))
-            if not player or not player.current_state:
-                logger.info(f'{player} - {player.current_state if player else None}')
-            return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
-                            status=status.HTTP_200_OK)
-        return Response('not implemented yet')
+        return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
+                        status=status.HTTP_200_OK)
 
     # @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['player'])
     # @transaction.atomic
