@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views.answer_view import UploadAnswerViewSet, AnswerViewSet
+from .views.article_view import ArticleViewSet
 from .views.event_view import EventViewSet
 from .views.fsm_view import *
 from .views.fsmstateview import *
@@ -91,4 +92,5 @@ router.register(r'hint', HintViewSet, basename='hints')
 router.register(r'widget', WidgetViewSet, basename='widgets')
 router.register(r'player', PlayerViewSet, basename='players')
 router.register(r'answers', AnswerViewSet, basename='answers')
+router.register(r'articles', ArticleViewSet, basename='articles')
 urlpatterns += router.urls

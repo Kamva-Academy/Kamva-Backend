@@ -1,11 +1,11 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.exceptions import ParseError, PermissionDenied, ValidationError
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
-from fsm.models import Event, FSM, RegistrationForm, Article, Hint, Edge, State
+from fsm.models import Event, FSM, RegistrationForm, Article, Hint, Edge, State, Tag
 from fsm.serializers.certificate_serializer import CertificateTemplateSerializer
 from fsm.serializers.widget_serializers import WidgetPolymorphicSerializer
 
@@ -82,14 +82,58 @@ class RegistrationFormSerializer(PaperSerializer):
         read_only_fields = ['id', 'creator']
 
 
-class ArticleSerializer(serializers.ModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = '__all__'
+        read_only_fields = ['id']
+
+
+class ArticleSerializer(PaperSerializer):
     widgets = WidgetPolymorphicSerializer(many=True, required=False)
+    tags = serializers.ListSerializer(required=False, child=serializers.CharField(min_length=1, max_length=100),
+                                      allow_null=True, allow_empty=True)
 
     class Meta:
         model = Article
         ref_name = 'article'
-        fields = ['id', 'widgets']
-        read_only_fields = ['id']
+        fields = ['id', 'name', 'description', 'widgets', 'tags', 'is_draft', 'publisher', 'cover_page']
+        read_only_fields = ['id', 'creator']
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = self.context.get('user', None)
+        tags = validated_data.pop('tags') if 'tags' in validated_data.keys() else []
+        article = super(ArticleSerializer, self).create({'paper_type': 'Article', 'creator': user, **validated_data})
+        for t in tags:
+            tag = Tag.objects.filter(name=t).first()
+            if tag:
+                article.tags.add(tag)
+            else:
+                tag_serializer = TagSerializer(data={'name': t}, context=self.context)
+                if tag_serializer.is_valid(raise_exception=True):
+                    article.tags.add(tag_serializer.save())
+        article.save()
+        return article
+
+    def validate_tags(self, tags):
+        if len(tags) > 5:
+            raise ValidationError(serialize_error('4106'))
+        return tags
+
+    def validate(self, attrs):
+        publisher = attrs.get('publisher', None)
+        user = self.context.get('user', None)
+        if publisher and user not in publisher.admins.all():
+            raise PermissionDenied(serialize_error('4105'))
+
+        return super(ArticleSerializer, self).validate(attrs)
+
+    def to_representation(self, instance):
+        representation = super(ArticleSerializer, self).to_representation(instance)
+        representation['tags'] = TagSerializer(instance.tags.all(), context=self.context, many=True).data
+        return representation
 
 
 class HintSerializer(PaperSerializer):
@@ -97,7 +141,8 @@ class HintSerializer(PaperSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        return super(HintSerializer, self).create({'paper_type': 'Hint', **validated_data})
+        user = self.context.get('user', None)
+        return super(HintSerializer, self).create({'paper_type': 'Hint', 'creator': user, **validated_data})
 
     def validate(self, attrs):
         reference = attrs.get('reference', None)

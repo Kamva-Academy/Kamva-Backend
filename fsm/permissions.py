@@ -62,6 +62,16 @@ class IsReceiptsFormModifier(permissions.BasePermission):
         return request.user in obj.answer_sheet_of.event_or_fsm.modifiers
 
 
+class IsArticleModifier(permissions.BasePermission):
+    """
+    Permission for editing an article
+    """
+    message = 'You are not this article\'s modifier'
+
+    def has_object_permission(self, request, view, obj):
+        return obj.creator == request.user
+
+
 class IsTeamHead(permissions.BasePermission):
     """
     Permission for team's head

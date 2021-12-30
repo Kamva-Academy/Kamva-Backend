@@ -198,7 +198,6 @@ class TeamManager(models.Manager):
         return team.members.values_list('user', flat=True) if team is not None else [user]
 
 
-
 class Team(models.Model):
     id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200, null=True, blank=True)
@@ -378,10 +377,19 @@ class Hint(Paper):
     reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='hints')
 
 
+class Tag(models.Model):
+    name = models.CharField(unique=True, max_length=25)
+    created_at = models.DateTimeField(auto_now=True)
+
+
 class Article(Paper):
+    name = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
-    active = models.BooleanField(default=False)
+    tags = models.ManyToManyField(Tag, related_name='articles')
+    is_draft = models.BooleanField(default=True)
+    publisher = models.ForeignKey('accounts.EducationalInstitute', related_name='articles', on_delete=models.SET_NULL,
+                                  null=True, blank=True)
 
 
 class EdgeManager(models.Manager):
@@ -463,6 +471,7 @@ class Widget(PolymorphicModel):
 class Description(Widget):
     text = models.TextField()
     is_spoilbox = models.BooleanField(default=False)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 

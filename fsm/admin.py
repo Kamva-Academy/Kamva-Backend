@@ -10,7 +10,7 @@ from import_export.admin import ExportActionMixin
 from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, Hint, Widget, Video, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
-    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone
+    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article
 
 
 class EdgeAdmin(admin.ModelAdmin):
@@ -211,6 +211,7 @@ admin.site.register(FSM, FSMAdmin)
 admin.site.register(Edge, EdgeAdmin)
 admin.site.register(State, StateAdmin)
 admin.site.register(Hint)
+admin.site.register(Article)
 admin.site.register(Widget, WidgetAdmin)
 admin.site.register(Video)
 admin.site.register(Image)
