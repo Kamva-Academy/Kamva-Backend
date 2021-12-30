@@ -462,7 +462,7 @@ class Widget(PolymorphicModel):
 
 class Description(Widget):
     text = models.TextField()
-
+    is_spoilbox = models.BooleanField(default=False)
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 

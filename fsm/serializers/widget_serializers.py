@@ -89,7 +89,7 @@ class DescriptionSerializer(WidgetSerializer):
 
     class Meta:
         model = Description
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text']
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text','is_spoilbox']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
