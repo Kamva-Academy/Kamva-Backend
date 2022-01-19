@@ -66,7 +66,8 @@ class TeamViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(responses={200: InvitationSerializer})
     @action(detail=True, methods=['get'], permission_classes=[customPermissions.IsTeamMember])
     def get_invitations(self, request, pk=None):
-        return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object(), has_accepted=False),
+        return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object(),
+                                                                       status=Invitation.InvitationStatus.Waiting),
                                              many=True, context=self.get_serializer_context()).data,
                         status=status.HTTP_200_OK)
 
@@ -137,7 +138,7 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
         invitation = self.get_object()
         if invitation.team.team_head.user != request.user:
             raise PermissionDenied(serialize_error('4060'))
-        if invitation.has_accepted:
+        if invitation.status == Invitation.InvitationStatus.Accepted:
             raise ParseError(serialize_error('4056'))
         return super(InvitationViewSet, self).destroy(request, *args, **kwargs)
 
@@ -153,12 +154,12 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
                                                          answer_sheet_of=invitation.team.registration_form).first()
             if receipt.team:
                 raise PermissionDenied(serialize_error('4053'))
-            has_accepted = serializer.validated_data.get('has_accepted', False)
+            invitation_status = serializer.validated_data.get('status', Invitation.InvitationStatus.Waiting)
             team = invitation.team
-            if has_accepted:
+            if invitation_status == Invitation.InvitationStatus.Accepted:
                 if len(team.members.all()) >= team.registration_form.event_or_fsm.team_size:
                     raise ParseError('4059')
-                invitation.has_accepted = has_accepted
+                invitation.status = Invitation.InvitationStatus.Accepted
                 invitation.save()
                 invitee.team = team
                 invitee.save()

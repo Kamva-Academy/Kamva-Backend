@@ -213,9 +213,14 @@ class Team(models.Model):
 
 
 class Invitation(models.Model):
+    class InvitationStatus(models.TextChoices):
+        Waiting = "Waiting"
+        Rejected = "Rejected"
+        Accepted = "Accepted"
+
     invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')
-    has_accepted = models.BooleanField(default=False)
+    status = models.CharField(max_length=15, default=InvitationStatus.Waiting, choices=InvitationStatus.choices)
 
     class Meta:
         unique_together = ('invitee', 'team')

@@ -164,4 +164,3 @@ factory = APIRequestFactory()
 user = User.objects.get(username='admin')
 request = factory.post('/registration_form', registration_form_creation_test_case, format='json')
 force_authenticate(request, user=user)
-# TODO - configure tests and all

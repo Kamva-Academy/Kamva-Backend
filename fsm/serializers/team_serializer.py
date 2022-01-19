@@ -65,8 +65,8 @@ class InvitationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invitation
-        fields = ['id', 'invitee', 'team', 'username', 'has_accepted']
-        read_only_fields = ['id', 'team', 'has_accepted']
+        fields = ['id', 'invitee', 'team', 'username', 'status']
+        read_only_fields = ['id', 'team', 'status']
 
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -83,7 +83,7 @@ class TeamSerializer(serializers.ModelSerializer):
         invitation_serializer = InvitationSerializer(data={'invitee': user_registration.id}, context=context)
 
         if invitation_serializer.is_valid(raise_exception=True):
-            invitation_serializer.validated_data['has_accepted'] = True
+            invitation_serializer.validated_data['status'] = Invitation.InvitationStatus.Accepted
             invitation_serializer.save()
         user_registration.team = team
         user_registration.save()
@@ -100,7 +100,7 @@ class TeamSerializer(serializers.ModelSerializer):
         if not user_registration or not user_registration.is_participating:
             raise PermissionDenied(serialize_error('4050'))
         if Invitation.objects.filter(invitee=user_registration, team__registration_form=registration_form,
-                                     has_accepted=True):
+                                     status=Invitation.InvitationStatus.Accepted):
             raise PermissionDenied(serialize_error('4051'))
         return attrs
 
@@ -115,4 +115,4 @@ class TeamSerializer(serializers.ModelSerializer):
 
 
 class InvitationResponseSerializer(serializers.Serializer):
-    has_accepted = serializers.BooleanField(required=True)
+    status = serializers.ChoiceField(choices=Invitation.InvitationStatus.choices, required=True)
