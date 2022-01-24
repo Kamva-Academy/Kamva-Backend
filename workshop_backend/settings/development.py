@@ -1,7 +1,7 @@
-from workshop_backend.settings.base import *
 import sys
-import django_heroku
 from datetime import timedelta
+
+from workshop_backend.settings.base import *
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff('
@@ -60,21 +60,6 @@ TESTING = sys.argv[1] == 'test'
 # TESTING = True
 STATIC_ROOT = get_environment_var('STATIC_ROOT', 'staticfiles')
 
-# Activate Django-Heroku.
-django_heroku.settings(locals(), test_runner=False)
-DOMAIN = get_environment_var('DOMAIN', 'http://kabaraamadalapeste.herokuapp.com')
-
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
-        },
-    },
-}
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
@@ -93,12 +78,11 @@ SIMPLE_JWT = {
 ZARINPAL_CONFIG = {
     'ROUTE_START_PAY': 'https://sandbox.zarinpal.com/pg/StartPay/',
     'ROUTE_WEB_GATE': 'https://sandbox.zarinpal.com/pg/services/WebGate/wsdl',
-    'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
-    'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
     'MERCHANT': 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',  # Required
-    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا» به صورت آزمایشی'  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: مسافر صفر» به صورت آزمایشی'  # Required
 }
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://rastaiha.ir/payment/success/',
-    'FRONT_HOST_FAILURE': 'https://rastaiha.ir/payment/failure/'
+    'FRONT_HOST_SUCCESS': 'https://academy.rastaiha.ir/message/payment/success',
+    'FRONT_HOST_FAILURE': 'https://academy.rastaiha.ir/message/payment/failure',
 }
+SWAGGER_URL = None

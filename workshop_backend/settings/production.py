@@ -1,16 +1,10 @@
 from workshop_backend.settings.base import *
 
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_environment_var('DEBUG', 'False') == 'True'
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_environment_var('SECRET_KEY', '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff(')
 
 ALLOWED_HOSTS = get_environment_var('ALLOWED_HOSTS', '*').split(',')
-
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DB_NAME = get_environment_var('DB_NAME', 'workshop')
 DB_USER = get_environment_var('DB_USER', 'user')
@@ -28,7 +22,6 @@ DATABASES = {
         'PORT': DB_PORT,
     }
 }
-
 
 STATIC_ROOT = get_environment_var('STATIC_ROOT', 'staticfiles')
 LOG_LEVEL = get_environment_var('LOG_LEVEL', 'INFO')
@@ -78,7 +71,7 @@ TESTING = False
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
@@ -98,21 +91,12 @@ ZARINPAL_CONFIG = {
     'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
     'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
     'MERCHANT': '8b469980-683d-11ea-806a-000c295eb8fc',  # Required
-    'DESCRIPTION': 'ثبت‌نام در رویداد «مدرسه تابستانه رستا»'  # Required
+    'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: روز صفر»'  # Required
 }
 
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://rastaiha.ir/payment/success/',
-    'FRONT_HOST_FAILURE': 'https://rastaiha.ir/payment/failure/'
+    'FRONT_HOST_SUCCESS': 'https://academy.rastaiha.ir/message/payment/success',
+    'FRONT_HOST_FAILURE': 'https://academy.rastaiha.ir/message/payment/failure',
 }
 
-REDIS_URL = get_environment_var('REDIS_URL', 'redis://localhost:6379')
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
-        },
-    },
-}
+SWAGGER_URL = 'https://backend.rastaiha.ir/api/'

@@ -30,24 +30,22 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    'workshop_backend.apps.MyAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'import_export',
-    'notifications',
     'rest_framework',
     'rest_framework.authtoken',
-    'auction',
-    'workshop',
-    'channels',
     'accounts',
     'corsheaders',
     'fsm',
     'drf_yasg',
-    'notice'
+    'polymorphic',
+    'django_extensions',
+    'django_filters',
 ]
 
 # SITE_ID=1
@@ -57,12 +55,29 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # 'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+# multi-lingual settings below
+# LANGUAGES = [
+#     ('en', _('English')),
+#     ('fa', _('Persian')),
+# ]
+
+# USE_I18N = True
+#
+# USE_L10N = True
+#
+# LANGUAGE_CODE = 'en'
+#
+# LOCALE_PATHS = [
+#     os.path.join(BASE_DIR, 'locale'),
+# ]
+# multilingual settings above
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -139,12 +154,6 @@ OK_STATUS = 'ok'
 ERROR_STATUS = 'err'
 HELP_STATUS = 'help'
 
-DJANGO_NOTIFICATIONS_CONFIG = {
-    'USE_JSONFIELD': True,
-    'SOFT_DELETE': True,
-    'NUM_TO_FETCH': 40,
-}
-
 THUMBNAIL_ALIASES = {
     '': {
         'avatar': {'size': (80, 80), 'crop': True},
@@ -159,15 +168,9 @@ CONSTANTS = {
 }
 
 # Custom user model
-AUTH_USER_MODEL = "accounts.Member"
+AUTH_USER_MODEL = "accounts.User"
 
 ASGI_APPLICATION = 'workshop_backend.routing.application'
-
-DJANGO_NOTIFICATIONS_CONFIG = {
-    'USE_JSONFIELD': True,
-    'SOFT_DELETE': True,
-    'NUM_TO_FETCH': 80,
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
@@ -176,18 +179,40 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': '12'
 }
 
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
+)
+
+GUARDIAN_RAISE_403 = True
+ANONYMOUS_USER_NAME = None
+
 SWAGGER_SETTINGS = {
+    'LOGIN_URL': '/api/auth/accounts/login/',
     'SECURITY_DEFINITIONS': {
-        'api_key': {
+        'Bearer': {
             'type': 'apiKey',
             'in': 'header',
             'name': 'Authorization'
         }
     },
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'workshop_backend.settings.custom_setting_classes.CustomAutoSchema',
+    'TAGS_SORTER': 'alpha',
+    'DOC_EXPANSION': 'none',
 }
 
 KAVENEGAR_TOKEN = KavenegarAPI('6A4F554D384477574A7162444F614B4A6C626A64495169306A43417566473655624644394833566C352F593D')
 
+SMS_CODE_DELAY = 5
+SMS_CODE_LENGTH = 5
+
+VOUCHER_CODE_LENGTH = 5
+
+DISCOUNT_CODE_LENGTH = 5
+
+PURCHASE_UNIQ_CODE_LENGTH = 10

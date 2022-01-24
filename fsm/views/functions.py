@@ -1,8 +1,47 @@
 from fsm.models import *
-from django.utils import timezone
+from fsm.serializers.answer_serializers import AnswerSerializer
+from fsm.serializers.widget_serializers import WidgetSerializer
 
-from fsm.serializers import MainStateSerializer, MainStateGetSerializer, WidgetSerializer, SubmitedAnswerSerializer, \
-    AnswerSerializer, PlayerStateGetSerializer, FSMEdgeSerializer
+logger = logging.getLogger(__name__)
+
+
+def get_receipt(user, fsm):
+    if fsm.registration_form and fsm.event.registration_form:
+        raise ParseError(serialize_error('4077'))
+    registration_form = fsm.registration_form or fsm.event.registration_form
+    return RegistrationReceipt.objects.filter(user=user, answer_sheet_of=registration_form,
+                                              is_participating=True).first()
+
+
+def get_player(user, fsm):
+    return user.players.filter(fsm=fsm, is_active=True).first()
+
+
+def move_on_edge(p, edge, departure_time, is_forward):
+    p.current_state = edge.head if is_forward else edge.tail
+    p.last_visit = departure_time
+    p.save()
+    last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
+    if last_state_history:
+        last_state_history.end_time = departure_time
+        last_state_history.save()
+    PlayerHistory.objects.create(player=p, state=edge.head if is_forward else edge.tail, entered_by_edge=edge,
+                                 start_time=departure_time, reverse_enter=not is_forward)
+
+    return p
+
+
+def get_a_player_from_team(team, fsm):
+    head_receipt = team.team_head
+    players = Player.objects.filter(fsm=fsm, receipt__in=team.members.all())
+    if len(players) <= 0:
+        logger.info('no player found for any member of team')
+        raise ParseError(serialize_error('4088'))
+    else:
+        player = players.filter(receipt=head_receipt).first()
+        if not player:
+            player = players.first()
+        return player
 
 
 def team_change_current_state(team, state):
@@ -53,30 +92,44 @@ def current_state_widgets_json(state, player):
     return widgets
 
 
-def current_state_incoming_edge(player, state):
-    player_history = PlayerHistory.objects.filter(player=player, state=state).last()
+def current_state_incoming_edge(state, player_workshop):
+    player_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=state).last()
     if player_history:
-        edge = player_history.edge
+        edge = player_history.inward_edge
     else:
         return
     return edge
-
-
-def player_state(state, player):
-    state_result = PlayerStateGetSerializer(state).data
-    widgets = current_state_widgets_json(state, player)
-    state_result['widgets'] = widgets
-    if state.fsm.fsm_learning_type == 'noMentor':
-        edge = current_state_incoming_edge(player, state)
-        if edge:
-            state_result['inward_edges'] = [FSMEdgeSerializer().to_representation(edge)]
-        else:
-            state_result['inward_edges'] = []
-
-    return state_result
 
 
 def register_individual_workshop(workshop, participant):
     player_workshop = PlayerWorkshop.objects.create(workshop=workshop, player=participant,
                                                     current_state=workshop.first_state, last_visit=timezone.now())
     return player_workshop
+
+
+def get_player_workshop(player, fsm):
+    return PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
+
+
+def get_scores_sum(player_workshop):
+    pass
+
+
+def send_signup_email(self, base_url, password=''):
+    options = {
+        'user': self,
+        'base_url': base_url,
+        'token': account_activation_token.make_token(self),
+        'uid': urlsafe_base64_encode(force_bytes(self.pk))
+    }
+    if password != '':
+        options['password'] = password
+    if self.participant.team is not None:
+        options['team'] = self.participant.team.id
+
+    html_content = strip_spaces_between_tags(render_to_string('auth/signup_email.html', options))
+    text_content = re.sub('<style[^<]+?</style>', '', html_content)
+    text_content = strip_tags(text_content)
+    msg = EmailMultiAlternatives('تایید ثبت‌نام اولیه', text_content, 'Rastaiha <info@rastaiha.ir>', [self.email])
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
