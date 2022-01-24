@@ -1,6 +1,8 @@
-from workshop_backend.settings.base import *
 import sys
 from datetime import timedelta
+
+from workshop_backend.settings.base import *
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff('
 
@@ -57,18 +59,6 @@ LOGGING = {
 TESTING = sys.argv[1] == 'test'
 # TESTING = True
 STATIC_ROOT = get_environment_var('STATIC_ROOT', 'staticfiles')
-
-
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
-        },
-    },
-}
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),

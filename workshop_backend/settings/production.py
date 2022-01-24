@@ -1,26 +1,16 @@
 from workshop_backend.settings.base import *
-import redis
 
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_environment_var('DEBUG', 'False') == 'True'
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_environment_var('SECRET_KEY', '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff(')
 
 ALLOWED_HOSTS = get_environment_var('ALLOWED_HOSTS', '*').split(',')
-
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DB_NAME = get_environment_var('DB_NAME', 'workshop')
 DB_USER = get_environment_var('DB_USER', 'user')
 DB_PASS = get_environment_var('DB_PASS', 'p4s$pAsS')
 DB_HOST = get_environment_var('DB_HOST', 'localhost')
 DB_PORT = get_environment_var('DB_PORT', '5432')
-
-REDIS_HOST = get_environment_var('REDIS_HOST', 'localhost')
-REDIS_PORT = get_environment_var('REDIS_PORT', '6379')
 
 DATABASES = {
     'default': {
@@ -32,7 +22,6 @@ DATABASES = {
         'PORT': DB_PORT,
     }
 }
-
 
 STATIC_ROOT = get_environment_var('STATIC_ROOT', 'staticfiles')
 LOG_LEVEL = get_environment_var('LOG_LEVEL', 'INFO')
@@ -108,17 +97,6 @@ ZARINPAL_CONFIG = {
 PAYMENT = {
     'FRONT_HOST_SUCCESS': 'https://academy.rastaiha.ir/message/payment/success',
     'FRONT_HOST_FAILURE': 'https://academy.rastaiha.ir/message/payment/failure',
-}
-
-REDIS_URL = get_environment_var('REDIS_URL', 'redis://localhost:6379')
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
-        },
-    },
 }
 
 SWAGGER_URL = 'https://backend.rastaiha.ir/api/'
