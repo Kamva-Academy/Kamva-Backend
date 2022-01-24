@@ -16,7 +16,6 @@ from accounts.models import Merchandise, Purchase, DiscountCode, User
 from accounts.permissions import IsPurchaseOwner, IsDiscountCodeModifier, IsMerchandiseOwner
 from accounts.serializers import DiscountCodeValidationSerializer, PurchaseSerializer, DiscountCodeSerializer, \
     MerchandiseSerializer
-from accounts.views.views import logger
 from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
 from fsm.models import RegistrationReceipt

@@ -37,21 +37,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'import_export',
-    'notifications',
     'rest_framework',
     'rest_framework.authtoken',
-    'workshop',
-    'channels',
     'accounts',
     'corsheaders',
     'fsm',
     'drf_yasg',
-    'notice',
     'scoring',
     'polymorphic',
     'django_extensions',
     'django_filters',
-    'guardian'
 ]
 
 # SITE_ID=1
@@ -160,12 +155,6 @@ OK_STATUS = 'ok'
 ERROR_STATUS = 'err'
 HELP_STATUS = 'help'
 
-DJANGO_NOTIFICATIONS_CONFIG = {
-    'USE_JSONFIELD': True,
-    'SOFT_DELETE': True,
-    'NUM_TO_FETCH': 40,
-}
-
 THUMBNAIL_ALIASES = {
     '': {
         'avatar': {'size': (80, 80), 'crop': True},
@@ -183,12 +172,6 @@ CONSTANTS = {
 AUTH_USER_MODEL = "accounts.User"
 
 ASGI_APPLICATION = 'workshop_backend.routing.application'
-
-DJANGO_NOTIFICATIONS_CONFIG = {
-    'USE_JSONFIELD': True,
-    'SOFT_DELETE': True,
-    'NUM_TO_FETCH': 80,
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
