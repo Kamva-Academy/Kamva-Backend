@@ -42,8 +42,7 @@ class EventSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super(EventSerializer, self).to_representation(instance)
         user = self.context.get('user', None)
-        if not isinstance(user, AnonymousUser):
-            receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
+        receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last() if not isinstance(user, AnonymousUser) else None
         representation['participants_size'] = len(instance.participants)
         representation['has_certificate'] = instance.registration_form.has_certificate
         representation['certificates_ready'] = instance.registration_form.certificates_ready
