@@ -1,7 +1,5 @@
 import logging
-import time
 
-import redis
 from django.db import transaction
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
@@ -13,12 +11,11 @@ from rest_framework.viewsets import ModelViewSet
 
 from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
-from fsm.models import Edge, FSM, PlayerHistory
+from fsm.models import Edge, FSM
 from fsm.permissions import IsEdgeModifier
 from fsm.serializers.fsm_serializers import EdgeSerializer, KeySerializer, TeamGetSerializer
-from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
+from fsm.serializers.player_serializer import PlayerSerializer
 from fsm.views.functions import get_player, move_on_edge, get_a_player_from_team
-from workshop_backend.settings.production import REDIS_PORT, REDIS_HOST
 
 logger = logging.getLogger(__name__)
 

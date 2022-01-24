@@ -3,16 +3,15 @@ from datetime import datetime
 
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
-from rest_framework_simplejwt.exceptions import AuthenticationFailed, TokenError
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from errors.error_codes import serialize_error
 from workshop_backend.settings.base import SMS_CODE_LENGTH, DISCOUNT_CODE_LENGTH
-from .models import Member, Participant, Teamm, User, VerificationCode, EducationalInstitute, School, University, \
-    SchoolStudentship, Studentship, AcademicStudentship, Merchandise, DiscountCode, Purchase
+from .models import User, VerificationCode, EducationalInstitute, School, University, SchoolStudentship, Studentship, \
+    AcademicStudentship, Merchandise, DiscountCode, Purchase
 from .validators import phone_number_validator, grade_validator, price_validator
 
 logger = logging.getLogger(__name__)
@@ -310,82 +309,3 @@ class PurchaseSerializer(serializers.ModelSerializer):
         model = Purchase
         fields = '__all__'
         read_only_fields = ['id']
-
-
-#
-# class MemberSerializer(serializers.ModelSerializer):
-#     """
-#     Currently unused in preference of the below.
-#     """
-#     email = serializers.EmailField(
-#         required=True
-#     )
-#     username = serializers.CharField()
-#     password = serializers.CharField(min_length=8, write_only=True)
-#
-#     class Meta:
-#         model = Member
-#         fields = ('email', 'username', 'password')
-#         extra_kwargs = {'password': {'write_only': True}}
-#
-#     def create(self, validated_data):
-#         password = validated_data.pop('password', None)
-#         instance = self.Meta.model(**validated_data)  # as long as the fields are the same, we can just use this
-#         if password is not None:
-#             instance.set_password(password)
-#         instance.save()
-#         return instance
-
-
-class ParticipantsListField(serializers.RelatedField):
-    def to_representation(self, value):
-        return value.member.first_name
-
-
-class TeammSerializer(serializers.ModelSerializer):
-    # histories = TeamHistorySerializer(many=True)
-    # p_type = serializers.Field(source="team")
-    team_participants = ParticipantsListField(many=True, read_only=True)
-
-    class Meta:
-        model = Teamm
-        fields = ['player_type', 'id', 'uuid', 'group_name', 'score', 'team_participants']
-
-
-class PlayerSerializer(serializers.Serializer):
-    @classmethod
-    def get_serializer(cls, model):
-        try:
-            model.team
-            return TeammSerializer
-        except:
-            return ParticipantSerializer
-
-    def to_representation(self, instance):
-        try:
-            instance.team
-            serializer = TeammSerializer
-            return serializer(instance.team).data
-        except:
-            try:
-                instance.participant
-                serializer = ParticipantSerializer
-                return serializer(instance.participant).data
-            except:
-                return {}
-
-
-class ParticipantSerializer(serializers.Serializer):
-    # player_type = serializers.CharField(source='player_type()', read_only=True)
-    # customField = serializers.Field(source='get_absolute_url')
-    class Meta:
-        model = Participant
-
-    def to_representation(self, instance):
-        return {
-            'player_type': instance.player_type,
-            'name': instance.member.first_name,
-            'id': instance.id,
-            'score': instance.score,
-            'uuid': instance.member.uuid
-        }

@@ -1,14 +1,6 @@
-from django.db.models import Sum
-
 from fsm.models import *
-from django.utils import timezone
-
-from fsm.serializers.paper_serializers import EdgeSimpleSerializer
-from fsm.serializers.player_serializer import PlayerHistorySerializer
-from fsm.serializers.serializers import PlayerStateGetSerializer
-from fsm.serializers.widget_serializers import WidgetSerializer
 from fsm.serializers.answer_serializers import AnswerSerializer
-from scoring.models import ScoreTransaction
+from fsm.serializers.widget_serializers import WidgetSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -109,19 +101,6 @@ def current_state_incoming_edge(state, player_workshop):
     return edge
 
 
-def player_state(state, player_workshop):
-    state_result = PlayerStateGetSerializer(state).data
-    widgets = current_state_widgets_json(state, player_workshop.player)
-    state_result['widgets'] = widgets
-    edge = current_state_incoming_edge(state, player_workshop)
-    if edge:
-        state_result['inward_edges'] = [EdgeSimpleSerializer().to_representation(edge)]
-    else:
-        state_result['inward_edges'] = []
-
-    return state_result
-
-
 def register_individual_workshop(workshop, participant):
     player_workshop = PlayerWorkshop.objects.create(workshop=workshop, player=participant,
                                                     current_state=workshop.first_state, last_visit=timezone.now())
@@ -132,28 +111,25 @@ def get_player_workshop(player, fsm):
     return PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
 
 
-# TODO - BIGGEST TOF EVER
-def get_participant(user, event="مسافر صفر"):
-    current_event = Event.objects.get(name=event)
-    return Participant.objects.filter(member=user, event=current_event).last()
-
-
-def get_score_histories(player_workshop):
-    score_transactions = ScoreTransaction.objects.filter(player_workshop=player_workshop)
-    return [{'description': s.description,
-             'id': s.id,
-             'is_valid': s.is_valid,
-             'player_workshop': s.player.id,
-             'score': s.score,
-             'submitted_answer': s.answer.id if s.answer is not None else None,
-             'problem_name': s.answer.problem.name if (s.answer is not None) and (
-                     s.answer.problem is not None) else None,
-             'state_name': s.answer.problem.form.name if (s.answer is not None) and (
-                     s.answer.problem is not None) else None,
-             'problem_id': s.answer.problem.id if (s.answer is not None) and (
-                     s.answer.problem is not None) else None} for s in score_transactions]
-
-
 def get_scores_sum(player_workshop):
-    sum_scores = ScoreTransaction.objects.filter(player_workshop=player_workshop, is_valid=True).aggregate(Sum('score'))
-    return sum_scores.get('score__sum', 0)
+    pass
+
+
+def send_signup_email(self, base_url, password=''):
+    options = {
+        'user': self,
+        'base_url': base_url,
+        'token': account_activation_token.make_token(self),
+        'uid': urlsafe_base64_encode(force_bytes(self.pk))
+    }
+    if password != '':
+        options['password'] = password
+    if self.participant.team is not None:
+        options['team'] = self.participant.team.id
+
+    html_content = strip_spaces_between_tags(render_to_string('auth/signup_email.html', options))
+    text_content = re.sub('<style[^<]+?</style>', '', html_content)
+    text_content = strip_tags(text_content)
+    msg = EmailMultiAlternatives('تایید ثبت‌نام اولیه', text_content, 'Rastaiha <info@rastaiha.ir>', [self.email])
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()

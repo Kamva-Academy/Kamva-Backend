@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'fsm',
     'drf_yasg',
-    'scoring',
     'polymorphic',
     'django_extensions',
     'django_filters',

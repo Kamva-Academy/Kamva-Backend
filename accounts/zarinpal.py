@@ -1,7 +1,6 @@
 import logging
 
 from django.conf import settings
-from rest_framework.response import Response
 from zeep import Client
 
 from errors.error_codes import serialize_error

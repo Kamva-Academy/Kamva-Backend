@@ -1,15 +1,16 @@
-from django.core.management.base import BaseCommand
-from accounts.models import Participant, Member, Teamm
-import os
 import logging
 
-from fsm.models import PlayerWorkshop, FSM, BigAnswerProblem, Problem
-from fsm.views.functions import get_scores_sum
-from scoring.models import ScoreTransaction
-from .users import users
+from django.core.management.base import BaseCommand
+
+from fsm.models import PlayerWorkshop, Problem
 
 logger = logging.getLogger(__file__)
 
+class ScoreTransaction:
+    class Objects:
+        def filter(self, **args):
+            return []
+    objects = Objects()
 
 class Command(BaseCommand):
     help = 'Get scores of a workshop'

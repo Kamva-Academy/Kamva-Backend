@@ -1,11 +1,10 @@
-from django.core.management.base import BaseCommand
-from accounts.models import Participant, Member, Teamm
-import os
 import logging
 
+from django.core.management.base import BaseCommand
+
+from accounts.models import Teamm
 from fsm.models import PlayerWorkshop, FSM
 from fsm.views.functions import get_scores_sum
-from .users import users
 
 logger = logging.getLogger(__file__)
 
