@@ -109,6 +109,7 @@ class School(EducationalInstitute):
         Elementary = 'Elementary'
         JuniorHigh = 'JuniorHigh'
         High = 'High'
+        SchoolOfArt = 'SchoolOfArt'
 
     principal_name = models.CharField(max_length=30, null=True, blank=True)
     principal_phone = models.CharField(max_length=15, null=True, blank=True)
