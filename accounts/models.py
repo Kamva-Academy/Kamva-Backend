@@ -118,7 +118,7 @@ class School(EducationalInstitute):
     principal_name = models.CharField(max_length=30, null=True, blank=True)
     principal_phone = models.CharField(max_length=15, null=True, blank=True)
     school_type = models.CharField(max_length=15, null=True, blank=True, choices=SchoolType.choices)
-    gender = models.CharField(max_length=10, null=True, blank=True,choices=Gender.choices, default='Male')
+    gender_type = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices, default='Male')
 
 
 class University(EducationalInstitute):
