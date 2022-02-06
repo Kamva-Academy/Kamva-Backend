@@ -135,6 +135,7 @@ class InstituteSerializer(serializers.ModelSerializer):
     principal_phone = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
     phone_number = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
     school_type = serializers.ChoiceField(choices=School.SchoolType.choices, required=False)
+    gender = serializers.ChoiceField(choices=School.Gender.choices, required=False)
 
     is_approved = serializers.BooleanField(read_only=True)
     creator = serializers.PrimaryKeyRelatedField(many=False, required=False, read_only=True)
@@ -152,7 +153,7 @@ class InstituteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EducationalInstitute
-        fields = ['id', 'name', 'institute_type', 'school_type', 'address', 'province', 'city', 'postal_code',
+        fields = ['id', 'name', 'institute_type', 'school_type', 'gender', 'address', 'province', 'city', 'postal_code',
                   'phone_number', 'contact_info', 'description', 'principal_name', 'principal_phone', 'is_approved',
                   'created_at', 'owner', 'admins', 'date_added', 'creator']
         read_only_fields = ['id', 'date_added']

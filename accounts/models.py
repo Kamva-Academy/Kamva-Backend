@@ -105,6 +105,10 @@ class EducationalInstitute(PolymorphicModel):
 
 
 class School(EducationalInstitute):
+    class Gender(models.TextChoices):
+        Male = 'Male'
+        Female = 'Female'
+
     class SchoolType(models.Choices):
         Elementary = 'Elementary'
         JuniorHigh = 'JuniorHigh'
@@ -114,6 +118,7 @@ class School(EducationalInstitute):
     principal_name = models.CharField(max_length=30, null=True, blank=True)
     principal_phone = models.CharField(max_length=15, null=True, blank=True)
     school_type = models.CharField(max_length=15, null=True, blank=True, choices=SchoolType.choices)
+    gender = models.CharField(max_length=10, null=True, blank=True,choices=Gender.choices, default='Male')
 
 
 class University(EducationalInstitute):
