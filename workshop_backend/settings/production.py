@@ -90,8 +90,8 @@ ZARINPAL_CONFIG = {
     'ROUTE_WEB_GATE': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
     'TEAM_FEE': int(get_environment_var('TEAM_FEE', '255000')),  # Required
     'PERSON_FEE': int(get_environment_var('PERSON_FEE', '100000')),  # Required
-    'MERCHANT': '8b469980-683d-11ea-806a-000c295eb8fc',  # Required
-    'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: روز صفر»'  # Required
+    'MERCHANT': '817461df-e332-4657-85d1-76e7e0a06f0e',  # Required
+    'DESCRIPTION': ''  # Required
 }
 
 PAYMENT = {
