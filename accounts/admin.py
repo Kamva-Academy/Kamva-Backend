@@ -30,7 +30,7 @@ class CustomUserAdmin(admin.ModelAdmin):
     model = User
     list_display = ['id', 'username', 'phone_number', 'national_code', 'first_name', 'last_name', 'gender', 'province',
                     'city', 'school']
-    search_fields = ['username', 'phone_number', 'national_code']
+    search_fields = ['id', 'username', 'phone_number', 'national_code', 'first_name', 'last_name']
     actions = [verify_school_documents]
     ordering = ['-date_joined']
 
@@ -66,6 +66,11 @@ def export_selected_objects(model_admin, request, queryset):
         f'/api/admin/export/?ct={ct.pk}&ids={",".join(str(pk) for pk in selected)}&name={ct.model}')
 
 
+class CustomPurchaseAdmin(admin.ModelAdmin):
+    model = User
+    list_display = ['id', 'ref_id', 'amount', 'status', 'created_at', 'user', 'merchandise']
+    search_fields = ['user', 'status', 'merchandise']
+
 admin.site.add_action(export_selected_objects, 'export_selected')
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(School, CustomSchoolAdmin)
@@ -73,7 +78,7 @@ admin.site.register(EducationalInstitute)
 admin.site.register(University)
 admin.site.register(DiscountCode)
 admin.site.register(VerificationCode)
-admin.site.register(Purchase)
+admin.site.register(Purchase, CustomPurchaseAdmin)
 admin.site.register(SchoolStudentship)
 admin.site.register(AcademicStudentship)
 admin.site.register(Merchandise)
