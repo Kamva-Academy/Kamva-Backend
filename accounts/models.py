@@ -227,7 +227,8 @@ class DiscountCode(models.Model):
     value = models.FloatField(null=False, blank=False, validators=[percentage_validator])
     expiration_date = models.DateTimeField(blank=True, null=True)
     remaining = models.IntegerField(default=1)
-    user = models.ForeignKey(User, related_name='discount_codes', on_delete=models.CASCADE, null=True, default=None)
+    user = models.ForeignKey(User, related_name='discount_codes', on_delete=models.CASCADE, null=True, blank=True,
+                             default=None)
     merchandise = models.ForeignKey(Merchandise, related_name='discount_codes', on_delete=models.CASCADE, null=False,
                                     blank=False)
 
