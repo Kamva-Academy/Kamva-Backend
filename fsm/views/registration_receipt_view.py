@@ -57,8 +57,8 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
         receipt = self.get_object()
         if self.request.user not in receipt.answer_sheet_of.event_or_fsm.modifiers:
             raise PermissionDenied(serialize_error('4061'))
-        if not self.request.user.school_studentship.is_document_verified:
-            raise PermissionDenied(serialize_error('4062'))
+        # if not self.request.user.school_studentship.is_document_verified:
+        #     raise PermissionDenied(serialize_error('4062'))
         status_serializer = RegistrationStatusSerializer(data=self.request.data)
         if status_serializer.is_valid(raise_exception=True):
             registration_status = status_serializer.data.get('status', RegistrationReceipt.RegistrationStatus.Waiting)
