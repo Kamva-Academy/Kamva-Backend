@@ -240,9 +240,8 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         if creator not in merchandise.event_or_fsm.modifiers:
             raise PermissionDenied(serialize_error('4066'))
         if user is None:
-            if username is None:
-                raise ParseError(serialize_error('4067'))
-            attrs['user'] = get_object_or_404(User, username=username)
+            if username is not None:
+                attrs['user'] = get_object_or_404(User, username=username)
         return attrs
 
     def create(self, validated_data):
