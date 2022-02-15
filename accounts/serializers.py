@@ -251,9 +251,9 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super(DiscountCodeSerializer, self).to_representation(instance)
-        representation['first_name'] = instance.user.first_name
-        representation['last_name'] = instance.user.last_name
-        representation['phone_number'] = instance.user.phone_number
+        representation['first_name'] = instance.user.first_name if instance.user else None
+        representation['last_name'] = instance.user.last_name if instance.user else None
+        representation['phone_number'] = instance.user.phone_number if instance.user else None
         return representation
 
     class Meta:
