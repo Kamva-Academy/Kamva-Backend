@@ -23,6 +23,7 @@ after being logged in to server and workshop_backend folder, run:
 
 1. Select an issue from [here](https://github.com/Rastaiha/workshop_backend/issues) that you want to work on.
 2. Create a new branch from `main` and fix selected issue on new branch.
+      * creating new branch from `master`: `git checkout -b <new-branch-name> master`
 3. After fixing selected issue, create a pull request (PR) to `main` and waits until reviewr review your code.
 4. If reviewer noticed you for a mistake in PR, be responsible to fix that.
 5. At the end, reviewer merges your PR and your contribution complete!
