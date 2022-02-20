@@ -99,7 +99,7 @@ class TeamViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], serializer_class=PhoneNumberSerializer, permission_classes=[IsAuthenticated])
-    def register_and_join(self, request, pk=None):
+    def register_and_join(self, request, pk=None):  # todo: change name
         team = self.get_object()
         serializer = PhoneNumberSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
