@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/admin/', admin.site.urls),
     path('api/auth/', include(('accounts.urls', 'accounts'), namespace='accounts')),
     path('api/fsm/', include('fsm.urls')),
+    path('api/event/', include('event_metadata.urls')),
 ]
 
 
