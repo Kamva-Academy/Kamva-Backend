@@ -70,11 +70,6 @@ class FSMViewSet(viewsets.ModelViewSet):
         receipt = get_receipt(user, fsm)
         player = get_player(user, fsm)
 
-        # if any state has been deleted and player has no current state:
-        if player.current_state is None:
-            player.current_state = fsm.first_state
-            player.save()
-
         if receipt is None:
             raise ParseError(serialize_error('4079'))
         # TODO - add for hybrid and individual
@@ -100,6 +95,11 @@ class FSMViewSet(viewsets.ModelViewSet):
                 if serializer.is_valid(raise_exception=True):
                     player_history = serializer.save()
         else:
+            # if any state has been deleted and player has no current state:
+            if player.current_state is None:
+                player.current_state = fsm.first_state
+                player.save()
+
             player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
             if player_history is None:
                 logger.info(f'user {user.full_name} has player [id:{player.id}] without corresponding history')
