@@ -298,9 +298,10 @@ class Purchase(models.Model):
     user = models.ForeignKey(User, related_name='purchases', on_delete=models.CASCADE)
 
     merchandise = models.ForeignKey(Merchandise, related_name='purchases', on_delete=models.SET_NULL, null=True)
-    voucher = models.ForeignKey(Voucher, related_name='purchases', on_delete=models.SET_NULL, null=True, default=None)
+    voucher = models.ForeignKey(Voucher, related_name='purchases', on_delete=models.SET_NULL, null=True,
+                                blank=True, default=None)
     discount_code = models.ForeignKey(DiscountCode, related_name='purchases', on_delete=models.SET_NULL, null=True,
-                                      default=None)
+                                      blank=True, default=None)
 
     objects = PurchaseManager()
 

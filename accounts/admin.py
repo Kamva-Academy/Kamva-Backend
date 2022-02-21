@@ -65,7 +65,7 @@ def export_selected_objects(model_admin, request, queryset):
 class CustomPurchaseAdmin(admin.ModelAdmin):
     model = Purchase
     list_display = ['id', 'ref_id', 'amount', 'status', 'created_at', 'user', 'merchandise']
-    search_fields = ['user']
+    search_fields = ['user__username']
 
 
 admin.site.add_action(export_selected_objects, 'export_selected')
