@@ -68,24 +68,18 @@ def export_registration(request):
         writer.writerow(
             ['username', 'id', 'first_name', 'last_name', 'phone_number', 'gender', 'national_code', 'province', 'city',
              'status', 'receipt_id', 'is_paid', 'is_participating'])
-        for user in User.objects.all():
-            receipt = RegistrationReceipt.objects.filter(answer_sheet_of=form, user=user).first()
-            if receipt:
-                writer.writerow(
-                    [user.username, user.id, user.first_name, user.last_name, user.phone_number, user.gender,
-                     user.national_code, user.province, user.city, receipt.status, receipt.id, receipt.is_paid,
-                     receipt.is_participating])
-            else:
-                writer.writerow(
-                    [user.username, user.id, user.first_name, user.last_name, user.phone_number, user.gender,
-                     user.national_code, user.province, user.city, 'NotRegistered', '', False, False])
+
+        for r in form.registration_receipts.all():
+            writer.writerow(
+                [r.user.username, r.user.id, r.user.first_name, r.user.last_name, r.user.phone_number, r.user.gender,
+                 r.user.national_code, r.user.province, r.user.city, r.status, r.id, r.is_paid, r.is_participating])
 
         return response
     raise PermissionDenied(serialize_error('4068'))
 
 
 class MyAdminSite(admin.AdminSite):
-    site_header = gettext_lazy('Rastaiha admin')
+    site_header = gettext_lazy('Kamva admin')
 
     def get_urls(self):
         urls = super(MyAdminSite, self).get_urls()
