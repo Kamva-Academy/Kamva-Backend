@@ -2,15 +2,11 @@ import logging
 
 from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
-
+from django.http import HttpResponseRedirect
 from .models import Purchase, DiscountCode, User, VerificationCode, \
     University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship, Merchandise
 
 logger = logging.getLogger(__name__)
-
-from django.http import HttpResponseRedirect
-
-zero_media_root = 'backend.rastaiha.ir/api/media/'
 
 
 class CustomUserAdmin(admin.ModelAdmin):
@@ -70,6 +66,7 @@ class CustomPurchaseAdmin(admin.ModelAdmin):
     model = Purchase
     list_display = ['id', 'ref_id', 'amount', 'status', 'created_at', 'user', 'merchandise']
     search_fields = ['user']
+
 
 admin.site.add_action(export_selected_objects, 'export_selected')
 admin.site.register(User, CustomUserAdmin)
