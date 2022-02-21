@@ -19,12 +19,13 @@ from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm.filtersets import FSMFilterSet
-from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt
+from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt, Problem
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
 from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer, \
     TeamGetSerializer
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer, EdgeSimpleSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
+from fsm.serializers.widget_serializers import MockWidgetSerializer, WidgetPolymorphicSerializer
 from fsm.views.functions import get_player, get_receipt, get_a_player_from_team
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class FSMViewSet(viewsets.ModelViewSet):
         if self.action in ['partial_update', 'update', 'destroy', 'add_mentor', 'get_states', 'get_edges',
                            'get_player_from_team', 'activate']:
             permission_classes = [MentorPermission]
-        elif self.action in ['enter', 'get_self']:
+        elif self.action in ['enter', 'get_self', 'review']:
             permission_classes = [HasActiveRegistration]
         else:
             permission_classes = self.permission_classes
@@ -119,6 +120,14 @@ class FSMViewSet(viewsets.ModelViewSet):
     #                         status=status.HTTP_200_OK)
     #     else:
     #         raise NotFound(serialize_error('4081'))
+
+    @swagger_auto_schema(responses={200: MockWidgetSerializer}, tags=['player', 'fsm'])
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def review(self, request, pk):
+        problems = Problem.objects.filter(paper__in=self.get_object().states.filter(is_exam=True))
+        return Response(WidgetPolymorphicSerializer(problems, context=self.get_serializer_context(), many=True).data,
+                        status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
     @transaction.atomic
