@@ -115,6 +115,10 @@ class TeamViewSet(viewsets.ModelViewSet):
             else:
                 receipt = RegistrationReceipt.objects.filter(
                     answer_sheet_of=team.registration_form, user=user).first()
+                if receipt.headed_team:
+                    receipt.headed_team.team_head = None
+                    receipt.headed_team.save()
+                    receipt.headed_team = None
                 receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
                 receipt.is_participating = True
                 receipt.team = team
