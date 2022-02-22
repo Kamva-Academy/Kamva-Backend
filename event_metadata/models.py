@@ -1,3 +1,4 @@
+from pickletools import optimize
 from re import S
 from django.db import models
 
@@ -27,6 +28,11 @@ class StaffInfo(models.Model):
     class Meta:
         unique_together = ['account', 'event']
 
+    def save(self):
+        super().save()
+        img = PIL.Image.open(self.image.path)
+        img.save(self.image.path, optimize=True, quality=85)  
+
     def __str__(self) -> str:
         return f'{str(self.account)} event:{str(self.event)}'
 
@@ -36,22 +42,17 @@ class EventImage(models.Model):
     image = models.ImageField(upload_to=event_image_upload_path, blank=True, null=True)
     description = models.TextField(null=True, blank=True)
 
-    def save(self, request=False, *args, **kwargs):
-        if request and request.FILES.get('image',False):
-             self.image.save('filename', self.image, save=True)
-        return super(EventImage, self).save(*args, **kwargs)
-
-
-    # def save(self):
-    #     super().save()
-    #     img = PIL.Image.open(self.image.path)
-    #     if img.height > 250 or img.width > 250:
-    #         output_size = (250, 250)
-    #     img.thumbnail(output_size)
-    #     img.save(self.cover_image.path)    
+    def save(self):
+        super().save()
+        img = PIL.Image.open(self.image.path)
+        # width = 2400
+        # if img.width < width:
+        #     width = img.width
+        # height = round(img.height * width / img.width)
+        # output_size = (height, width)
+        # # img.thumbnail(output_size)
+        # img.resize(output_size, PIL.Image.ANTIALIAS)
+        img.save(self.image.path, optimize=True, quality=85)    
 
     def __str__(self) -> str:
         return f'event:{str(self.event)} desc:{self.description}'
-    
-
-# TODO: image for event with data compresion

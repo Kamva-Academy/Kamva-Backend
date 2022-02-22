@@ -34,21 +34,16 @@ class StaffInfoSerializer(serializers.ModelSerializer):
             return None
 
 class EventImageSerializer(serializers.ModelSerializer):
-    # image_url = serializers.SerializerMethodField(read_only=True)
+    image_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = EventImage
-        fields = ['event', 'image', 'image_small', 'description']
+        fields = ['event', 'image_url', 'description']
     
-    # def get_image_url(self, event_image):
-    #     request = self.context.get('request')
-    #     if bool(event_image.image):
-    #         image_url = event_image.image.url
-    #         return request.build_absolute_uri(image_url)
-    #     else:
-    #         return None
-
-    image_small = serializers.SerializerMethodField()
-
-    def get_image_small(self, obj):
-        return get_thumbnail(self.image, '200x200', crop='center', quality=99).url
+    def get_image_url(self, event_image):
+        request = self.context.get('request')
+        if bool(event_image.image):
+            image_url = event_image.image.url
+            return request.build_absolute_uri(image_url)
+        else:
+            return None
