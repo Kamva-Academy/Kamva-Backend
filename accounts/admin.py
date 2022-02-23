@@ -1,10 +1,11 @@
 import logging
+from re import search
 
 from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
 
 from .models import Purchase, DiscountCode, User, VerificationCode, \
-    University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship, Merchandise
+    University, EducationalInstitute, School, SchoolStudentship, AcademicStudentship, Merchandise, Voucher
 
 logger = logging.getLogger(__name__)
 
@@ -69,16 +70,25 @@ def export_selected_objects(model_admin, request, queryset):
 class CustomPurchaseAdmin(admin.ModelAdmin):
     model = User
     list_display = ['id', 'ref_id', 'amount', 'status', 'created_at', 'user', 'merchandise']
-    search_fields = ['user', 'status', 'merchandise']
+    search_fields = ['user__username']
+
+
+
+class UniversityCustomAdmin(admin.ModelAdmin):
+    model = University
+    list_display = ['id', 'name', 'province', 'city', 'school_type', 'postal_code', 'address']
+    search_fields = ['name', 'city']
+
 
 admin.site.add_action(export_selected_objects, 'export_selected')
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(School, CustomSchoolAdmin)
 admin.site.register(EducationalInstitute)
-admin.site.register(University)
 admin.site.register(DiscountCode)
 admin.site.register(VerificationCode)
 admin.site.register(Purchase, CustomPurchaseAdmin)
 admin.site.register(SchoolStudentship)
 admin.site.register(AcademicStudentship)
 admin.site.register(Merchandise)
+# admin.site.register(University)
+admin.site.register(Voucher)
