@@ -41,7 +41,7 @@ class FSMViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['partial_update', 'update', 'destroy', 'add_mentor', 'get_states', 'get_edges',
-                           'get_player_from_team', 'activate']:
+                           'get_player_from_team', 'activate', 'players']:
             permission_classes = [MentorPermission]
         elif self.action in ['enter', 'get_self', 'review']:
             permission_classes = [HasActiveRegistration]
@@ -128,6 +128,13 @@ class FSMViewSet(viewsets.ModelViewSet):
         problems = Problem.objects.filter(paper__in=self.get_object().states.filter(is_exam=True))
         return Response(WidgetPolymorphicSerializer(problems, context=self.get_serializer_context(), many=True).data,
                         status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['mentor'])
+    @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def players(self, request, pk):
+        return Response(PlayerSerializer(self.get_object().players.all(), context=self.get_serializer_context(),
+                                         many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
     @transaction.atomic
