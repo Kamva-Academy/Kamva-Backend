@@ -1,3 +1,4 @@
+from re import search
 from rest_framework.exceptions import PermissionDenied, ParseError
 
 from accounts.models import *
@@ -27,6 +28,9 @@ class Paper(PolymorphicModel):
                 w.paper = None
                 w.save()
         return super(Paper, self).delete()
+
+    def __str__(self):
+        return f"{self.paper_type}"
 
 
 class AnswerSheet(PolymorphicModel):
@@ -390,6 +394,9 @@ class Tag(models.Model):
     name = models.CharField(unique=True, max_length=25)
     created_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Article(Paper):
     name = models.CharField(max_length=100, null=True, blank=True)
@@ -642,6 +649,9 @@ class Font(models.Model):
     @property
     def name(self):
         return self.font_file.name if not self.font_file.name.startswith('fonts/') else self.font_file.name[6:]
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class CertificateTemplate(models.Model):
