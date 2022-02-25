@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from accounts.serializers import MerchandiseSerializer, AccountSerializer
 from errors.error_codes import serialize_error
-from fsm.models import Event, RegistrationReceipt, FSM, Edge, Team
+from fsm.models import Event, RegistrationReceipt, FSM, Edge, Team, RegistrationForm
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
 
 
@@ -16,7 +16,8 @@ class EventSerializer(serializers.ModelSerializer):
         merchandise = validated_data.pop('merchandise', None)
 
         creator = self.context.get('user', None)
-        instance = super(EventSerializer, self).create({'creator': creator, **validated_data})
+        instance = super(EventSerializer, self).create(
+            {'creator': creator, **validated_data})
 
         if merchandise and merchandise.get('name', None) is None:
             merchandise['name'] = validated_data.get('name', 'unnamed_event')
@@ -40,9 +41,11 @@ class EventSerializer(serializers.ModelSerializer):
         return attrs
 
     def to_representation(self, instance):
-        representation = super(EventSerializer, self).to_representation(instance)
+        representation = super(
+            EventSerializer, self).to_representation(instance)
         user = self.context.get('user', None)
-        receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last() if not isinstance(user, AnonymousUser) else None
+        receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last(
+        ) if not isinstance(user, AnonymousUser) else None
         representation['participants_size'] = len(instance.participants)
         representation['has_certificate'] = instance.registration_form.has_certificate
         representation['certificates_ready'] = instance.registration_form.certificates_ready
@@ -50,7 +53,7 @@ class EventSerializer(serializers.ModelSerializer):
         representation['registration_till'] = instance.registration_form.till
         representation['audience_type'] = instance.registration_form.audience_type
         if receipt:
-            representation['user_registration_status'] = receipt.status
+            representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() else receipt.status
             representation['is_paid'] = receipt.is_paid
             representation['is_user_participating'] = receipt.is_participating
             representation['registration_receipt'] = receipt.id
@@ -124,7 +127,8 @@ class FSMSerializer(serializers.ModelSerializer):
         if team_size is None and event and fsm_p_type != FSM.FSMPType.Individual:
             validated_data['team_size'] = event.team_size
 
-        instance = super(FSMSerializer, self).create({'creator': creator, **validated_data})
+        instance = super(FSMSerializer, self).create(
+            {'creator': creator, **validated_data})
 
         if merchandise and merchandise.get('name', None) is None:
             merchandise['name'] = validated_data.get('name', 'unnamed_event')
@@ -158,9 +162,10 @@ class FSMSerializer(serializers.ModelSerializer):
             representation['registration_since'] = instance.registration_form.since
             representation['registration_till'] = instance.registration_form.till
             representation['audience_type'] = instance.registration_form.audience_type
-            receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last()
+            receipt = RegistrationReceipt.objects.filter(
+                user=user, answer_sheet_of=instance.registration_form).last()
             if receipt:
-                representation['user_registration_status'] = receipt.status
+                representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() else receipt.status
                 representation['is_paid'] = receipt.is_paid
                 representation['is_user_participating'] = receipt.is_participating
                 representation['registration_receipt'] = receipt.id
@@ -175,7 +180,8 @@ class FSMSerializer(serializers.ModelSerializer):
     class Meta:
         model = FSM
         fields = '__all__'
-        read_only_fields = ['id', 'creator', 'mentors', 'first_state', 'registration_form']
+        read_only_fields = ['id', 'creator', 'mentors',
+                            'first_state', 'registration_form']
 
 
 class FSMRawSerializer(serializers.ModelSerializer):
@@ -213,9 +219,12 @@ class EdgeSerializer(serializers.ModelSerializer):
         return super(EdgeSerializer, self).validate(attrs)
 
     def to_representation(self, instance):
-        representation = super(EdgeSerializer, self).to_representation(instance)
-        representation['tail'] = StateSimpleSerializer(context=self.context).to_representation(instance.tail)
-        representation['head'] = StateSimpleSerializer(context=self.context).to_representation(instance.head)
+        representation = super(
+            EdgeSerializer, self).to_representation(instance)
+        representation['tail'] = StateSimpleSerializer(
+            context=self.context).to_representation(instance.tail)
+        representation['head'] = StateSimpleSerializer(
+            context=self.context).to_representation(instance.head)
         representation['str'] = str(instance)
         return representation
 
@@ -230,4 +239,5 @@ class KeySerializer(serializers.Serializer):
 
 
 class TeamGetSerializer(serializers.Serializer):
-    team = serializers.PrimaryKeyRelatedField(queryset=Team.objects.all(), required=True)
+    team = serializers.PrimaryKeyRelatedField(
+        queryset=Team.objects.all(), required=True)
