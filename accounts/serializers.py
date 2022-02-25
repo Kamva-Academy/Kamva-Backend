@@ -240,9 +240,8 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         if creator not in merchandise.event_or_fsm.modifiers:
             raise PermissionDenied(serialize_error('4066'))
         if user is None:
-            if username is None:
-                raise ParseError(serialize_error('4067'))
-            attrs['user'] = get_object_or_404(User, username=username)
+            if username is not None:
+                attrs['user'] = get_object_or_404(User, username=username)
         return attrs
 
     def create(self, validated_data):
@@ -251,9 +250,9 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super(DiscountCodeSerializer, self).to_representation(instance)
-        representation['first_name'] = instance.user.first_name
-        representation['last_name'] = instance.user.last_name
-        representation['phone_number'] = instance.user.phone_number
+        representation['first_name'] = instance.user.first_name if instance.user else None
+        representation['last_name'] = instance.user.last_name if instance.user else None
+        representation['phone_number'] = instance.user.phone_number if instance.user else None
         return representation
 
     class Meta:
