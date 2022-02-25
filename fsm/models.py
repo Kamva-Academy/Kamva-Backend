@@ -100,7 +100,7 @@ class RegistrationForm(Paper):
                 return None
 
     def user_permission_status(self, user):
-        self.check_time(self)
+        self.check_time()
 
         # if exec(self.answer_sheet_of.conditions):
         #     return True
