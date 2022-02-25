@@ -100,7 +100,9 @@ class RegistrationForm(Paper):
                 return None
 
     def user_permission_status(self, user):
-        self.check_time()
+        time_check_result = self.check_time()
+        if time_check_result != 'ok':
+            return time_check_result
 
         # if exec(self.answer_sheet_of.conditions):
         #     return True
@@ -135,6 +137,7 @@ class RegistrationForm(Paper):
             return self.RegisterPermissionStatus.DeadlineMissed
         if self.since and datetime.now(self.since.tzinfo) < self.since:
             return self.RegisterPermissionStatus.NotStarted
+        return 'ok'
 
     def __str__(self):
         return f'<{self.id}-{self.paper_type}>:{self.event_or_fsm.name if self.event_or_fsm else None}'

@@ -53,7 +53,7 @@ class EventSerializer(serializers.ModelSerializer):
         representation['registration_till'] = instance.registration_form.till
         representation['audience_type'] = instance.registration_form.audience_type
         if receipt:
-            representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() else receipt.status
+            representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() != 'ok' else receipt.status
             representation['is_paid'] = receipt.is_paid
             representation['is_user_participating'] = receipt.is_participating
             representation['registration_receipt'] = receipt.id
@@ -165,7 +165,7 @@ class FSMSerializer(serializers.ModelSerializer):
             receipt = RegistrationReceipt.objects.filter(
                 user=user, answer_sheet_of=instance.registration_form).last()
             if receipt:
-                representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() else receipt.status
+                representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() != 'ok' else receipt.status
                 representation['is_paid'] = receipt.is_paid
                 representation['is_user_participating'] = receipt.is_participating
                 representation['registration_receipt'] = receipt.id
