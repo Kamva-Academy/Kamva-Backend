@@ -47,7 +47,8 @@ def export(request):
                 fields = validated_fields
             writer.writerow(fields)
         for obj in objects:
-            to_be_written = list(obj.__dict__[x] if x in obj.__dict__.keys() else '' for x in fields)
+            to_be_written = list(
+                obj.__dict__[x] if x in obj.__dict__.keys() else '' for x in fields)
             writer.writerow(to_be_written)
 
         return response
@@ -66,13 +67,16 @@ def export_registration(request):
 
         writer = csv.writer(response)
         writer.writerow(
-            ['username', 'id', 'first_name', 'last_name', 'phone_number', 'gender', 'national_code', 'province', 'city',
-             'status', 'receipt_id', 'is_paid', 'is_participating'])
+            ['username', 'id', 'first_name', 'last_name', 'phone_number', 'gender', 'national_code',
+             'province', 'city', 'grade', 'school', 'principal', 'status', 'receipt_id', 'is_paid',
+             'is_participating'])
 
         for r in form.registration_receipts.all():
             writer.writerow(
                 [r.user.username, r.user.id, r.user.first_name, r.user.last_name, r.user.phone_number, r.user.gender,
-                 r.user.national_code, r.user.province, r.user.city, r.status, r.id, r.is_paid, r.is_participating])
+                 r.user.national_code, r.user.province, r.user.city, r.user.school_studentship.grade,
+                 r.user.school_studentship.school.name, r.user.school_studentship.school.principal_name,
+                 r.status, r.id, r.is_paid, r.is_participating])
 
         return response
     raise PermissionDenied(serialize_error('4068'))
@@ -84,6 +88,7 @@ class MyAdminSite(admin.AdminSite):
     def get_urls(self):
         urls = super(MyAdminSite, self).get_urls()
         urls += [path(r'export/', self.admin_view(export), name='export'), ]
-        urls += [path(r'export_registration_data/', self.admin_view(export_registration), name='export_registration')]
+        urls += [path(r'export_registration_data/',
+                      self.admin_view(export_registration), name='export_registration')]
 
         return urls
