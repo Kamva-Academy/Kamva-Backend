@@ -27,4 +27,5 @@ class PlayerSerializer(serializers.ModelSerializer):
             player_history) if player_history else None
         representation['team'] = TeamSerializer(context=self.context).to_representation(
             instance.team) if instance.team else None
+        representation['full_name'] = instance.user.full_name
         return representation
