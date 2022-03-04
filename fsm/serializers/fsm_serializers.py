@@ -16,8 +16,7 @@ class EventSerializer(serializers.ModelSerializer):
         merchandise = validated_data.pop('merchandise', None)
 
         creator = self.context.get('user', None)
-        instance = super(EventSerializer, self).create(
-            {'creator': creator, **validated_data})
+        instance = super(EventSerializer, self).create({'creator': creator, **validated_data})
 
         if merchandise and merchandise.get('name', None) is None:
             merchandise['name'] = validated_data.get('name', 'unnamed_event')
@@ -47,18 +46,21 @@ class EventSerializer(serializers.ModelSerializer):
         receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last(
         ) if not isinstance(user, AnonymousUser) else None
         representation['participants_size'] = len(instance.participants)
-        representation['has_certificate'] = instance.registration_form.has_certificate
-        representation['certificates_ready'] = instance.registration_form.certificates_ready
-        representation['registration_since'] = instance.registration_form.since
-        representation['registration_till'] = instance.registration_form.till
-        representation['audience_type'] = instance.registration_form.audience_type
+        if instance.registration_form:
+            representation['has_certificate'] = instance.registration_form.has_certificate
+            representation['certificates_ready'] = instance.registration_form.certificates_ready
+            representation['registration_since'] = instance.registration_form.since
+            representation['registration_till'] = instance.registration_form.till
+            representation['audience_type'] = instance.registration_form.audience_type
         if receipt:
-            representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() != 'ok' else receipt.status
+            representation[
+                'user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() != 'ok' else receipt.status
             representation['is_paid'] = receipt.is_paid
             representation['is_user_participating'] = receipt.is_participating
             representation['registration_receipt'] = receipt.id
         else:
-            representation['user_registration_status'] = instance.registration_form.user_permission_status(user) if instance.registration_form else None
+            representation['user_registration_status'] = instance.registration_form.user_permission_status(
+                user) if instance.registration_form else None
             representation['is_paid'] = False
             representation['is_user_participating'] = False
             representation['registration_receipt'] = None
@@ -165,7 +167,8 @@ class FSMSerializer(serializers.ModelSerializer):
             receipt = RegistrationReceipt.objects.filter(
                 user=user, answer_sheet_of=instance.registration_form).last()
             if receipt:
-                representation['user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() != 'ok' else receipt.status
+                representation[
+                    'user_registration_status'] = instance.registration_form.check_time() if instance.registration_form.check_time() != 'ok' else receipt.status
                 representation['is_paid'] = receipt.is_paid
                 representation['is_user_participating'] = receipt.is_participating
                 representation['registration_receipt'] = receipt.id
@@ -182,26 +185,6 @@ class FSMSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'creator', 'mentors',
                             'first_state', 'registration_form']
-
-
-class FSMRawSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FSM
-        fields = '__all__'
-
-
-class CreateFSMSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FSM
-        fields = ['name', 'type', 'active', ]
-
-
-class FSMGetSerializer(serializers.ModelSerializer):
-    states = StateSerializer(many=True)
-
-    class Meta:
-        model = FSM
-        fields = '__all__'
 
 
 class EdgeSerializer(serializers.ModelSerializer):
