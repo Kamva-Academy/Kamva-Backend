@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ParseError, NotFound
-from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.mixins import RetrieveModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import viewsets
@@ -21,7 +21,7 @@ from errors.error_codes import serialize_error
 from fsm.filtersets import FSMFilterSet
 from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt, Problem
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
-from fsm.serializers.fsm_serializers import FSMSerializer, FSMGetSerializer, KeySerializer, EdgeSerializer, \
+from fsm.serializers.fsm_serializers import FSMSerializer, KeySerializer, EdgeSerializer, \
     TeamGetSerializer
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer, EdgeSimpleSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
@@ -50,9 +50,9 @@ class FSMViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        try:
-            return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        if self.action in ['players']:
+            return PlayerSerializer
+        else:
             return super().get_serializer_class()
 
     def get_serializer_context(self):
@@ -133,8 +133,22 @@ class FSMViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def players(self, request, pk):
-        return Response(PlayerSerializer(self.get_object().players.all(), context=self.get_serializer_context(),
-                                         many=True).data, status=status.HTTP_200_OK)
+        gender = request.query_params.get('gender', None)
+        first_name = request.query_params.get('first_name', None)
+        last_name = request.query_params.get('last_name', None)
+
+        queryset = self.get_object().players.all()
+        queryset = queryset.filter(user__gender=gender) if gender is not None else queryset
+        queryset = queryset.filter(user__first_name__startswith=first_name) if first_name is not None else queryset
+        queryset = queryset.filter(user__first_name__startswith=last_name) if last_name is not None else queryset
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True, context=self.get_serializer_context())
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True, context=self.get_serializer_context())
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
     @transaction.atomic

@@ -67,14 +67,14 @@ def export_registration(request):
 
         writer = csv.writer(response)
         writer.writerow(
-            ['username', 'id', 'first_name', 'last_name', 'phone_number', 'gender', 'national_code',
+            ['username', 'id', 'first_name', 'last_name', 'phone_number', 'email', 'gender', 'national_code',
              'province', 'city', 'grade', 'school', 'principal', 'status', 'receipt_id', 'is_paid',
              'is_participating'])
 
         for r in form.registration_receipts.all():
             writer.writerow(
-                [r.user.username, r.user.id, r.user.first_name, r.user.last_name, r.user.phone_number, r.user.gender,
-                 r.user.national_code, r.user.province, r.user.city, r.user.school_studentship.grade,
+                [r.user.username, r.user.id, r.user.first_name, r.user.last_name, r.user.phone_number, r.user.email,
+                 r.user.gender, r.user.national_code, r.user.province, r.user.city, r.user.school_studentship.grade,
                  r.user.school_studentship.school.name, r.user.school_studentship.school.principal_name,
                  r.status, r.id, r.is_paid, r.is_participating])
 
