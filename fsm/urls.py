@@ -7,7 +7,7 @@ from .views.event_view import EventViewSet
 from .views.fsm_view import *
 from .views.edge_view import *
 from .views.registration_receipt_view import RegistrationReceiptViewSet
-from .views.registration_view import RegistrationViewSet
+from .views.registration_view import RegistrationViewSet, RegistrationAdminViewSet
 from .views.certificate_view import CertificateTemplateViewSet, FontViewSet
 from .views.state_view import StateViewSet, HintViewSet
 from .views.widget_view import *
@@ -18,6 +18,7 @@ router = DefaultRouter()
 urlpatterns = []
 
 router.register(r'registration', RegistrationViewSet, basename='registration')
+router.register(r'registration', RegistrationAdminViewSet, basename='registration_admin')
 router.register(r'certificate_templates', CertificateTemplateViewSet, basename='certificate_templates')
 router.register(r'fonts', FontViewSet, basename='fonts')
 router.register(r'event', EventViewSet, basename='events')
