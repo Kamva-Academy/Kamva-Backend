@@ -236,7 +236,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                         )
                     elif len(User.objects.filter(phone_number=phone_number)) > 0:
                         user = User.objects.filter(phone_number=phone_number).first()
-                        older_users.append(user)
+                        older_users.append(user.username)
                     else:
                         user = User.objects.filter(username=national_code).first()
                     if len(SchoolStudentship.objects.filter(user=user)) <= 0:
@@ -268,7 +268,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                     else:
                         receipts.append(RegistrationReceipt.objects.filter(
                             answer_sheet_of=registration_form, user=user).first())
-                    result_users.append(user.phone_number)
+                    result_users.append(user.username)
                 if len(Team.objects.filter(name=data['team_code'])) <= 0:
                     team = Team.objects.create(name=data['team_code'],
                                                team_head=receipts[0],
@@ -280,4 +280,5 @@ class RegistrationAdminViewSet(GenericViewSet):
                     x.team = team
                     x.save()
                 result_teams.append(team.name)
-            return Response({'users': result_users, 'teams': result_teams}, status=status.HTTP_200_OK)
+            return Response({'users': result_users, 'older_users': older_users, 'teams': result_teams},
+                            status=status.HTTP_200_OK)
