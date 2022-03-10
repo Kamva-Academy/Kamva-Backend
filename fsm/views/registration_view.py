@@ -200,7 +200,6 @@ class RegistrationAdminViewSet(GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             in_memory_file = request.data.get('file')
-            grade = serializer.validated_data.get('grade')
             registration_form = self.get_object()
             older_users = []
             result_teams = []
@@ -212,7 +211,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                     if k == 'gender':
                         for i in range(len(members)):
                             members[i][k] = data[k].strip()
-                    if k in ['phone_number', 'national_code', 'name']:
+                    if k in ['phone_number', 'national_code', 'name', 'grade']:
                         for i in range(len(members)):
                             if len(data[k]) > 1:
                                 members[i][k] = data[k].split('-')[i].strip()
@@ -224,6 +223,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                     national_code = convert_with_punctuation_removal(member['national_code'])
                     first_name = member['name'].split()[0]
                     last_name = member['name'][len(first_name):].strip()
+                    grade = convert_with_punctuation_removal(member['grade'])
                     if len(User.objects.filter(Q(username=national_code) | Q(phone_number=phone_number))) <= 0:
                         user = User.objects.create(
                             phone_number=phone_number,
