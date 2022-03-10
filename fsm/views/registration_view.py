@@ -1,3 +1,8 @@
+import csv
+from io import BytesIO, StringIO
+
+import rest_framework.parsers
+from django.contrib.auth.hashers import make_password
 from django.db.models import Count, F, Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -5,16 +10,18 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.parsers import MultiPartParser
 
-from accounts.models import User
+from accounts.models import User, SchoolStudentship, Studentship, AcademicStudentship
 from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
     RegistrationPerCitySerializer
 from fsm.serializers.paper_serializers import RegistrationFormSerializer, ChangeWidgetOrderSerializer
 from fsm.serializers.certificate_serializer import CertificateTemplateSerializer
-from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation
+from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation, AnswerSheet, Team
 from fsm.permissions import IsRegistrationFormModifier
+from fsm.serializers.serializers import BatchRegistrationSerializer
 from fsm.serializers.team_serializer import InvitationSerializer
 
 
@@ -152,3 +159,126 @@ class RegistrationViewSet(ModelViewSet):
                         raise ParseError(serialize_error('4035'))
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+GENDER_MAPPING = {
+    'دختر': User.Gender.Female,
+    'پسر': User.Gender.Male
+}
+
+GRADE_MAPPING = {
+    'نهم': 9,
+    'دهم': 10,
+    'یازدهم': 11,
+    'دوازدهم': 12
+}
+
+MAJOR_MAPPING = {
+    'ریاضی': SchoolStudentship.Major.Math,
+    'تجربی': SchoolStudentship.Major.Biology,
+    'ادبیات': SchoolStudentship.Major.Literature,
+    'عمومی': SchoolStudentship.Major.Others
+}
+
+
+def convert_with_punctuation_removal(string):
+    return string.replace('۰', '0').replace('۱', '1').replace('۲', '2').replace('۳', '3').replace('۴', '4').replace(
+        '۵', '5').replace('۶', '6').replace('۷', '7').replace('۸', '8').replace('۹', '9').replace(' ', '').replace(
+        '-', '').replace('_', '')
+
+
+class RegistrationAdminViewSet(GenericViewSet):
+    queryset = RegistrationForm.objects.all()
+    serializer_class = BatchRegistrationSerializer
+    parser_classes = [MultiPartParser]
+    permission_classes = [IsRegistrationFormModifier]
+    my_tags = ['registration']
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def batch_register(self, request, pk=None):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            in_memory_file = request.data.get('file')
+            registration_form = self.get_object()
+            older_users = []
+            result_teams = []
+            result_users = []
+            file = in_memory_file.read().decode('utf-8')
+            for data in csv.DictReader(StringIO(file)):
+                members = [dict(), dict(), dict()]
+                for k in data.keys():
+                    if k == 'gender':
+                        for i in range(len(members)):
+                            members[i][k] = data[k].strip()
+                    if k in ['phone_number', 'national_code', 'name', 'grade']:
+                        for i in range(len(members)):
+                            if len(data[k]) > 1:
+                                members[i][k] = data[k].split('-')[i].strip()
+                receipts = []
+                for member in members:
+                    if 'phone_number' not in member.keys():
+                        continue
+                    phone_number = convert_with_punctuation_removal(member['phone_number'])
+                    national_code = convert_with_punctuation_removal(member['national_code'])
+                    first_name = member['name'].split()[0]
+                    last_name = member['name'][len(first_name):].strip()
+                    grade = convert_with_punctuation_removal(member['grade'])
+                    if len(User.objects.filter(Q(username=national_code) | Q(phone_number=phone_number))) <= 0:
+                        user = User.objects.create(
+                            phone_number=phone_number,
+                            first_name=first_name,
+                            last_name=last_name,
+                            password=make_password(national_code),
+                            national_code=national_code,
+                            username=national_code,
+                            gender=GENDER_MAPPING[member['gender']],
+                        )
+                    elif len(User.objects.filter(phone_number=phone_number)) > 0:
+                        user = User.objects.filter(phone_number=phone_number).first()
+                        older_users.append(user.username)
+                    else:
+                        user = User.objects.filter(username=national_code).first()
+                    if len(SchoolStudentship.objects.filter(user=user)) <= 0:
+                        school_studentship = SchoolStudentship.objects.create(
+                            studentship_type=Studentship.StudentshipType.School,
+                            user=user,
+                            major=MAJOR_MAPPING[member['major']] if 'major' in member.keys() else MAJOR_MAPPING[
+                                'ریاضی'],
+                            grade=grade,
+                            is_document_verified=True,
+                        )
+                    else:
+                        school_studentship = SchoolStudentship.objects.filter(user=user).first()
+                    if len(AcademicStudentship.objects.filter(user=user)) <= 0:
+                        academic_studentship = AcademicStudentship.objects.create(
+                            studentship_type=Studentship.StudentshipType.Academic,
+                            user=user,
+                        )
+                    else:
+                        academic_studentship = AcademicStudentship.objects.filter(user=user).first()
+                    if len(RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=user)) <= 0:
+                        receipts.append(RegistrationReceipt.objects.create(
+                            answer_sheet_of=registration_form,
+                            answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                            user=user,
+                            status=RegistrationReceipt.RegistrationStatus.Accepted,
+                            is_participating=True,
+                        ))
+                    else:
+                        receipts.append(RegistrationReceipt.objects.filter(
+                            answer_sheet_of=registration_form, user=user).first())
+                    result_users.append(user.username)
+                if len(Team.objects.filter(name=data['team_code'])) <= 0:
+                    team = Team.objects.create(name=data['team_code'],
+                                               team_head=receipts[0],
+                                               registration_form=registration_form)
+                else:
+                    team = Team.objects.filter(name=data['team_code']).first()
+
+                for x in receipts:
+                    x.team = team
+                    x.save()
+                result_teams.append(team.name)
+            return Response({'users': result_users, 'older_users': older_users, 'teams': result_teams},
+                            status=status.HTTP_200_OK)
