@@ -9,7 +9,7 @@ from fsm.models import BigAnswer, UploadFileAnswer, Paper
 # Create your models here.
 
 class ScoreType(PolymorphicModel):
-    score_type = CharField()
+    score_type = CharField(null=False, blank=False)
     papers = models.ManyToManyField(Paper, related_name='scoreTypes')
 
 class Score(PolymorphicModel):
@@ -21,3 +21,4 @@ class Comment(models.Model):
     content = CharField(max_length=250, null = False, blank=False)
     writer = models.ForeignKey('accounts.User', related_name='comments', null=True, blank=True,
                                 on_delete=models.SET_NULL)
+    answer = models.ForeignKey(BigAnswer, on_delete=models.CASCADE)
