@@ -31,15 +31,26 @@ class EdgeAdmin(admin.ModelAdmin):
     tail_name.short_description = "از "
 
 
-class AnswerAdmin(admin.ModelAdmin):
+class UploadFileAnswerAdmin(admin.ModelAdmin):
     model = UploadFileAnswer
-    list_display = ['id', 'answer_file', ]
-    search_fields = ['answer_file']
+    list_display = ['id', 'problem', 'answer_file', 'is_final_answer' ]
     list_filter = ['problem', 'is_final_answer']
 
-    # def name(self, obj):
-    #     name = obj.problem.name
-    #     return name
+    def download_csv(self, request, queryset):
+        file = open('answers.csv', 'w')
+        writer = csv.writer(file)
+        writer.writerow(['answer-id', 'problem-id'])
+        for answer in queryset:
+            writer.writerow([answer.id, answer.problem.id])
+        file.close()
+
+        f = open('answers.csv', 'r')
+        response = HttpResponse(f, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=answers.csv'
+        return response
+    
+    download_csv.short_description = 'Export Selected as CSV'
+    actions = [download_csv]
 
 
 class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
@@ -287,7 +298,7 @@ class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
 class AnswerCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution']
     list_display_links = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at']
-    list_filter = ['answer_type', 'submitted_by', 'is_final_answer', 'is_solution']
+    list_filter = ['answer_type', 'is_final_answer', 'is_solution']
 
 
 @admin.register(BigAnswer)
@@ -389,7 +400,7 @@ admin.site.register(Description, DescriptionAdmin)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(PlayerHistory, PlayerHistoryAdmin)
 admin.site.register(Widget, WidgetAdmin)
-admin.site.register(UploadFileAnswer, AnswerAdmin)
+admin.site.register(UploadFileAnswer, UploadFileAnswerAdmin)
 admin.site.register(Tag)
 # admin.site.register(Invitation)
 # admin.site.register(CertificateTemplate)
