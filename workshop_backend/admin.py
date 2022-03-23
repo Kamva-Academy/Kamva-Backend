@@ -72,10 +72,12 @@ def export_registration(request):
              'is_participating'])
 
         for r in form.registration_receipts.all():
+            user = r.user
+            school = user.school_studentship.school
             writer.writerow(
-                [r.user.username, r.user.id, r.user.first_name, r.user.last_name, r.user.phone_number, r.user.email,
-                 r.user.gender, r.user.national_code, r.user.province, r.user.city, r.user.school_studentship.grade,
-                 r.user.school_studentship.school.name, r.user.school_studentship.school.principal_name,
+                [user.username, user.id, user.first_name, user.last_name, user.phone_number, user.email,
+                 user.gender, user.national_code, user.province, user.city, user.school_studentship.grade,
+                 school.name if school is not None else None, school.principal_name if school is not None else None,
                  r.status, r.id, r.is_paid, r.is_participating])
 
         return response

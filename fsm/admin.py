@@ -99,10 +99,10 @@ class RegistrationFormAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(f'/api/admin/export_registration_data/?q={selected}')
 
     model = RegistrationForm
-    list_display = ['id', 'accepting_status', 'min_grade', 'max_grade', 'since', 'till']
+    list_display = ['id', 'event_or_fsm', 'accepting_status', 'min_grade', 'max_grade', 'audience_type']
+    list_display_links = ['id', 'event_or_fsm']
+    search_fields = ['id', 'event_or_fsm']
     list_filter = ['id', 'accepting_status', 'min_grade', 'max_grade', 'since', 'till']
-    search_fields = ['id', 'accepting_status', 'min_grade', 'max_grade', 'since', 'till']
-    list_display_links = ['id', 'accepting_status', 'min_grade', 'max_grade', 'since', 'till']
     actions = [get_registration_status_for_users]
 
 
