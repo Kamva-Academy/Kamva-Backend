@@ -14,10 +14,14 @@ To see apis check http://127.0.0.1:8000/api after running projec on local
  
 ## Deployment
 
-after being logged in to server and workshop_backend folder, run:
+After being logged in to server and workshop_backend folder, run:
 - `git pull`
 - `docker-compose up -d --build`
 - `docker-compose restart nginx`
+
+In case you need to get shell, do:
+- go inside the docker: `docker exec -it {name} sh`
+- `python manage.py shell`
 
 ## Contribution
 
