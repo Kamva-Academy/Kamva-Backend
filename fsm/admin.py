@@ -374,9 +374,7 @@ class ChoiceCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Event)
 class EventCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'merchandise', 'registration_form', 'creator', 'holder', 'name']
-    list_filter = ['creator', 'holder', 'name']
-
+    list_display = ['id', 'name', 'registration_form', 'merchandise', 'creator', 'holder']
 
 @admin.register(UploadFileProblem)
 class UploadFileProblemCustomAdmin(admin.ModelAdmin):
