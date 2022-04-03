@@ -12,7 +12,7 @@ class StaffInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StaffInfo
-        fields = ['account', 'registration_form', 'title', 'description', 'team', 'image_url']
+        fields = ['registration_form', 'title', 'description', 'team', 'image_url']
 
     def get_image_url(self, staff_info):
         request = self.context.get('request')
