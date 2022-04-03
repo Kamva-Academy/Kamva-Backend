@@ -101,8 +101,6 @@ class RegistrationFormAdmin(admin.ModelAdmin):
     model = RegistrationForm
     list_display = ['id', 'event_or_fsm', 'accepting_status', 'min_grade', 'max_grade', 'audience_type']
     list_display_links = ['id', 'event_or_fsm']
-    search_fields = ['id', 'event_or_fsm']
-    list_filter = ['id', 'accepting_status', 'min_grade', 'max_grade', 'since', 'till']
     actions = [get_registration_status_for_users]
 
 
@@ -375,6 +373,8 @@ class ChoiceCustomAdmin(admin.ModelAdmin):
 @admin.register(Event)
 class EventCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'registration_form', 'merchandise', 'creator', 'holder']
+    list_display_links = ['id', 'name']
+
 
 @admin.register(UploadFileProblem)
 class UploadFileProblemCustomAdmin(admin.ModelAdmin):
