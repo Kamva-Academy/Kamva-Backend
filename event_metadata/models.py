@@ -31,7 +31,7 @@ class StaffInfo(models.Model):
     class Meta:
         unique_together = ['account', 'registration_form']
 
-    def save(self) -> None:
+    def save(self, *args, **kwargs) -> None:
         super().save()
         if bool(self.image):
             image = Image.open(self.image.path)
