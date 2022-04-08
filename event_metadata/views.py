@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny
 class StaffInfoRetrieveView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = StaffInfoSerializer
+    pagination_class = None
 
     def get_queryset(self):
         pk = self.kwargs['pk']
