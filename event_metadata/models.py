@@ -21,7 +21,7 @@ def get_staff_info_upload_path(instance, filename):
     return f'registration_form/{instance.registration_form.id}/{filename}'
 
 class StaffInfo(models.Model):
-    account = models.ForeignKey('accounts.User', on_delete=models.PROTECT, related_name='staff_infos')
+    user = models.ForeignKey('accounts.User', on_delete=models.PROTECT, related_name='staff_infos')
     registration_form = models.ForeignKey(RegistrationForm, on_delete=models.CASCADE, related_name='staff_infos')
     title = models.CharField(max_length=50, null=True, blank=True)
     team = models.ManyToManyField(StaffTeam, blank=True)
@@ -29,7 +29,7 @@ class StaffInfo(models.Model):
     image = models.ImageField(upload_to=get_staff_info_upload_path, null=True, blank=True)
 
     class Meta:
-        unique_together = ['account', 'registration_form']
+        unique_together = ['user', 'registration_form']
 
     def save(self, *args, **kwargs) -> None:
         super().save()
@@ -38,5 +38,5 @@ class StaffInfo(models.Model):
             image.save(self.image.path,quality=75,optimize=True)
 
     def __str__(self) -> str:
-        return f'{self.account}: {self.title} in {self.team}'
+        return f'{self.user}: {self.title} in {self.team}'
 

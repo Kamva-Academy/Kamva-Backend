@@ -1,5 +1,11 @@
 from rest_framework import serializers
 from event_metadata.models import StaffInfo, StaffTeam
+from accounts.models import User
+
+class StaffUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'bio', 'profile_picture']
 
 class StaffTeamSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,11 +14,12 @@ class StaffTeamSerializer(serializers.ModelSerializer):
 
 class StaffInfoSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField(read_only=True)
+    user = StaffUserSerializer()
     team = StaffTeamSerializer(many=True)
 
     class Meta:
         model = StaffInfo
-        fields = ['registration_form', 'title', 'description', 'team', 'image_url']
+        fields = ['user', 'registration_form', 'title', 'description', 'team', 'image_url']
 
     def get_image_url(self, staff_info):
         request = self.context.get('request')
