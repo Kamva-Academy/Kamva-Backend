@@ -36,22 +36,6 @@ class UploadFileAnswerAdmin(admin.ModelAdmin):
     list_display = ['id', 'problem', 'answer_file', 'is_final_answer' ]
     list_filter = ['problem', 'is_final_answer']
 
-    def download_csv(self, request, queryset):
-        file = open('answers.csv', 'w')
-        writer = csv.writer(file)
-        writer.writerow(['answer-id', 'problem-id'])
-        for answer in queryset:
-            writer.writerow([answer.id, answer.problem.id])
-        file.close()
-
-        f = open('answers.csv', 'r')
-        response = HttpResponse(f, content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename=answers.csv'
-        return response
-    
-    download_csv.short_description = 'Export Selected as CSV'
-    actions = [download_csv]
-
 
 class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
     model = PlayerHistory
@@ -253,6 +237,35 @@ class ProblemCustomAdmin(admin.ModelAdmin):
     list_display_links = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name', 'paper', 'widget_type', 'creator', 'required']
     search_fields = ['name']
+
+    def download_final_answers_scores(self, request, queryset):
+        score_types = set()
+        problems = {}
+        for p in queryset:
+            answers = []
+            score_types |= set(st for st in p.paper.score_types.all().values_list('name', flat=True))
+            for ans in p.answers.filter(is_final_answer=True):
+                ans_dict = {'id': ans.id}
+                for score in ans.scores.all():
+                    ans_dict[score.score_type.name] = score.value
+                answers.append(ans_dict)
+            problems[p] = answers
+
+        file = open('answers.csv', 'w', encoding="utf-8")
+        writer = csv.writer(file)
+        writer.writerow(['problem_id', 'answer_id'] + [st for st in score_types])
+        for p in queryset:
+            for a in problems[p]:
+                writer.writerow([p.id, a['id']] + [a.get(st, '') for st in score_types])
+        file.close()
+
+        f = open('answers.csv', 'rb')
+        response = HttpResponse(f, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=answers.csv'
+        return response
+
+    download_final_answers_scores.short_description = 'export scored answers'
+    actions = [download_final_answers_scores]
 
 
 @admin.register(MultiChoiceAnswer)
