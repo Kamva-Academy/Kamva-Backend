@@ -9,7 +9,7 @@ from fsm.models import Answer, Paper
 
 class ScoreType(PolymorphicModel):
     name = models.CharField(max_length=50, null=False, blank=False)
-    papers = models.ManyToManyField(Paper, related_name='scoreTypes')
+    papers = models.ManyToManyField(Paper, related_name='score_types')
 
     def __str__(self):
         return self.name
@@ -18,7 +18,7 @@ class ScoreType(PolymorphicModel):
 class Score(PolymorphicModel):
     value = IntegerField(default=0)
     score_type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
-    answer = models.ForeignKey(Answer, on_delete=models.CASCADE)
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='scores')
     # todo: make score unique per answer-scoreType
 
     def __str__(self):

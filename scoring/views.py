@@ -31,7 +31,7 @@ def get_answer_scores_and_comments(request):
     answer_id = request.data.get('answer_id')
     paper = Answer.objects.get(id=answer_id).problem.paper
     answer_scores = []
-    for score_type in paper.scoreTypes.all():
+    for score_type in paper.score_types.all():
         score = Score.objects.filter(
             score_type=score_type, answer__id=answer_id)
         item = {
