@@ -1,8 +1,4 @@
-from re import search
-from rest_framework.exceptions import PermissionDenied, ParseError
-
 from accounts.models import *
-from errors.error_codes import serialize_error
 
 
 class Paper(PolymorphicModel):
