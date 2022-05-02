@@ -3,8 +3,6 @@ from rest_framework.exceptions import PermissionDenied, ParseError
 
 from accounts.models import *
 from errors.error_codes import serialize_error
-from scoring.models import Criteria
-
 
 class Paper(PolymorphicModel):
     class PaperType(models.TextChoices):
@@ -20,7 +18,7 @@ class Paper(PolymorphicModel):
     till = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True, default=None)
     is_exam = models.BooleanField(default=False)
-    criteria = models.OneToOneField(Criteria, related_name='paper', on_delete=models.CASCADE, null=True, )
+    criteria = models.OneToOneField('scoring.Criteria', related_name='paper', on_delete=models.CASCADE, null=True)
 
     def delete(self):
         for w in Widget.objects.filter(paper=self):
