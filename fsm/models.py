@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied, ParseError
 
 from accounts.models import *
 from errors.error_codes import serialize_error
+from scoring.models import Criteria
 
 
 class Paper(PolymorphicModel):
@@ -19,6 +20,7 @@ class Paper(PolymorphicModel):
     till = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True, default=None)
     is_exam = models.BooleanField(default=False)
+    criteria = models.OneToOneField(Criteria, related_name='paper', on_delete=models.CASCADE, null=True, )
 
     def delete(self):
         for w in Widget.objects.filter(paper=self):
@@ -28,6 +30,11 @@ class Paper(PolymorphicModel):
                 w.paper = None
                 w.save()
         return super(Paper, self).delete()
+
+    def is_user_permitted(self, user: User):
+        if self.criteria:
+            return self.criteria.evaluate(user)
+        return True
 
     def __str__(self):
         return f"{self.paper_type}"

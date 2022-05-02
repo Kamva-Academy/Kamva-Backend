@@ -1,7 +1,7 @@
 from operator import mod
 from django.db import models
 from accounts.models import *
-from django.db.models import IntegerField, Model
+from django.db.models import IntegerField, Model, Sum
 from django.core.validators import MaxValueValidator, MinValueValidator
 from fsm.models import Answer, Paper
 # Create your models here.
@@ -33,3 +33,34 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.content[:30]
+
+
+class BaseCondition(PolymorphicModel):
+
+    def evaluate(self, user: User) -> bool:
+        pass
+
+
+class Condition(BaseCondition):
+    name = models.CharField(max_length=50, null=True, blank=True)
+    amount = models.IntegerField(default=0)
+    score_type = models.ForeignKey(ScoreType, related_name='conditions', on_delete=models.CASCADE)
+
+    def evaluate(self, user: User) -> bool:
+        return Score.objects.filter(ScoreType=self.score_type, answer__user=user).aggregate(Sum('value')) >= self.amount
+
+
+class Criteria(BaseCondition):
+    class Operand(models.TextChoices):
+        And = "And"
+        Or = "Or"
+
+    conditions = models.ManyToManyField(BaseCondition, related_name='criterias')
+    operand = models.CharField(max_length=25, blank=False, null=False, choices=Operand.choices)
+
+    def evaluate(self, user: User) -> bool:
+        result = self.operand == 'And'
+        for condition in self.conditions.all():
+            evaluation = condition.evaluate(user)
+            result = (result and evaluation) if self.operand == 'And' else (result or evaluation)
+        return result
