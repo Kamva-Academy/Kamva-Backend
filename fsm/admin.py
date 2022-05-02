@@ -1,10 +1,6 @@
-import os
 import csv
-from gettext import ngettext
-from re import search
 
-from django.contrib import admin, messages
-from django.db.models import Q
+from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
@@ -33,7 +29,7 @@ class EdgeAdmin(admin.ModelAdmin):
 
 class UploadFileAnswerAdmin(admin.ModelAdmin):
     model = UploadFileAnswer
-    list_display = ['id', 'problem', 'answer_file', 'is_final_answer' ]
+    list_display = ['id', 'problem', 'answer_file', 'is_final_answer']
     list_filter = ['problem', 'is_final_answer']
 
 
@@ -69,10 +65,8 @@ class WidgetAdmin(admin.ModelAdmin):
 
 class PaperAdmin(admin.ModelAdmin):
     model = Paper
-    list_display = ['id', 'since', 'till', 'is_exam']
-    list_filter = ['id', 'since', 'till', 'is_exam']
-    search_fields = ['id', 'since', 'till', 'is_exam']
-    list_display_links = ['id', 'since', 'till', 'is_exam']
+    list_display = ['id', 'since', 'till', 'criteria', 'is_exam']
+    list_filter = ['is_exam']
 
 
 class RegistrationFormAdmin(admin.ModelAdmin):
@@ -92,13 +86,14 @@ def delete_registration_receipts(modeladmin, request, queryset):
     for obj in queryset:
         obj.delete()
 
+
 def download_csv(modeladmin, request, queryset):
-        import csv
-        f = open('registration_recepie.csv', 'w')
-        writer = csv.writer(f)
-        writer.writerow(['user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team'])
-        for s in queryset:
-            writer.writerow([s.user, s.answer_sheet_type, s.answer_sheet_of, s.status, s.is_participating, s.team])
+    import csv
+    f = open('registration_receipts.csv', 'w')
+    writer = csv.writer(f)
+    writer.writerow(['user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team'])
+    for s in queryset:
+        writer.writerow([s.user, s.answer_sheet_type, s.answer_sheet_of, s.status, s.is_participating, s.team])
 
 
 class RegistrationReceiptsAdmin(admin.ModelAdmin):
@@ -108,8 +103,6 @@ class RegistrationReceiptsAdmin(admin.ModelAdmin):
 
     def name(self, obj):
         return obj.user.full_name
-
-    
 
 
 class PlayerAdmin(admin.ModelAdmin):
@@ -245,8 +238,10 @@ class ProblemCustomAdmin(admin.ModelAdmin):
             answers = []
             score_types |= set(st for st in p.paper.score_types.all().values_list('name', flat=True))
             for ans in p.answers.filter(is_final_answer=True):
-                ans_dict = {'id': ans.id, 'first_name': ans.submitted_by.first_name, 'last_name': ans.submitted_by.last_name,
-                            'school': ans.submitted_by.school_studentship.school.name, 'grade': ans.submitted_by.school_studentship.grade,
+                ans_dict = {'id': ans.id, 'first_name': ans.submitted_by.first_name,
+                            'last_name': ans.submitted_by.last_name,
+                            'school': ans.submitted_by.school_studentship.school.name,
+                            'grade': ans.submitted_by.school_studentship.grade,
                             'province': ans.submitted_by.province, 'city': ans.submitted_by.city}
                 for score in ans.scores.all():
                     ans_dict[score.score_type.name] = score.value
@@ -255,10 +250,14 @@ class ProblemCustomAdmin(admin.ModelAdmin):
 
         file = open('answers.csv', 'w', encoding="utf-8")
         writer = csv.writer(file)
-        writer.writerow(['problem_id', 'answer_id', 'first_name', 'last_name', 'school', 'grade', 'province', 'city'] + [st for st in score_types])
+        writer.writerow(
+            ['problem_id', 'answer_id', 'first_name', 'last_name', 'school', 'grade', 'province', 'city'] + [st for st
+                                                                                                             in
+                                                                                                             score_types])
         for p in queryset:
             for a in problems[p]:
-                writer.writerow([p.id, a['id'], a['first_name'], a['last_name'], a['school'], a['grade'], a['province'], a['city']] + [a.get(st, '') for st in score_types])
+                writer.writerow([p.id, a['id'], a['first_name'], a['last_name'], a['school'], a['grade'], a['province'],
+                                 a['city']] + [a.get(st, '') for st in score_types])
         file.close()
 
         f = open('answers.csv', 'rb')
@@ -328,7 +327,7 @@ class BigAnswerCustomAdmin(admin.ModelAdmin):
     def creator(self, obj):
         return obj.problem.creator
 
-        
+
 @admin.register(SmallAnswer)
 class SmallAnswerCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'widget_type', 'creator']
@@ -346,7 +345,7 @@ class SmallAnswerCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Article)
 class ArticleCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'is_draft', 'all_tags','publisher']
+    list_display = ['id', 'name', 'is_draft', 'all_tags', 'publisher']
     list_filter = ['name']
 
     def all_tags(self, obj):
@@ -355,21 +354,21 @@ class ArticleCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Game)
 class GameCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'paper', 'widget_type','creator']
+    list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']
     search_fields = ['name']
 
 
 @admin.register(Video)
 class VideoCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'paper', 'widget_type','creator']
+    list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']
     search_fields = ['name']
 
 
 @admin.register(Image)
 class ImageCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'paper', 'widget_type','creator']
+    list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']
     search_fields = ['name']
 
@@ -433,5 +432,3 @@ admin.site.register(Tag)
 # admin.site.register(Choice)
 # admin.site.register(Event)
 # admin.site.register(UploadFileProblem)
-
-
