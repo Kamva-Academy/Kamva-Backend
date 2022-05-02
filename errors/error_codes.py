@@ -115,6 +115,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4105': 'you can\'t publish on an institute\'s page that you are not one of its admins',
                '4106': 'maximum number of tags for an article is 5',
                '4107': 'batch registration file must be .csv',
+               '4108': 'user didn\'t pass entrance criteria for this fsm',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

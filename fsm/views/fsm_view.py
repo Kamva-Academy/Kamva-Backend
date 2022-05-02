@@ -78,6 +78,9 @@ class FSMViewSet(viewsets.ModelViewSet):
             if receipt.team is None:
                 raise ParseError(serialize_error('4078'))
 
+        if not fsm.first_state.is_user_permitted(user):
+            raise ParseError(serialize_error('4108'))
+
         # first time entering fsm
         if not player:
             if fsm.lock and len(fsm.lock) > 0:
