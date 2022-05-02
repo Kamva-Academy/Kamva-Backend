@@ -47,7 +47,11 @@ class Condition(BaseCondition):
     score_type = models.ForeignKey(ScoreType, related_name='conditions', on_delete=models.CASCADE)
 
     def evaluate(self, user: User) -> bool:
-        return Score.objects.filter(ScoreType=self.score_type, answer__user=user).aggregate(Sum('value')) >= self.amount
+        score_sum = Score.objects.filter(score_type=self.score_type, answer__submitted_by=user).aggregate(Sum('value')).get('value__sum', 0)
+        return (score_sum if score_sum is not None else 0) >= self.amount
+
+    def __str__(self):
+        return f'{self.score_type.name}>={self.amount}'
 
 
 class Criteria(BaseCondition):
@@ -64,3 +68,6 @@ class Criteria(BaseCondition):
             evaluation = condition.evaluate(user)
             result = (result and evaluation) if self.operand == 'And' else (result or evaluation)
         return result
+
+    def __str__(self):
+        return ('&' if self.operand == 'And' else '|').join(str(c) for c in self.conditions.all())
