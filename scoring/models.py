@@ -4,6 +4,8 @@ from accounts.models import *
 from django.db.models import IntegerField, Model, Sum
 from django.core.validators import MaxValueValidator, MinValueValidator
 from fsm.models import Answer, Paper
+
+
 # Create your models here.
 
 
@@ -19,6 +21,7 @@ class Score(PolymorphicModel):
     value = IntegerField(default=0)
     score_type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='scores')
+
     # todo: make score unique per answer-scoreType
 
     def __str__(self):
@@ -47,7 +50,8 @@ class Condition(BaseCondition):
     score_type = models.ForeignKey(ScoreType, related_name='conditions', on_delete=models.CASCADE)
 
     def evaluate(self, user: User) -> bool:
-        score_sum = Score.objects.filter(score_type=self.score_type, answer__submitted_by=user).aggregate(Sum('value')).get('value__sum', 0)
+        score_sum = Score.objects.filter(score_type=self.score_type, answer__submitted_by=user).aggregate(
+            Sum('value')).get('value__sum', 0)
         return (score_sum if score_sum is not None else 0) >= self.amount
 
     def __str__(self):
