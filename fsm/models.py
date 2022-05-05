@@ -582,6 +582,9 @@ class Answer(PolymorphicModel):
     is_final_answer = models.BooleanField(default=False)
     is_solution = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.submitted_by
+
     @property
     def problem(self):
         return self.problem
