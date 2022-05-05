@@ -10,9 +10,10 @@ from scoring.models import ScoreType, Score, Comment, Condition, Criteria
 class ScoreCustomAdmin(admin.ModelAdmin):
     list_display = ['value', 'score_type', 'submitted_by']
     list_filter = ['score_type', 'answer__submitted_by']
+    raw_id_fields = ["answer", ]
 
     def submitted_by(self, obj):
-        obj.answer.submitted_by
+        return obj.answer.submitted_by
 
 
 @admin.register(Criteria)
