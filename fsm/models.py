@@ -583,7 +583,7 @@ class Answer(PolymorphicModel):
     is_solution = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.submitted_by
+        return f'{self.submitted_by.username} - {self.problem}'
 
     @property
     def problem(self):
