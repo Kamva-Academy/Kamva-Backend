@@ -308,9 +308,9 @@ class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Answer)
 class AnswerCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution']
-    list_display_links = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at']
+    list_display = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'is_final_answer', 'is_solution']
     list_filter = ['answer_type', 'is_final_answer', 'is_solution']
+    search_fields = ['submitted_by__username']
 
 
 @admin.register(BigAnswer)
