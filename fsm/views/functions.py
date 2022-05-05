@@ -1,3 +1,5 @@
+from rest_framework.exceptions import ParseError
+
 from fsm.models import *
 from fsm.serializers.answer_serializers import AnswerSerializer
 from fsm.serializers.widget_serializers import WidgetSerializer
