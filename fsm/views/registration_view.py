@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError, PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.parsers import MultiPartParser
@@ -44,9 +44,10 @@ class RegistrationViewSet(ModelViewSet):
         return context
 
     def get_permissions(self):
-        if self.action == 'create' or self.action == 'register' or self.action == 'retrieve' or self.action == 'list' \
-                or self.action == 'get_possible_teammates' or self.action == 'my_invitations':
+        if self.action in ['create', 'register', 'list', 'get_possible_teammates', 'my_invitations']:
             permission_classes = [IsAuthenticated]
+        elif self.action == 'retrieve':
+            permission_classes = [AllowAny]
         else:
             permission_classes = [IsRegistrationFormModifier]
         return [permission() for permission in permission_classes]
