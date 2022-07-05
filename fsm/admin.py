@@ -242,7 +242,11 @@ class ProblemCustomAdmin(admin.ModelAdmin):
                             'last_name': ans.submitted_by.last_name,
                             'school': ans.submitted_by.school_studentship.school.name,
                             'grade': ans.submitted_by.school_studentship.grade,
-                            'province': ans.submitted_by.province, 'city': ans.submitted_by.city}
+                            'province': ans.submitted_by.province,
+                            'city': ans.submitted_by.city,
+                            'gender': ans.submitted_by.gender,
+                            'national_code': ans.submitted_by.national_code,
+                            }
                 for score in ans.scores.all():
                     ans_dict[score.score_type.name] = score.value
                 answers.append(ans_dict)
@@ -251,13 +255,12 @@ class ProblemCustomAdmin(admin.ModelAdmin):
         file = open('answers.csv', 'w', encoding="utf-8")
         writer = csv.writer(file)
         writer.writerow(
-            ['problem_id', 'answer_id', 'first_name', 'last_name', 'school', 'grade', 'province', 'city'] + [st for st
-                                                                                                             in
-                                                                                                             score_types])
+            ['problem_id', 'answer_id', 'first_name', 'last_name', 'school', 'grade', 'province', 'city', 'gender',
+             'national_code'] + [st for st in score_types])
         for p in queryset:
             for a in problems[p]:
                 writer.writerow([p.id, a['id'], a['first_name'], a['last_name'], a['school'], a['grade'], a['province'],
-                                 a['city']] + [a.get(st, '') for st in score_types])
+                                 a['city'], a['gender'], a['national_code']] + [a.get(st, '') for st in score_types])
         file.close()
 
         f = open('answers.csv', 'rb')

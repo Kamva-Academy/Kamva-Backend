@@ -75,20 +75,20 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
             receipt.status = registration_status
             receipt.save()
 
-            if older_status != receipt.status:
-                # TODO - I did the dirty way to force us change it to notification sooner
-                def send_update_notification_sms(user, token):
-                    # text to put in kavenegar: 'کاربر گرامی، تغییری در وضعیت ثبت‌نام شما در '{token}' ایجاد شده است. به کاموا مراجعه کنید: kamva.academy'
-                    from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY
-                    api = KAVENEGAR_TOKEN
-                    params = {
-                        'receptor': user.phone_number,
-                        'template': 'receipt_update',
-                        'token': token,
-                        'type': 'sms'
-                    }
-                    api.verify_lookup(params)
-                send_update_notification_sms(receipt.user, receipt.answer_sheet_of.event_or_fsm.name)
+            # if older_status != receipt.status:
+            #     # TODO - I did the dirty way to force us change it to notification sooner
+            #     def send_update_notification_sms(user, token):
+            #         # text to put in kavenegar: 'کاربر گرامی، تغییری در وضعیت ثبت‌نام شما در '{token}' ایجاد شده است. به کاموا مراجعه کنید: kamva.academy'
+            #         from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY
+            #         api = KAVENEGAR_TOKEN
+            #         params = {
+            #             'receptor': user.phone_number,
+            #             'template': 'receipt_update',
+            #             'token': token,
+            #             'type': 'sms'
+            #         }
+            #         api.verify_lookup(params)
+            #     send_update_notification_sms(receipt.user, receipt.answer_sheet_of.event_or_fsm.name)
 
             return Response(
                 RegistrationReceiptSerializer(context=self.get_serializer_context()).to_representation(receipt),
