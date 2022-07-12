@@ -8,7 +8,7 @@ from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
 from fsm.models import Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
-    Paper, Widget, Team
+    Paper, Widget, Team, Aparat
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer, AnswerPolymorphicSerializer
 from fsm.serializers.validators import multi_choice_answer_validator
@@ -69,6 +69,16 @@ class VideoSerializer(WidgetSerializer):
     class Meta:
         model = Video
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
+        read_only_fields = ['id', 'creator', 'duplication_of']
+
+
+class AparatSerializer(WidgetSerializer):
+    def create(self, validated_data):
+        return super(AparatSerializer, self).create({'widget_type': Widget.WidgetTypes.Aparat, **validated_data})
+
+    class Meta:
+        model = Aparat
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'id_link']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -279,6 +289,7 @@ class WidgetPolymorphicSerializer(PolymorphicSerializer):
         Description: DescriptionSerializer,
         Image: ImageSerializer,
         Video: VideoSerializer,
+        Aparat: AparatSerializer,
         Game: GameSerializer,
         # Problem: ProblemSerializer,
         SmallAnswerProblem: SmallAnswerProblemSerializer,
@@ -293,6 +304,7 @@ class WidgetPolymorphicSerializer(PolymorphicSerializer):
 class MockWidgetSerializer(serializers.Serializer):
     GameSerializer = GameSerializer(required=False)
     VideoSerializer = VideoSerializer(required=False)
+    AparatSerializer = AparatSerializer(required=False)
     ImageSerializer = ImageSerializer(required=False)
     DescriptionSerializer = DescriptionSerializer(required=False)
     # ProblemSerializer = ProblemSerializer(required=False)
