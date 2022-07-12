@@ -238,7 +238,9 @@ class ProblemCustomAdmin(admin.ModelAdmin):
             answers = []
             score_types |= set(st for st in p.paper.score_types.all().values_list('name', flat=True))
             for ans in p.answers.filter(is_final_answer=True):
-                ans_dict = {'id': ans.id, 'first_name': ans.submitted_by.first_name,
+                ans_dict = {'id': ans.id,
+                            'first_name': ans.submitted_by.first_name,
+                            'phone_number': ans.submitted_by.phone_number,
                             'last_name': ans.submitted_by.last_name,
                             'school': ans.submitted_by.school_studentship.school.name,
                             'grade': ans.submitted_by.school_studentship.grade,
@@ -255,11 +257,11 @@ class ProblemCustomAdmin(admin.ModelAdmin):
         file = open('answers.csv', 'w', encoding="utf-8")
         writer = csv.writer(file)
         writer.writerow(
-            ['problem_id', 'answer_id', 'first_name', 'last_name', 'school', 'grade', 'province', 'city', 'gender',
+            ['problem_id', 'answer_id', 'first_name', 'last_name', 'phone_number', 'school', 'grade', 'province', 'city', 'gender',
              'national_code'] + [st for st in score_types])
         for p in queryset:
             for a in problems[p]:
-                writer.writerow([p.id, a['id'], a['first_name'], a['last_name'], a['school'], a['grade'], a['province'],
+                writer.writerow([p.id, a['id'], a['first_name'], a['last_name'], a['phone_number'], a['school'], a['grade'], a['province'],
                                  a['city'], a['gender'], a['national_code']] + [a.get(st, '') for st in score_types])
         file.close()
 
