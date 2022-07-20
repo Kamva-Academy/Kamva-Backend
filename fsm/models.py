@@ -69,6 +69,7 @@ class RegistrationForm(Paper):
         GradeNotAvailable = "GradeNotAvailable"
         StudentshipDataNotApproved = "StudentshipDataNotApproved"
         Permitted = "Permitted"
+        NotRightGender = "NotRightGender"
 
     class AudienceType(models.TextChoices):
         Student = 'Student'
@@ -110,6 +111,11 @@ class RegistrationForm(Paper):
         # if exec(self.answer_sheet_of.conditions):
         #     return True
         # TODO - handle for academic studentship too
+
+        gender_check_result = self.check_gender(user)
+        if gender_check_result != 'ok':
+            return gender_check_result
+
         if self.audience_type == self.AudienceType.Academic:
             studentship = user.academic_studentship
             if studentship:
@@ -140,6 +146,15 @@ class RegistrationForm(Paper):
             return self.RegisterPermissionStatus.DeadlineMissed
         if self.since and datetime.now(self.since.tzinfo) < self.since:
             return self.RegisterPermissionStatus.NotStarted
+        return 'ok'
+
+    def check_gender(self, user):
+        if self.gender_partition_status == 'BothNonPartitioned':
+            return self.RegisterPermissionStatus.NotRightGender
+        if self.gender_partition_status == 'OnlyFemale' and user.gender == 'Male':
+            return self.RegisterPermissionStatus.NotRightGender
+        if self.gender_partition_status == 'OnlyMale' and user.gender == 'Female':
+            return self.RegisterPermissionStatus.NotRightGender
         return 'ok'
 
     def __str__(self):
