@@ -149,11 +149,8 @@ class RegistrationForm(Paper):
         return 'ok'
 
     def check_gender(self, user):
-        if self.gender_partition_status == 'BothNonPartitioned':
-            return self.RegisterPermissionStatus.NotRightGender
-        if self.gender_partition_status == 'OnlyFemale' and user.gender == 'Male':
-            return self.RegisterPermissionStatus.NotRightGender
-        if self.gender_partition_status == 'OnlyMale' and user.gender == 'Female':
+        if (self.gender_partition_status == 'OnlyFemale' and user.gender == 'Male') or \
+                (self.gender_partition_status == 'OnlyMale' and user.gender == 'Female'):
             return self.RegisterPermissionStatus.NotRightGender
         return 'ok'
 
