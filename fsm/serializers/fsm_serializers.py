@@ -3,7 +3,7 @@ from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import serializers
 
-from accounts.serializers import MerchandiseSerializer, AccountSerializer
+from accounts.serializers import MerchandiseSerializer, AccountSerializer, MentorSerializer
 from errors.error_codes import serialize_error
 from fsm.models import Event, RegistrationReceipt, FSM, Edge, Team, RegistrationForm
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
@@ -87,7 +87,7 @@ class EventSerializer(serializers.ModelSerializer):
 class FSMSerializer(serializers.ModelSerializer):
     lock = serializers.CharField(required=False, write_only=True)
     merchandise = MerchandiseSerializer(required=False)
-    mentors = AccountSerializer(many=True, read_only=True)
+    mentors = MentorSerializer(many=True, read_only=True)
     first_state = StateSerializer(read_only=True)
 
     def validate(self, attrs):
