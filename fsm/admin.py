@@ -7,7 +7,7 @@ from import_export.admin import ExportActionMixin
 from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, Hint, Widget, Video, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
-    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag
+    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag, Aparat
 
 
 class EdgeAdmin(admin.ModelAdmin):
@@ -365,6 +365,13 @@ class GameCustomAdmin(admin.ModelAdmin):
 
 
 @admin.register(Video)
+class VideoCustomAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
+    list_filter = ['name']
+    search_fields = ['name']
+
+
+@admin.register(Aparat)
 class VideoCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']

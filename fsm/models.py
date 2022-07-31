@@ -482,6 +482,7 @@ class Widget(PolymorphicModel):
         Game = 'Game'
         Video = 'Video'
         Image = 'Image'
+        Aparat = 'Aparat'
         Description = 'Description'
         SmallAnswerProblem = 'SmallAnswerProblem'
         BigAnswerProblem = 'BigAnswerProblem'
@@ -518,6 +519,13 @@ class Game(Widget):
 
 class Video(Widget):
     link = models.TextField()
+
+    def __str__(self):
+        return f'<{self.id}-{self.widget_type}>:{self.name}'
+
+
+class Aparat(Widget):
+    video_id = models.TextField()
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
