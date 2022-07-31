@@ -513,7 +513,7 @@ class Video(Widget):
 
 
 class Aparat(Widget):
-    id_link = models.TextField()
+    video_id = models.TextField()
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
