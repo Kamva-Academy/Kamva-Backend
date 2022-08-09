@@ -231,6 +231,8 @@ class Team(models.Model):
     team_head = models.OneToOneField(RegistrationReceipt, related_name='headed_team', null=True, blank=True,
                                      on_delete=models.SET_NULL)
 
+    chat_room = models.CharField(max_length=200, null=True, blank=True)
+
     objects = TeamManager()
 
     def __str__(self):
