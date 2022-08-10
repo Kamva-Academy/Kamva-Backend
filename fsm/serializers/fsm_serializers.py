@@ -89,6 +89,13 @@ class FSMSerializer(serializers.ModelSerializer):
     merchandise = MerchandiseSerializer(required=False)
     mentors = MentorSerializer(many=True, read_only=True)
     first_state = StateSerializer(read_only=True)
+    is_mentor = serializers.SerializerMethodField()
+
+    def get_is_mentor(self, obj):
+        user = self.context.get('user', None)
+        if user in obj.mentors.all():
+            return True
+        return False
 
     def validate(self, attrs):
         event = attrs.get('event', None)
