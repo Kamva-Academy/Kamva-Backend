@@ -90,6 +90,12 @@ class AccountSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class MentorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'username', 'email']
+
+
 class UserSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
     username = serializers.CharField(required=False)
