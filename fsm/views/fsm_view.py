@@ -171,7 +171,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
     @transaction.atomic
     @action(detail=True, methods=['get'])
-    def get_edges(self, request, pk):
+    def get_mentors(self, request, pk):
         mentors = self.get_object().mentors
         return Response(data=AccountSerializer(mentors, context=self.get_serializer_context(), many=True).data,
                         status=status.HTTP_200_OK)
