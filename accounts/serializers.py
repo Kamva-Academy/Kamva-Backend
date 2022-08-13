@@ -93,7 +93,7 @@ class AccountSerializer(serializers.ModelSerializer):
 class MentorSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'username', 'email']
+        fields = ['first_name', 'last_name']
 
 
 class UserSerializer(serializers.ModelSerializer):
