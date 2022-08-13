@@ -170,6 +170,14 @@ class FSMViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
     @transaction.atomic
+    @action(detail=True, methods=['get'])
+    def get_mentors(self, request, pk):
+        mentors = self.get_object().mentors
+        return Response(data=AccountSerializer(mentors, context=self.get_serializer_context(), many=True).data,
+                        status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
+    @transaction.atomic
     @action(detail=True, methods=['post'], serializer_class=AccountSerializer, permission_classes=[MentorPermission, ])
     def add_mentor(self, request, pk=None):
         data = request.data
@@ -180,6 +188,22 @@ class FSMViewSet(viewsets.ModelViewSet):
             fsm.mentors.add(new_mentor)
             return Response(FSMSerializer(context=self.get_serializer_context()).to_representation(fsm),
                             status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
+    @transaction.atomic
+    @action(detail=True, methods=['post'], serializer_class=AccountSerializer, permission_classes=[MentorPermission, ])
+    def remove_mentor(self, request, pk=None):
+        data = request.data
+        fsm = self.get_object()
+        serializer = AccountSerializer(data=data, context=self.get_serializer_context())
+        if serializer.is_valid(raise_exception=True):
+            deleted_mentor = find_user(serializer.validated_data)
+            if deleted_mentor not in fsm.mentors.all():
+                raise ParseError(serialize_error('5005'))
+            else:
+                fsm.mentors.remove(deleted_mentor)
+                return Response(FSMSerializer(context=self.get_serializer_context()).to_representation(fsm),
+                                status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: PlayerSerializer}, tags=['mentor'])
     @transaction.atomic
