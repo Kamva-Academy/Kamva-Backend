@@ -122,7 +122,9 @@ errors_dict = {'4000': 'phone number must be digit',
                '5001': 'zarinpal request failed, contact with support',
                '5002': 'given registration form is illegal, a form must either associate with an event or a fsm',
                '5003': 'given merchandise is illegal, a merch must be either for an event or a fsm',
-               '5004': 'each event/fsm must have a registration form, given one doesn\'t'}
+               '5004': 'each event/fsm must have a registration form, given one doesn\'t',
+               '5005': 'user was not mentor'
+               }
 
 
 def serialize_error(code, params=dict(), is_field_error=True):
