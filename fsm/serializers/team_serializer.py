@@ -65,7 +65,7 @@ class InvitationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invitation
-        fields = ['id', 'invitee', 'team', 'username', 'status', 'chat_room']
+        fields = ['id', 'invitee', 'team', 'username', 'status']
         read_only_fields = ['id', 'team', 'status']
 
 
