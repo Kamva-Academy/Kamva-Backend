@@ -84,6 +84,32 @@ class TeamViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @transaction.atomic
+    @swagger_auto_schema(responses={200: TeamSerializer()})
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def create_team_and_join(self, request):
+        team_serializer = TeamSerializer(
+            data=request.data, context={"user": request.user})
+        team_serializer.is_valid(raise_exception=True)
+        team = team_serializer.save()
+
+        user_registration_receipt = team.registration_form.registration_receipts.filter(
+            user=request.user).first()
+
+        invitation_serializer = InvitationSerializer(
+            data={'invitee': user_registration_receipt.id},
+            context={'team': team})
+
+        if invitation_serializer.is_valid(raise_exception=True):
+            invitation_serializer.validated_data['status'] = Invitation.InvitationStatus.Accepted
+            invitation_serializer.save()
+        user_registration_receipt.team = team
+        user_registration_receipt.save()
+        team.team_head = user_registration_receipt
+        team.save()
+
+        return Response(team_serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'], serializer_class=ReceiptGetSerializer, permission_classes=[IsAuthenticated])
     def make_team_head(self, request, pk=None):
         team = self.get_object()
