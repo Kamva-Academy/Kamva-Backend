@@ -72,25 +72,6 @@ class InvitationSerializer(serializers.ModelSerializer):
 class TeamSerializer(serializers.ModelSerializer):
     members = RegistrationInfoSerializer(many=True, read_only=True)
 
-    @transaction.atomic
-    def create(self, validated_data):
-        team = super(TeamSerializer, self).create(validated_data)
-        user = self.context.get('user', None)
-        if user in team.registration_form.event_or_fsm.modifiers:
-            return team
-        user_registration = team.registration_form.registration_receipts.filter(user=user).first()
-        context = {'team': team, **self.context}
-        invitation_serializer = InvitationSerializer(data={'invitee': user_registration.id}, context=context)
-
-        if invitation_serializer.is_valid(raise_exception=True):
-            invitation_serializer.validated_data['status'] = Invitation.InvitationStatus.Accepted
-            invitation_serializer.save()
-        user_registration.team = team
-        user_registration.save()
-        team.team_head = user_registration
-        team.save()
-        return team
-
     def validate(self, attrs):
         registration_form = attrs.get('registration_form', None)
         user = self.context.get('user', None)
