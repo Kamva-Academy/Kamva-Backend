@@ -76,7 +76,7 @@ class IsTeamModifier(permissions.BasePermission):
     """
     Permission for team's modifier
     """
-    message = 'You are not this team\'s modifier (mentor/team head)'
+    message = 'You are not this team\'s modifier (event owner/team head)'
 
     def has_object_permission(self, request, view, obj):
         head = obj.team_head
