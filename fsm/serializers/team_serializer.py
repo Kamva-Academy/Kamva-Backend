@@ -72,18 +72,19 @@ class InvitationSerializer(serializers.ModelSerializer):
 class TeamSerializer(serializers.ModelSerializer):
     members = RegistrationInfoSerializer(many=True, read_only=True)
 
-    def validate(self, attrs):
-        registration_form = attrs.get('registration_form', None)
-        user = self.context.get('user', None)
-        user_registration = registration_form.registration_receipts.filter(user=user).first()
-        if user in registration_form.event_or_fsm.modifiers:
-            return attrs
-        if not user_registration or not user_registration.is_participating:
-            raise PermissionDenied(serialize_error('4050'))
-        if Invitation.objects.filter(invitee=user_registration, team__registration_form=registration_form,
-                                     status=Invitation.InvitationStatus.Accepted):
-            raise PermissionDenied(serialize_error('4051'))
-        return attrs
+    # todo: talk with Erfan about commenting this
+    # def validate(self, attrs):
+    #     registration_form = attrs.get('registration_form', None)
+    #     user = self.context.get('user', None)
+    #     user_registration = registration_form.registration_receipts.filter(user=user).first()
+    #     if user in registration_form.event_or_fsm.modifiers:
+    #         return attrs
+    #     if not user_registration or not user_registration.is_participating:
+    #         raise PermissionDenied(serialize_error('4050'))
+    #     if Invitation.objects.filter(invitee=user_registration, team__registration_form=registration_form,
+    #                                  status=Invitation.InvitationStatus.Accepted):
+    #         raise PermissionDenied(serialize_error('4051'))
+    #     return attrs
 
     def to_representation(self, instance):
         representation = super(TeamSerializer, self).to_representation(instance)
