@@ -39,8 +39,8 @@ class InvitationSerializer(serializers.ModelSerializer):
             raise PermissionDenied(serialize_error('4055'))
         if invitee.team:
             raise ParseError(serialize_error('4053'))
-        if len(Invitation.objects.filter(invitee=invitee, team=team)) > 0:
-            raise ParseError(serialize_error('4054'))
+        # if len(Invitation.objects.filter(invitee=invitee, team=team)) > 0:
+        #     raise ParseError(serialize_error('4054'))
 
         return attrs
 

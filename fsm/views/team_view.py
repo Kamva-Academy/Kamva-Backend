@@ -66,9 +66,8 @@ class TeamViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(responses={200: InvitationSerializer})
     @action(detail=True, methods=['get'], permission_classes=[customPermissions.IsTeamMember])
-    def get_invitations(self, request, pk=None):
-        return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object(),
-                                                                       status=Invitation.InvitationStatus.Waiting),
+    def get_team_invitations(self, request, pk=None):
+        return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object()),
                                              many=True, context=self.get_serializer_context()).data,
                         status=status.HTTP_200_OK)
 
@@ -77,8 +76,14 @@ class TeamViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[customPermissions.IsTeamHead])
     def invite_member(self, request, pk=None):
         team = self.get_object()
+        if len(Invitation.objects.filter(team=team,
+                                         status=Invitation.InvitationStatus.Waiting,
+                                         invitee__user__username=request.data.get('username'))) > 0:
+            raise ParseError(serialize_error('4110'))
+
         serializer = InvitationSerializer(data=self.request.data,
                                           context={'team': team, **self.get_serializer_context()})
+
         if serializer.is_valid(raise_exception=True):
             serializer.validated_data['team'] = team
             serializer.save()
@@ -203,6 +208,9 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
                 invitation.save()
                 invitee.team = team
                 invitee.save()
+            elif invitation_status == Invitation.InvitationStatus.Rejected:
+                invitation.status = Invitation.InvitationStatus.Rejected
+                invitation.save()
             return Response(
                 data=InvitationSerializer(
                     context=self.get_serializer_context()).to_representation(invitation),

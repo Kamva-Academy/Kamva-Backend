@@ -117,6 +117,7 @@ errors_dict = {'4000': 'phone number must be digit',
                '4107': 'batch registration file must be .csv',
                '4108': 'user didn\'t pass entrance criteria for this fsm',
                '4109': 'this course is not available for your gender',
+               '4110': 'you can\'t invite the same person twice',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',
