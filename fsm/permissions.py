@@ -72,6 +72,22 @@ class IsArticleModifier(permissions.BasePermission):
         return obj.creator == request.user
 
 
+class IsTeamModifier(permissions.BasePermission):
+    """
+    Permission for team's modifier
+    """
+    message = 'You are not this team\'s modifier (mentor/team head)'
+
+    def has_object_permission(self, request, view, obj):
+        head = obj.team_head
+        if head:
+            return obj.team_head.user == request.user
+        fsm_modifiers = obj.registration_form.event_or_fsm.modifiers
+        if request.user in fsm_modifiers:
+            return True
+        return False
+
+
 class IsTeamHead(permissions.BasePermission):
     """
     Permission for team's head

@@ -61,7 +61,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         elif self.action in ['get_invitations', 'retrieve']:
             permission_classes = [customPermissions.IsTeamMember]
         else:
-            permission_classes = [customPermissions.IsTeamHead]
+            permission_classes = [customPermissions.IsTeamModifier]
         return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(responses={200: InvitationSerializer})
