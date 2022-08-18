@@ -40,7 +40,8 @@ class RegistrationViewSet(ModelViewSet):
         context = super().get_serializer_context()
         context.update({'user': self.request.user})
         context.update({'editable': True})
-        context.update({'domain': self.request.build_absolute_uri('/api/')[:-5]})
+        context.update(
+            {'domain': self.request.build_absolute_uri('/api/')[:-5]})
         return context
 
     def get_permissions(self):
@@ -100,7 +101,8 @@ class RegistrationViewSet(ModelViewSet):
     def my_invitations(self, request, pk=None):
         receipt = RegistrationReceipt.objects.filter(user=request.user, is_participating=True,
                                                      answer_sheet_of=self.get_object()).first()
-        invitations = Invitation.objects.filter(invitee=receipt, team__registration_form=self.get_object(), status="Waiting")
+        invitations = Invitation.objects.filter(
+            invitee=receipt, team__registration_form=self.get_object(), status=Invitation.InvitationStatus.Waiting)
         return Response(data=InvitationSerializer(invitations, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: RegistrationFormSerializer})
@@ -121,7 +123,8 @@ class RegistrationViewSet(ModelViewSet):
         serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt',
                                                          **request.data}, context=context)
         if serializer.is_valid(raise_exception=True):
-            register_permission_status = self.get_object().user_permission_status(context.get('user', None))
+            register_permission_status = self.get_object(
+            ).user_permission_status(context.get('user', None))
             if register_permission_status == RegistrationForm.RegisterPermissionStatus.DeadlineMissed:
                 raise ParseError(serialize_error('4036'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotStarted:
@@ -137,7 +140,8 @@ class RegistrationViewSet(ModelViewSet):
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotRightGender:
                 raise ParseError(serialize_error('4109'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.Permitted:
-                serializer.validated_data['answer_sheet_of'] = self.get_object()
+                serializer.validated_data['answer_sheet_of'] = self.get_object(
+                )
                 registration_receipt = serializer.save()
 
                 form = registration_receipt.answer_sheet_of
@@ -222,8 +226,10 @@ class RegistrationAdminViewSet(GenericViewSet):
                 for member in members:
                     if 'phone_number' not in member.keys():
                         continue
-                    phone_number = convert_with_punctuation_removal(member['phone_number'])
-                    national_code = convert_with_punctuation_removal(member['national_code'])
+                    phone_number = convert_with_punctuation_removal(
+                        member['phone_number'])
+                    national_code = convert_with_punctuation_removal(
+                        member['national_code'])
                     first_name = member['name'].split()[0]
                     last_name = member['name'][len(first_name):].strip()
                     grade = convert_with_punctuation_removal(member['grade'])
@@ -238,10 +244,12 @@ class RegistrationAdminViewSet(GenericViewSet):
                             gender=GENDER_MAPPING[member['gender']],
                         )
                     elif len(User.objects.filter(phone_number=phone_number)) > 0:
-                        user = User.objects.filter(phone_number=phone_number).first()
+                        user = User.objects.filter(
+                            phone_number=phone_number).first()
                         older_users.append(user.username)
                     else:
-                        user = User.objects.filter(username=national_code).first()
+                        user = User.objects.filter(
+                            username=national_code).first()
                     if len(SchoolStudentship.objects.filter(user=user)) <= 0:
                         school_studentship = SchoolStudentship.objects.create(
                             studentship_type=Studentship.StudentshipType.School,
@@ -252,14 +260,16 @@ class RegistrationAdminViewSet(GenericViewSet):
                             is_document_verified=True,
                         )
                     else:
-                        school_studentship = SchoolStudentship.objects.filter(user=user).first()
+                        school_studentship = SchoolStudentship.objects.filter(
+                            user=user).first()
                     if len(AcademicStudentship.objects.filter(user=user)) <= 0:
                         academic_studentship = AcademicStudentship.objects.create(
                             studentship_type=Studentship.StudentshipType.Academic,
                             user=user,
                         )
                     else:
-                        academic_studentship = AcademicStudentship.objects.filter(user=user).first()
+                        academic_studentship = AcademicStudentship.objects.filter(
+                            user=user).first()
                     if len(RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=user)) <= 0:
                         receipts.append(RegistrationReceipt.objects.create(
                             answer_sheet_of=registration_form,
