@@ -15,7 +15,7 @@ class EventSerializer(serializers.ModelSerializer):
 
     def get_is_manager(self, obj):
         user = self.context.get('user', None)
-        if user in obj.holder.admins.all():
+        if user in obj.modifiers:
             return True
         return False
 
