@@ -80,8 +80,8 @@ class IsTeamModifier(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         head = obj.team_head
-        if head:
-            return obj.team_head.user == request.user
+        if head and obj.team_head.user == request.user:
+            return True
         fsm_modifiers = obj.registration_form.event_or_fsm.modifiers
         if request.user in fsm_modifiers:
             return True
