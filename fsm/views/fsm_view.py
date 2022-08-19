@@ -19,7 +19,7 @@ from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm.filtersets import FSMFilterSet
-from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt, Problem
+from fsm.models import AnswerSheet, RegistrationReceipt, FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt, Problem
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
 from fsm.serializers.fsm_serializers import FSMSerializer, KeySerializer, EdgeSerializer, \
     TeamGetSerializer
@@ -194,11 +194,19 @@ class FSMViewSet(viewsets.ModelViewSet):
     def add_mentor(self, request, pk=None):
         data = request.data
         fsm = self.get_object()
-        serializer = AccountSerializer(
+        account_serializer = AccountSerializer(
             data=data, context=self.get_serializer_context())
-        if serializer.is_valid(raise_exception=True):
-            new_mentor = find_user(serializer.validated_data)
+        if account_serializer.is_valid(raise_exception=True):
+            new_mentor = find_user(account_serializer.validated_data)
             fsm.mentors.add(new_mentor)
+            registration_form = fsm.event.registration_form
+            if len(RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=new_mentor)) == 0:
+                RegistrationReceipt.objects.create(
+                    answer_sheet_of=registration_form,
+                    user=new_mentor,
+                    answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                    status=RegistrationReceipt.RegistrationStatus.Accepted,
+                    is_participating=True)
             return Response(FSMSerializer(context=self.get_serializer_context()).to_representation(fsm),
                             status=status.HTTP_200_OK)
 
