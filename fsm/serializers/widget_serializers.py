@@ -44,7 +44,7 @@ class WidgetSerializer(serializers.ModelSerializer):
 
             # TODO: potentially with BUGS!
             url = self.context.get('request').get_full_path()
-            if "player" in url:
+            if "/fsm/player/" in url:
                 matcher = re.search(r'\d+', url)
                 player_id = matcher.group()
                 user = Player.objects.filter(id=player_id).first().user
