@@ -295,3 +295,85 @@ class RegistrationAdminViewSet(GenericViewSet):
                 result_teams.append(team.name)
             return Response({'users': result_users, 'older_users': older_users, 'teams': result_teams},
                             status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def csv_registration(self, request, pk=None):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            in_memory_file = request.data.get('file')
+            registration_form = self.get_object()
+
+            file = in_memory_file.read().decode('utf-8')
+            for data in csv.DictReader(StringIO(file)):
+                member = dict()
+                for k in data.keys():
+                    member[k] = data[k].strip()
+
+                team_name = member['team_name']
+                username = member['username']
+                phone_number = member['phone_number']
+                password = member['password']
+                gender = member['gender']
+                first_name = member['first_name']
+                last_name = member['last_name']
+
+                if team_name is not None:
+                    team = Team.objects.filter(name=team_name).first()
+                    if team is None:
+                        team = Team.objects.create(
+                            registration_form=registration_form)
+                        team.name = team_name
+                        team.save()
+
+                user = User.objects.filter(username=username).first()
+                if user is None:
+                    user = User.objects.create(
+                        username=username,
+                        first_name=first_name,
+                        last_name=last_name,
+                        phone_number=phone_number,
+                        password=password,
+                        gender=gender,
+                    )
+
+                if password is None:
+                    user.password = username
+                    user.save()
+
+                if len(SchoolStudentship.objects.filter(user=user)) <= 0:
+                    school_studentship = SchoolStudentship.objects.create(
+                        studentship_type=Studentship.StudentshipType.School,
+                        user=user,
+                        major=MAJOR_MAPPING[member['major']] if 'major' in member.keys() else MAJOR_MAPPING[
+                            'ریاضی'],
+                        grade=10,
+                        is_document_verified=True,
+                    )
+
+                if len(AcademicStudentship.objects.filter(user=user)) <= 0:
+                    academic_studentship = AcademicStudentship.objects.create(
+                        studentship_type=Studentship.StudentshipType.Academic,
+                        user=user,
+                    )
+
+                receipt = RegistrationReceipt.objects.filter(
+                    answer_sheet_of=registration_form, user=user).first()
+
+                if receipt is None:
+                    receipt = RegistrationReceipt.objects.create(
+                        answer_sheet_of=registration_form,
+                        answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                        user=user,
+                        status=RegistrationReceipt.RegistrationStatus.Accepted,
+                        is_participating=True,
+                    )
+
+                if team_name is not None:
+                    if team.team_head is None:
+                        team.team_head = receipt
+                        team.save()
+                    receipt.team = team
+                    receipt.save()
+
+            return Response("ok", status=status.HTTP_200_OK)
