@@ -372,6 +372,11 @@ class RegistrationAdminViewSet(GenericViewSet):
                     )
 
                 if team_name is not None:
+                    team_with_same_head = Team.objects.filter(
+                        team_head=receipt).first()
+                    if team_with_same_head is not None:
+                        team_with_same_head.team_head = None
+                        team_with_same_head.save()
                     if team.team_head is None:
                         team.team_head = receipt
                     if chat_room != "":
