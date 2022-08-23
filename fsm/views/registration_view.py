@@ -317,6 +317,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                 gender = member['gender']
                 first_name = member['first_name']
                 last_name = member['last_name']
+                grade = member['grade']
 
                 if team_name is not None:
                     team = Team.objects.filter(name=team_name).first()
@@ -347,7 +348,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                         user=user,
                         major=MAJOR_MAPPING[member['major']] if 'major' in member.keys() else MAJOR_MAPPING[
                             'ریاضی'],
-                        grade=10,
+                        grade=grade,
                         is_document_verified=True,
                     )
 
