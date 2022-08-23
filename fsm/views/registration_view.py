@@ -7,7 +7,7 @@ from django.db.models import Count, F, Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.exceptions import ParseError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -284,4 +284,69 @@ class RegistrationAdminViewSet(GenericViewSet):
                     x.save()
                 result_teams.append(team.name)
             return Response({'users': result_users, 'older_users': older_users, 'teams': result_teams},
+                            status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def csv_registration(self, request, pk=None):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            result_teams = []
+            result_users = []
+            in_memory_file = request.data.get('file')
+            registration_form = self.get_object()
+
+            file = in_memory_file.read().decode('utf-8')
+            for data in csv.DictReader(StringIO(file)):
+                member = dict()
+                for k in data.keys():
+                    member[k] = data[k].strip()
+
+                team_name = member['team_name']
+                username = member['username']
+                phone_number = member['phone_number']
+                password = member['password']
+                first_name = member['first_name'].strip()
+                last_name = member['last_name'].strip()
+
+                team = Team.objects.filter(team_name=team_name)
+                if team is None:
+                    team = Team(
+                        registration_form=registration_form
+                    ).objects.create()
+                    team.name = team_name
+                    team.save()
+                result_teams.append(team_name)
+
+                user = User.objects.filter(username=username)
+                if user is None:
+                    user = User.objects.create()
+
+                user.first_name = first_name
+                user.last_name = last_name
+                user.phone_number = phone_number
+                user.password = password
+                if password is None:
+                    user.password = username
+                user.save()
+                result_users.append(user.username)
+
+                receipt = RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=user).first()
+                if receipt is None:
+                    receipt = RegistrationReceipt.objects.create(
+                        answer_sheet_of=registration_form,
+                        answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                        user=user,
+                        status=RegistrationReceipt.RegistrationStatus.Accepted,
+                        is_participating=True,
+                    )
+                    team.team_head = user
+                else:
+                    receipt = RegistrationReceipt.objects.filter(
+                        answer_sheet_of=registration_form, user=user).first()
+
+                receipt.team = team
+                receipt.save()
+
+            return Response({'users': result_users, 'teams': result_teams},
                             status=status.HTTP_200_OK)
