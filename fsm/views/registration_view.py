@@ -326,7 +326,6 @@ class RegistrationAdminViewSet(GenericViewSet):
                         phone_number=phone_number,
                         password=password,
                     )
-
                 elif len(User.objects.filter(phone_number=phone_number)) > 0:
                     user = User.objects.filter(phone_number=phone_number).first()
                 else:
