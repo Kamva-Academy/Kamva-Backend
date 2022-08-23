@@ -318,22 +318,22 @@ class RegistrationAdminViewSet(GenericViewSet):
                     team.save()
                 result_teams.append(team_name)
 
-                user = None
                 if len(User.objects.filter(Q(username=username) | Q(phone_number=phone_number))) <= 0:
-                    user = User.objects.create()
+                    user = User.objects.create(
+                        username=username,
+                        first_name=first_name,
+                        last_name=last_name,
+                        phone_number=phone_number,
+                        password=password,
+                    )
 
                 elif len(User.objects.filter(phone_number=phone_number)) > 0:
                     user = User.objects.filter(phone_number=phone_number).first()
                 else:
                     user = User.objects.filter(username=username).first()
 
-                user.first_name = first_name
-                user.last_name = last_name
-                user.phone_number = phone_number
-                user.password = password
                 if password is None:
                     user.password = username
-                user.save()
                 result_users.append(user.username)
 
                 receipt = RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=user).first()
