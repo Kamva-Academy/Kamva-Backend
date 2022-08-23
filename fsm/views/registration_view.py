@@ -374,7 +374,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                 if team_name is not None:
                     if team.team_head is None:
                         team.team_head = receipt
-                    if chat_room is not None:
+                    if chat_room != "":
                         team.chat_room = chat_room
                     team.save()
                     receipt.team = team
