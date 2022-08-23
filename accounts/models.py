@@ -388,3 +388,12 @@ class Member(AbstractBaseUser):
         return self.username
 
 
+class File(models.Model):
+    username = models.CharField(max_length=15)
+    team_id = models.IntegerField()
+    first_name = models.CharField(max_length=15, blank=True, null=True)
+    last_name = models.CharField(max_length=15, blank=True, null=True)
+    email = models.CharField(max_length=15, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    def __str__(self):
+        return self.username

@@ -78,7 +78,7 @@ class AparatSerializer(WidgetSerializer):
 
     class Meta:
         model = Aparat
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'id_link']
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'video_id']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
