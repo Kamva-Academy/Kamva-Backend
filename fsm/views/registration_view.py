@@ -308,7 +308,7 @@ class RegistrationAdminViewSet(GenericViewSet):
             for data in csv.DictReader(StringIO(file)):
                 member = dict()
                 for k in data.keys():
-                    member[k] = data[k].strip()
+                    member[k] = data[k]
 
                 team_name = member['team_name']
                 username = member['username']
@@ -321,7 +321,8 @@ class RegistrationAdminViewSet(GenericViewSet):
                 chat_room = member['chat_room']
 
                 if team_name is not None:
-                    team = Team.objects.filter(name=team_name).first()
+                    team = Team.objects.filter(
+                        name=team_name, registration_form=registration_form).first()
                     if team is None:
                         team = Team.objects.create(
                             registration_form=registration_form)
@@ -335,13 +336,12 @@ class RegistrationAdminViewSet(GenericViewSet):
                         first_name=first_name,
                         last_name=last_name,
                         phone_number=phone_number,
-                        password=password,
+                        password=make_password(password),
                         gender=gender,
                     )
 
-                if password is None:
-                    user.password = username
-                    user.save()
+                user.password = make_password(password)
+                user.save()
 
                 if len(SchoolStudentship.objects.filter(user=user)) <= 0:
                     school_studentship = SchoolStudentship.objects.create(
