@@ -318,6 +318,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                 first_name = member['first_name']
                 last_name = member['last_name']
                 grade = member['grade']
+                chat_room = member['chat_room']
 
                 if team_name is not None:
                     team = Team.objects.filter(name=team_name).first()
@@ -373,7 +374,9 @@ class RegistrationAdminViewSet(GenericViewSet):
                 if team_name is not None:
                     if team.team_head is None:
                         team.team_head = receipt
-                        team.save()
+                    if chat_room is not None:
+                        team.chat_room = chat_room
+                    team.save()
                     receipt.team = team
                     receipt.save()
 
