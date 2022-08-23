@@ -321,6 +321,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                 user = None
                 if len(User.objects.filter(Q(username=username) | Q(phone_number=phone_number))) <= 0:
                     user = User.objects.create()
+
                 elif len(User.objects.filter(phone_number=phone_number)) > 0:
                     user = User.objects.filter(phone_number=phone_number).first()
                 else:
