@@ -318,9 +318,13 @@ class RegistrationAdminViewSet(GenericViewSet):
                     team.save()
                 result_teams.append(team_name)
 
-                user = User.objects.filter(username=username)
-                if user is None:
+                user = None
+                if len(User.objects.filter(Q(username=username) | Q(phone_number=phone_number))) <= 0:
                     user = User.objects.create()
+                elif len(User.objects.filter(phone_number=phone_number)) > 0:
+                    user = User.objects.filter(phone_number=phone_number).first()
+                else:
+                    user = User.objects.filter(username=username).first()
 
                 user.first_name = first_name
                 user.last_name = last_name
