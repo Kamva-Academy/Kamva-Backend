@@ -129,6 +129,15 @@ class TeamViewSet(viewsets.ModelViewSet):
             return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
                             status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'], serializer_class=ReceiptGetSerializer, permission_classes=[IsAuthenticated])
+    def remove_from_team(self, request, pk=None):
+        serializer = ReceiptGetSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            receipt = serializer.validated_data['receipt']
+            receipt.team = None
+            receipt.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'], serializer_class=PhoneNumberSerializer, permission_classes=[IsAuthenticated])
     def register_and_join(self, request, pk=None):  # todo: change name
         team = self.get_object()
