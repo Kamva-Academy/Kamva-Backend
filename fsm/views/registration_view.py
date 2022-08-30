@@ -371,7 +371,7 @@ class RegistrationAdminViewSet(GenericViewSet):
                         is_participating=True,
                     )
 
-                if team_name is not None:
+                if team_name is not None and team_name != "":
                     team_with_same_head = Team.objects.filter(
                         team_head=receipt).first()
                     if team_with_same_head is not None:
