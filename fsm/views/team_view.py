@@ -129,35 +129,42 @@ class TeamViewSet(viewsets.ModelViewSet):
             return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
                             status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'], serializer_class=ReceiptGetSerializer, permission_classes=[IsAuthenticated])
+    def remove_from_team(self, request, pk=None):
+        serializer = ReceiptGetSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            receipt = serializer.validated_data['receipt']
+            receipt.team = None
+            receipt.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'], serializer_class=PhoneNumberSerializer, permission_classes=[IsAuthenticated])
     def register_and_join(self, request, pk=None):  # todo: change name
         team = self.get_object()
-        serializer = PhoneNumberSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = find_user(serializer.validated_data)
-            if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) == 0:
-                receipt = RegistrationReceipt.objects.create(
-                    answer_sheet_of=team.registration_form,
-                    user=user,
-                    answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
-                    status=RegistrationReceipt.RegistrationStatus.Accepted,
-                    is_participating=True,
-                    team=team)
-            else:
-                receipt = RegistrationReceipt.objects.filter(
-                    answer_sheet_of=team.registration_form, user=user).first()
-                if hasattr(receipt, 'headed_team'):
-                    previous_team = getattr(receipt, 'headed_team')
-                    previous_team.team_head = None
-                    previous_team.save()
-                    receipt.headed_team = None
-                receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
-                receipt.is_participating = True
-                receipt.team = team
-                receipt.save()
+        user = find_user(request.data)
+        if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) == 0:
+            receipt = RegistrationReceipt.objects.create(
+                answer_sheet_of=team.registration_form,
+                user=user,
+                answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                status=RegistrationReceipt.RegistrationStatus.Accepted,
+                is_participating=True,
+                team=team)
+        else:
+            receipt = RegistrationReceipt.objects.filter(
+                answer_sheet_of=team.registration_form, user=user).first()
+            if hasattr(receipt, 'headed_team'):
+                previous_team = getattr(receipt, 'headed_team')
+                previous_team.team_head = None
+                previous_team.save()
+                receipt.headed_team = None
+            receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+            receipt.is_participating = True
+            receipt.team = team
+            receipt.save()
 
-            return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
-                            status=status.HTTP_200_OK)
+        return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
+                        status=status.HTTP_200_OK)
 
 
 class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.ListModelMixin):

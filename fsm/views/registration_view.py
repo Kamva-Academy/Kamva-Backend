@@ -296,33 +296,6 @@ class RegistrationAdminViewSet(GenericViewSet):
             return Response({'users': result_users, 'older_users': older_users, 'teams': result_teams},
                             status=status.HTTP_200_OK)
 
-    def create_user_from_csv(self, data):
-        member = dict()
-        for k in data.keys():
-            member[k] = data[k].strip()
-
-        username = member['username']
-        phone_number = member['phone_number']
-        password = member['password']
-        first_name = member['first_name']
-        last_name = member['last_name']
-
-        user = User.objects.filter(username=username).first()
-        if user is None:
-            user = User.objects.create(
-                username=username,
-                first_name=first_name,
-                last_name=last_name,
-                phone_number=phone_number,
-                password=password,
-            )
-
-        if password is None:
-            user.password = username
-            user.save()
-
-        return user
-
     @action(detail=True, methods=['post'])
     @transaction.atomic
     def csv_registration(self, request, pk=None):
@@ -333,22 +306,42 @@ class RegistrationAdminViewSet(GenericViewSet):
 
             file = in_memory_file.read().decode('utf-8')
             for data in csv.DictReader(StringIO(file)):
-                user = self.create_user_from_csv(data)
                 member = dict()
                 for k in data.keys():
-                    member[k] = data[k].strip()
+                    member[k] = data[k]
 
                 team_name = member['team_name']
+                username = member['username']
+                phone_number = member['phone_number']
+                password = member['password']
                 gender = member['gender']
+                first_name = member['first_name']
+                last_name = member['last_name']
                 grade = member['grade']
+                chat_room = member['chat_room']
 
                 if team_name is not None:
-                    team = Team.objects.filter(name=team_name).first()
+                    team = Team.objects.filter(
+                        name=team_name, registration_form=registration_form).first()
                     if team is None:
                         team = Team.objects.create(
                             registration_form=registration_form)
                         team.name = team_name
                         team.save()
+
+                user = User.objects.filter(username=username).first()
+                if user is None:
+                    user = User.objects.create(
+                        username=username,
+                        first_name=first_name,
+                        last_name=last_name,
+                        phone_number=phone_number,
+                        password=make_password(password),
+                        gender=gender,
+                    )
+
+                user.password = make_password(password)
+                user.save()
 
                 if len(SchoolStudentship.objects.filter(user=user)) <= 0:
                     school_studentship = SchoolStudentship.objects.create(
@@ -378,24 +371,18 @@ class RegistrationAdminViewSet(GenericViewSet):
                         is_participating=True,
                     )
 
-                if team_name is not None:
+                if team_name is not None and team_name != "":
+                    team_with_same_head = Team.objects.filter(
+                        team_head=receipt).first()
+                    if team_with_same_head is not None:
+                        team_with_same_head.team_head = None
+                        team_with_same_head.save()
                     if team.team_head is None:
                         team.team_head = receipt
-                        team.save()
+                    if chat_room != "":
+                        team.chat_room = chat_room
+                    team.save()
                     receipt.team = team
                     receipt.save()
 
             return Response("ok", status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['post'])
-    @transaction.atomic
-    def add_individual_student(self, request, pk=None):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            in_memory_file = request.data.get('file')
-
-            file = in_memory_file.read().decode('utf-8')
-            for data in csv.DictReader(StringIO(file)):
-                self.create_user_from_csv(data)
-                
-        return Response("ok", status=status.HTTP_200_OK)

@@ -35,8 +35,10 @@ class UploadFileAnswerAdmin(admin.ModelAdmin):
 
 class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
     model = PlayerHistory
-    list_display = ['player', 'state', 'start_time', 'end_time', 'entered_by_edge', 'reverse_enter', 'delta_time']
-    list_filter = ['start_time', 'end_time', 'state__fsm', 'state', 'entered_by_edge']
+    list_display = ['player', 'state', 'start_time', 'end_time',
+                    'entered_by_edge', 'reverse_enter', 'delta_time']
+    list_filter = ['start_time', 'end_time',
+                   'state__fsm', 'state', 'entered_by_edge']
 
     def delta_time(self, obj):
         if (obj.end_time and obj.start_time):
@@ -77,7 +79,8 @@ class RegistrationFormAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(f'/api/admin/export_registration_data/?q={selected}')
 
     model = RegistrationForm
-    list_display = ['id', 'event_or_fsm', 'accepting_status', 'min_grade', 'max_grade', 'audience_type']
+    list_display = ['id', 'event_or_fsm', 'accepting_status',
+                    'min_grade', 'max_grade', 'audience_type']
     list_display_links = ['id', 'event_or_fsm']
     actions = [get_registration_status_for_users]
 
@@ -91,13 +94,16 @@ def download_csv(modeladmin, request, queryset):
     import csv
     f = open('registration_receipts.csv', 'w')
     writer = csv.writer(f)
-    writer.writerow(['user', 'answer_sheet_type', 'answer_sheet_of', 'status', 'is_participating', 'team'])
+    writer.writerow(['user', 'answer_sheet_type',
+                    'answer_sheet_of', 'status', 'is_participating', 'team'])
     for s in queryset:
-        writer.writerow([s.user, s.answer_sheet_type, s.answer_sheet_of, s.status, s.is_participating, s.team])
+        writer.writerow([s.user, s.answer_sheet_type,
+                        s.answer_sheet_of, s.status, s.is_participating, s.team])
 
 
 class RegistrationReceiptsAdmin(admin.ModelAdmin):
-    list_display = ['user', 'name', 'answer_sheet_of', 'status', 'is_participating', 'team']
+    list_display = ['user', 'name', 'answer_sheet_of',
+                    'status', 'is_participating', 'team']
     list_filter = ['answer_sheet_of', 'status', 'is_participating']
     actions = [delete_registration_receipts, download_csv]
 
@@ -114,7 +120,8 @@ class PlayerAdmin(admin.ModelAdmin):
 
 class FSMAdmin(admin.ModelAdmin):
     model = FSM
-    list_display = ['name', 'first_state', 'is_active', 'mentors_num', 'mentors_list', 'online_teams_in_last_hour']
+    list_display = ['name', 'first_state', 'is_active',
+                    'mentors_num', 'mentors_list', 'online_teams_in_last_hour']
     list_filter = ['name']
     search_fields = ['name']
 
@@ -129,14 +136,39 @@ class FSMAdmin(admin.ModelAdmin):
             last_visit__gt=timezone.now() - timedelta(hours=1))) / obj.team_size if obj.team_size > 0 else 1)
 
 
+def download_team_info_csv(modeladmin, request, queryset):
+    import csv
+    f = open('teams-info.csv', 'w', encoding="utf-8")
+    writer = csv.writer(f)
+    writer.writerow(['team_name', 'users'])
+    for team in queryset:
+        members = team.members.all()
+        team_info = [team.name, ]
+        for member in members:
+            team_info.append(
+                f'{member.user.first_name} {member.user.last_name}')
+        writer.writerow(team_info)
+
+    f.close()
+    f = open('teams-info.csv', 'r')
+    response = HttpResponse(f, content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=teams-info.csv'
+    return response
+
+
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['id', 'name', 'team_head', 'members', 'has_been_online_in_last_hour']
-    list_filter = ['name']
+    list_display = ['name', 'event_or_fsm', 'team_head',
+                    'members', 'has_been_online_in_last_hour']
+    list_filter = ['registration_form']
     search_fields = ['name']
+    actions = [download_team_info_csv]
+
+    def event_or_fsm(self, obj):
+        return obj.registration_form.event_or_fsm
 
     def members(self, obj):
-        return ','.join(member.user.full_name for member in obj.members.all())
+        return ', '.join(member.user.full_name for member in obj.members.all())
 
     def has_been_online_in_last_hour(self, obj):
         for m in obj.members.all():
@@ -161,13 +193,15 @@ class SmallAnswerProblemAdmin(admin.ModelAdmin):
 
         file = open('small-answers.csv', 'w', encoding="utf-8")
         writer = csv.writer(file)
-        writer.writerow(['problem_name', 'problem_body', 'text', 'submitted_by'])
+        writer.writerow(
+            ['problem_name', 'problem_body', 'text', 'submitted_by'])
         problem_obj = queryset[0]
         answers = SmallAnswer.objects.filter(problem=problem_obj)
         ctr = 0
         for i in answers:
             if ctr == 0:
-                writer.writerow([i.problem.name, i.problem.text, i.text, i.submitted_by])
+                writer.writerow(
+                    [i.problem.name, i.problem.text, i.text, i.submitted_by])
 
             else:
                 writer.writerow([i.problem.name, None, i.text, i.submitted_by])
@@ -193,13 +227,15 @@ class BigAnswerProblemAdmin(admin.ModelAdmin):
 
         file = open('big-answers.csv', 'w', encoding="utf-8")
         writer = csv.writer(file)
-        writer.writerow(['problem_name', 'problem_body', 'text', 'submitted_by'])
+        writer.writerow(
+            ['problem_name', 'problem_body', 'text', 'submitted_by'])
         problem_obj = queryset[0]
         answers = BigAnswer.objects.filter(problem=problem_obj)
         ctr = 0
         for i in answers:
             if ctr == 0:
-                writer.writerow([i.problem.name, i.problem.text, i.text, i.submitted_by])
+                writer.writerow(
+                    [i.problem.name, i.problem.text, i.text, i.submitted_by])
 
             else:
                 writer.writerow([i.problem.name, None, i.text, i.submitted_by])
@@ -226,7 +262,8 @@ class AnswerSheetCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Problem)
 class ProblemCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'paper', 'widget_type', 'creator', 'max_score', 'required', 'max_corrections']
+    list_display = ['id', 'name', 'paper', 'widget_type',
+                    'creator', 'max_score', 'required', 'max_corrections']
     list_display_links = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name', 'paper', 'widget_type', 'creator', 'required']
     search_fields = ['name']
@@ -236,7 +273,8 @@ class ProblemCustomAdmin(admin.ModelAdmin):
         problems = {}
         for p in queryset:
             answers = []
-            score_types |= set(st for st in p.paper.score_types.all().values_list('name', flat=True))
+            score_types |= set(
+                st for st in p.paper.score_types.all().values_list('name', flat=True))
             for ans in p.answers.filter(is_final_answer=True):
                 ans_dict = {'id': ans.id,
                             'first_name': ans.submitted_by.first_name,
@@ -297,7 +335,8 @@ class InvitationCustomAdmin(admin.ModelAdmin):
 
 @admin.register(CertificateTemplate)
 class CertificateTemplateCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'certificate_type', 'name_X', 'name_Y', 'registration_form', 'font_size']
+    list_display = ['id', 'certificate_type', 'name_X',
+                    'name_Y', 'registration_form', 'font_size']
     list_display_links = ['id', 'certificate_type']
     list_filter = ['certificate_type', 'name_X', 'name_Y']
     search_fields = ['certificate_type']
@@ -313,7 +352,8 @@ class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Answer)
 class AnswerCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'is_final_answer', 'is_solution']
+    list_display = ['id', 'answer_type', 'answer_sheet',
+                    'submitted_by', 'is_final_answer', 'is_solution']
     list_filter = ['answer_type', 'is_final_answer', 'is_solution']
     search_fields = ['submitted_by__username']
 
@@ -398,7 +438,8 @@ class ChoiceCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Event)
 class EventCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'registration_form', 'merchandise', 'creator', 'holder']
+    list_display = ['id', 'name', 'registration_form',
+                    'merchandise', 'creator', 'holder']
     list_display_links = ['id', 'name']
 
 
