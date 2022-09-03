@@ -61,7 +61,7 @@ class DescriptionAdmin(admin.ModelAdmin):
 class WidgetAdmin(admin.ModelAdmin):
     model = Widget
     list_display = ['id', 'widget_type', 'paper', 'name']
-    list_filter = ['widget_type', 'paper', 'name']
+    list_filter = ['widget_type', 'name']
     search_fields = ['name']
 
 
@@ -186,7 +186,7 @@ class StateAdmin(admin.ModelAdmin):
 
 class SmallAnswerProblemAdmin(admin.ModelAdmin):
     list_display = ['name', 'paper', 'widget_type', 'creator']
-    list_filter = ['name', 'paper', 'widget_type']
+    list_filter = ['widget_type']
     search_fields = ['name']
 
     def solution_csv(self, request, queryset):
@@ -220,7 +220,7 @@ class SmallAnswerProblemAdmin(admin.ModelAdmin):
 
 class BigAnswerProblemAdmin(admin.ModelAdmin):
     list_display = ['name', 'paper', 'widget_type', 'creator']
-    list_filter = ['name', 'paper', 'widget_type']
+    list_filter = ['widget_type']
     search_fields = ['name']
 
     def solution_csv(self, request, queryset):
@@ -265,7 +265,7 @@ class ProblemCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type',
                     'creator', 'max_score', 'required', 'max_corrections']
     list_display_links = ['id', 'name', 'paper', 'widget_type', 'creator']
-    list_filter = ['name', 'paper', 'widget_type', 'creator', 'required']
+    list_filter = ['name', 'widget_type', 'required']
     search_fields = ['name']
 
     def download_final_answers_scores(self, request, queryset):
@@ -346,7 +346,7 @@ class CertificateTemplateCustomAdmin(admin.ModelAdmin):
 class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_display_links = ['id', 'name']
-    list_filter = ['name', 'paper', 'widget_type']
+    list_filter = ['widget_type']
     search_fields = ['name']
 
 
@@ -428,7 +428,7 @@ class ImageCustomAdmin(admin.ModelAdmin):
 @admin.register(Hint)
 class HintCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'paper_type', 'creator']
-    list_filter = ['paper_type', 'creator']
+    list_filter = ['paper_type']
 
 
 @admin.register(Choice)
@@ -447,7 +447,7 @@ class EventCustomAdmin(admin.ModelAdmin):
 class UploadFileProblemCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_display_links = ['id', 'name']
-    list_filter = ['name', 'paper', 'widget_type']
+    list_filter = [ 'widget_type']
     search_fields = ['name']
 
 
