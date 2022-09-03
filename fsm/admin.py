@@ -447,7 +447,7 @@ class EventCustomAdmin(admin.ModelAdmin):
 class UploadFileProblemCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_display_links = ['id', 'name']
-    list_filter = [ 'widget_type']
+    list_filter = ['widget_type']
     search_fields = ['name']
 
 
