@@ -1,10 +1,11 @@
+from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ParseError
 
 from accounts.models import User
 from errors.error_codes import serialize_error
-from fsm.models import RegistrationReceipt
+from fsm.models import RegistrationReceipt, Team
 
 
 def find_user(data):
@@ -25,49 +26,50 @@ def find_registration_receipt(user, registration_form):
     return RegistrationReceipt.objects.filter(user=user, answer_sheet_of=registration_form).first()
 
 
-def get_user_json_info(user):
-    response = {
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "username": user.username,
-        "email": user.email,
-        "phone_number": user.phone_number,
-        "gender": user.gender,
-    }
+def create_user(**data):
+    username = data.get('username', None)
+    phone_number = data.get('phone_number', None)
+    password = data.get('password', None)
+    first_name = data.get('first_name', None)
+    last_name = data.get('last_name', None)
+    grade = data.get('grade', None)
+    gender = data.get('gender', None)
 
-    # if user.is_participant:
-    #     pass
-    # participant = member.participant
-    # response['grade'] = participant.member.grade
-    # response['gender'] = participant.member.gender
-    # response['city'] = participant.member.city
-    # response['school'] = participant.member.school
-    # response['accepted'] = participant.accepted
-    # response['is_activated'] = participant.is_activated
+    try:
+        user = User.objects.filter(username=username).first()
+        if user is None:
+            user = User.objects.create(
+                username=username,
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=phone_number,
+                password=make_password(password),
+                gender=gender,
+                grade=grade,
+            )
+        if password is None:
+            user.password = make_password(password)
+            user.save()
 
-    # if participant.team:
-    #     team = participant.team
-    #     response['team'] = participant.team_id
-    #     response['team_id'] = participant.team_id
-    #     response['team_uuid'] = participant.team.uuid,
-    #     response['team_members'] = [
-    #         {"email": p.member.email, "name": p.member.first_name, "uuid": p.member.uuid}
-    #         for p in team.participant_set.all()]
-    #     # TODO curren_state is no longer valid
-    #     if participant.team.current_state:
-    #         current_state = participant.team.current_state
-    #         response['current_state'] = {
-    #             'state_name': current_state.name,
-    #             'state_id': team.current_state_id,
-    #             'fsm_name': current_state.fsm.name,
-    #             'fsm_id': current_state.fsm_id,
-    #             # 'page_id': current_state.page.id
-    #         }
-    #         state_history = TeamHistory.objects.filter(team=team, state=current_state).order_by('-start_time')
-    #         if state_history:
-    #             response['current_state']['start_time'] = str(state_history[0].start_time)
-    #         else:
-    #             response['current_state']['start_time'] = ''
-    #
-    #     response['current_states'] = get_team_current_states_json(team)
-    return response
+        return user
+    except username is None or phone_number is None or first_name is None or last_name is None:
+        pass
+
+
+def create_team(**data):
+    team_name = data.get('team_name', None)
+    registration_form = data.get('registration_form', None)
+    user = data.get('user', None)
+
+    try:
+        team = Team.objects.filter(
+            name=team_name, registration_form=registration_form).first()
+        if team is None:
+            team = Team.objects.create(
+                registration_form=registration_form)
+            team.name = team_name
+            team.save()
+
+        return team
+    except team_name is None or registration_form is None:
+        pass

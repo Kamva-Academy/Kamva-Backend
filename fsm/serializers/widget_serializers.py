@@ -6,7 +6,7 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
-from fsm.models import Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
+from fsm.models import Player, Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
     Paper, Widget, Team, Aparat
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
@@ -15,7 +15,8 @@ from fsm.serializers.validators import multi_choice_answer_validator
 
 
 class WidgetSerializer(serializers.ModelSerializer):
-    widget_type = serializers.ChoiceField(choices=Widget.WidgetTypes.choices, required=True)
+    widget_type = serializers.ChoiceField(
+        choices=Widget.WidgetTypes.choices, required=True)
 
     def create(self, validated_data):
         return super().create({'creator': self.context.get('user', None), **validated_data})
@@ -33,14 +34,25 @@ class WidgetSerializer(serializers.ModelSerializer):
         return super(WidgetSerializer, self).validate(attrs)
 
     def to_representation(self, instance):
-        representation = super(WidgetSerializer, self).to_representation(instance)
+        representation = super(
+            WidgetSerializer, self).to_representation(instance)
         if 'solution' in representation.keys() and instance.paper.is_exam:
             representation.pop('solution')
         if isinstance(instance, Problem):
             user = self.context.get('user', None)
+
+            # TODO: potentially with BUGS!
+            url = self.context.get('request').get_full_path()
+            if "/fsm/player/" in url:
+                matcher = re.search(r'\d+', url)
+                player_id = matcher.group()
+                user = Player.objects.filter(id=player_id).first().user
+
             if user and isinstance(instance.paper, State):
-                teammates = Team.objects.get_teammates_from_widget(user, instance)
-                latest_answer = instance.answers.filter(submitted_by__in=teammates, is_final_answer=True).last()
+                teammates = Team.objects.get_teammates_from_widget(
+                    user, instance)
+                latest_answer = instance.answers.filter(
+                    submitted_by__in=teammates, is_final_answer=True).last()
                 if latest_answer:
                     representation['last_submitted_answer'] = AnswerPolymorphicSerializer(
                         instance=latest_answer).to_representation(latest_answer)
@@ -58,7 +70,8 @@ class GameSerializer(WidgetSerializer):
 
     class Meta:
         model = Game
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
+        fields = ['id', 'name', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'link']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -68,7 +81,8 @@ class VideoSerializer(WidgetSerializer):
 
     class Meta:
         model = Video
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
+        fields = ['id', 'name', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'link']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -78,7 +92,8 @@ class AparatSerializer(WidgetSerializer):
 
     class Meta:
         model = Aparat
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'video_id']
+        fields = ['id', 'name', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'video_id']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -99,7 +114,8 @@ class DescriptionSerializer(WidgetSerializer):
 
     class Meta:
         model = Description
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text','is_spoilbox']
+        fields = ['id', 'name', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'text', 'is_spoilbox']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -125,7 +141,8 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create({'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
+        instance = super().create(
+            {'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
         if has_solution:
             serializer = SmallAnswerSerializer(data={'problem': instance,
                                                      'is_final_answer': True,
@@ -150,7 +167,8 @@ class BigAnswerProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create({'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
+        instance = super().create(
+            {'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
         if has_solution:
             serializer = BigAnswerSerializer(data={'problem': instance,
                                                    'is_final_answer': True,
@@ -191,9 +209,11 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create({'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
+        instance = super().create(
+            {'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
         # used direct creation instead of serializer.save() for fewer db transactions
-        choice_objects = [Choice.objects.create(**{'problem': instance, **c}) for c in choices]
+        choice_objects = [Choice.objects.create(
+            **{'problem': instance, **c}) for c in choices]
         if has_solution:
             multi_choice_solution = MultiChoiceAnswer.objects.create(**{'problem': instance,
                                                                         'is_final_answer': True,
@@ -269,7 +289,8 @@ class UploadFileProblemSerializer(WidgetSerializer):
         has_solution = 'solution' in validated_data.keys()
         if has_solution:
             solution = validated_data.pop('solution')
-        instance = super().create({'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
+        instance = super().create(
+            {'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
         if has_solution:
             solution.problem = instance
             solution.is_solution = True
@@ -279,7 +300,8 @@ class UploadFileProblemSerializer(WidgetSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if instance.solution and not instance.paper.is_exam:
-            representation['solution'] = UploadFileAnswerSerializer().to_representation(instance.solution)
+            representation['solution'] = UploadFileAnswerSerializer(
+            ).to_representation(instance.solution)
         return representation
 
 

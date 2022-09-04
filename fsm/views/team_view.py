@@ -61,14 +61,13 @@ class TeamViewSet(viewsets.ModelViewSet):
         elif self.action in ['get_invitations', 'retrieve']:
             permission_classes = [customPermissions.IsTeamMember]
         else:
-            permission_classes = [customPermissions.IsTeamHead]
+            permission_classes = [customPermissions.IsTeamModifier]
         return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(responses={200: InvitationSerializer})
     @action(detail=True, methods=['get'], permission_classes=[customPermissions.IsTeamMember])
-    def get_invitations(self, request, pk=None):
-        return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object(),
-                                                                       status=Invitation.InvitationStatus.Waiting),
+    def get_team_invitations(self, request, pk=None):
+        return Response(InvitationSerializer(Invitation.objects.filter(team=self.get_object()),
                                              many=True, context=self.get_serializer_context()).data,
                         status=status.HTTP_200_OK)
 
@@ -77,12 +76,44 @@ class TeamViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[customPermissions.IsTeamHead])
     def invite_member(self, request, pk=None):
         team = self.get_object()
+        if len(Invitation.objects.filter(team=team,
+                                         status=Invitation.InvitationStatus.Waiting,
+                                         invitee__user__username=request.data.get('username'))) > 0:
+            raise ParseError(serialize_error('4110'))
+
         serializer = InvitationSerializer(data=self.request.data,
                                           context={'team': team, **self.get_serializer_context()})
+
         if serializer.is_valid(raise_exception=True):
             serializer.validated_data['team'] = team
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    @swagger_auto_schema(responses={200: TeamSerializer()})
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def create_team_and_join(self, request):
+        team_serializer = TeamSerializer(
+            data=request.data, context={"user": request.user})
+        team_serializer.is_valid(raise_exception=True)
+        team = team_serializer.save()
+
+        user_registration_receipt = team.registration_form.registration_receipts.filter(
+            user=request.user).first()
+
+        invitation_serializer = InvitationSerializer(
+            data={'invitee': user_registration_receipt.id},
+            context={'team': team})
+
+        if invitation_serializer.is_valid(raise_exception=True):
+            invitation_serializer.validated_data['status'] = Invitation.InvitationStatus.Accepted
+            invitation_serializer.save()
+        user_registration_receipt.team = team
+        user_registration_receipt.save()
+        team.team_head = user_registration_receipt
+        team.save()
+
+        return Response(team_serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], serializer_class=ReceiptGetSerializer, permission_classes=[IsAuthenticated])
     def make_team_head(self, request, pk=None):
@@ -98,35 +129,42 @@ class TeamViewSet(viewsets.ModelViewSet):
             return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
                             status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'], serializer_class=ReceiptGetSerializer, permission_classes=[IsAuthenticated])
+    def remove_from_team(self, request, pk=None):
+        serializer = ReceiptGetSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            receipt = serializer.validated_data['receipt']
+            receipt.team = None
+            receipt.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'], serializer_class=PhoneNumberSerializer, permission_classes=[IsAuthenticated])
     def register_and_join(self, request, pk=None):  # todo: change name
         team = self.get_object()
-        serializer = PhoneNumberSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = find_user(serializer.validated_data)
-            if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) == 0:
-                receipt = RegistrationReceipt.objects.create(
-                    answer_sheet_of=team.registration_form,
-                    user=user,
-                    answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
-                    status=RegistrationReceipt.RegistrationStatus.Accepted,
-                    is_participating=True,
-                    team=team)
-            else:
-                receipt = RegistrationReceipt.objects.filter(
-                    answer_sheet_of=team.registration_form, user=user).first()
-                if hasattr(receipt, 'headed_team'):
-                    previous_team = getattr(receipt, 'headed_team')
-                    previous_team.team_head = None
-                    previous_team.save()
-                    receipt.headed_team = None
-                receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
-                receipt.is_participating = True
-                receipt.team = team
-                receipt.save()
+        user = find_user(request.data)
+        if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) == 0:
+            receipt = RegistrationReceipt.objects.create(
+                answer_sheet_of=team.registration_form,
+                user=user,
+                answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                status=RegistrationReceipt.RegistrationStatus.Accepted,
+                is_participating=True,
+                team=team)
+        else:
+            receipt = RegistrationReceipt.objects.filter(
+                answer_sheet_of=team.registration_form, user=user).first()
+            if hasattr(receipt, 'headed_team'):
+                previous_team = getattr(receipt, 'headed_team')
+                previous_team.team_head = None
+                previous_team.save()
+                receipt.headed_team = None
+            receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+            receipt.is_participating = True
+            receipt.team = team
+            receipt.save()
 
-            return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
-                            status=status.HTTP_200_OK)
+        return Response(TeamSerializer(context=self.get_serializer_context()).to_representation(team),
+                        status=status.HTTP_200_OK)
 
 
 class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.ListModelMixin):
@@ -177,6 +215,9 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
                 invitation.save()
                 invitee.team = team
                 invitee.save()
+            elif invitation_status == Invitation.InvitationStatus.Rejected:
+                invitation.status = Invitation.InvitationStatus.Rejected
+                invitation.save()
             return Response(
                 data=InvitationSerializer(
                     context=self.get_serializer_context()).to_representation(invitation),

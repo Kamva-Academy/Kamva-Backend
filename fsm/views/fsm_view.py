@@ -19,7 +19,7 @@ from accounts.serializers import AccountSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm.filtersets import FSMFilterSet
-from fsm.models import FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt, Problem
+from fsm.models import AnswerSheet, RegistrationReceipt, FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt, Problem
 from fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
 from fsm.serializers.fsm_serializers import FSMSerializer, KeySerializer, EdgeSerializer, \
     TeamGetSerializer
@@ -78,6 +78,9 @@ class FSMViewSet(viewsets.ModelViewSet):
             if receipt.team is None:
                 raise ParseError(serialize_error('4078'))
 
+        if not fsm.first_state:
+            raise ParseError(serialize_error('4111'))
+
         if not fsm.first_state.is_user_permitted(user):
             raise ParseError(serialize_error('4108'))
 
@@ -104,9 +107,11 @@ class FSMViewSet(viewsets.ModelViewSet):
                 player.current_state = fsm.first_state
                 player.save()
 
-            player_history = PlayerHistory.objects.filter(player=player, state=player.current_state).last()
+            player_history = PlayerHistory.objects.filter(
+                player=player, state=player.current_state).last()
             if player_history is None:
-                logger.info(f'user {user.full_name} has player [id:{player.id}] without corresponding history')
+                logger.info(
+                    f'user {user.full_name} has player [id:{player.id}] without corresponding history')
             #     raise NotFound(serialize_error('4081'))
         return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                         status=status.HTTP_200_OK)
@@ -128,7 +133,8 @@ class FSMViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def review(self, request, pk):
-        problems = Problem.objects.filter(paper__in=self.get_object().states.filter(is_exam=True))
+        problems = Problem.objects.filter(
+            paper__in=self.get_object().states.filter(is_exam=True))
         return Response(WidgetPolymorphicSerializer(problems, context=self.get_serializer_context(), many=True).data,
                         status=status.HTTP_200_OK)
 
@@ -141,16 +147,21 @@ class FSMViewSet(viewsets.ModelViewSet):
         last_name = request.query_params.get('last_name', None)
 
         queryset = self.get_object().players.all()
-        queryset = queryset.filter(user__gender=gender) if gender is not None else queryset
-        queryset = queryset.filter(user__first_name__startswith=first_name) if first_name is not None else queryset
-        queryset = queryset.filter(user__first_name__startswith=last_name) if last_name is not None else queryset
+        queryset = queryset.filter(
+            user__gender=gender) if gender is not None else queryset
+        queryset = queryset.filter(
+            user__first_name__startswith=first_name) if first_name is not None else queryset
+        queryset = queryset.filter(
+            user__first_name__startswith=last_name) if last_name is not None else queryset
 
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True, context=self.get_serializer_context())
+            serializer = self.get_serializer(
+                page, many=True, context=self.get_serializer_context())
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True, context=self.get_serializer_context())
+        serializer = self.get_serializer(
+            queryset, many=True, context=self.get_serializer_context())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: StateSimpleSerializer}, tags=['mentor'])
@@ -164,11 +175,12 @@ class FSMViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_edges(self, request, pk):
-        edges = Edge.objects.filter(Q(tail__fsm=self.get_object()) | Q(head__fsm=self.get_object()))
+        edges = Edge.objects.filter(
+            Q(tail__fsm=self.get_object()) | Q(head__fsm=self.get_object()))
         return Response(data=EdgeSerializer(edges, context=self.get_serializer_context(), many=True).data,
                         status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(responses={200: FSMSerializer}, tags=['mentor'])
+    @swagger_auto_schema(responses={200: AccountSerializer(many=True)}, tags=['mentor'])
     @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_mentors(self, request, pk):
@@ -182,10 +194,19 @@ class FSMViewSet(viewsets.ModelViewSet):
     def add_mentor(self, request, pk=None):
         data = request.data
         fsm = self.get_object()
-        serializer = AccountSerializer(data=data, context=self.get_serializer_context())
-        if serializer.is_valid(raise_exception=True):
-            new_mentor = find_user(serializer.validated_data)
+        account_serializer = AccountSerializer(
+            data=data, context=self.get_serializer_context())
+        if account_serializer.is_valid(raise_exception=True):
+            new_mentor = find_user(account_serializer.validated_data)
             fsm.mentors.add(new_mentor)
+            registration_form = fsm.event.registration_form
+            if len(RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=new_mentor)) == 0:
+                RegistrationReceipt.objects.create(
+                    answer_sheet_of=registration_form,
+                    user=new_mentor,
+                    answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+                    status=RegistrationReceipt.RegistrationStatus.Accepted,
+                    is_participating=True)
             return Response(FSMSerializer(context=self.get_serializer_context()).to_representation(fsm),
                             status=status.HTTP_200_OK)
 
@@ -195,7 +216,8 @@ class FSMViewSet(viewsets.ModelViewSet):
     def remove_mentor(self, request, pk=None):
         data = request.data
         fsm = self.get_object()
-        serializer = AccountSerializer(data=data, context=self.get_serializer_context())
+        serializer = AccountSerializer(
+            data=data, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
             deleted_mentor = find_user(serializer.validated_data)
             if deleted_mentor not in fsm.mentors.all():
@@ -210,7 +232,8 @@ class FSMViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], serializer_class=TeamGetSerializer)
     def get_player_from_team(self, request, pk):
         fsm = self.get_object()
-        serializer = TeamGetSerializer(data=self.request.data, context=self.get_serializer_context())
+        serializer = TeamGetSerializer(
+            data=self.request.data, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
             team = serializer.validated_data['team']
             player = get_a_player_from_team(team, fsm)
@@ -226,7 +249,8 @@ class FSMViewSet(viewsets.ModelViewSet):
             if len(Player.objects.filter(user=r.user, fsm=f, receipt=r)) <= 0:
                 p = Player.objects.create(user=r.user, fsm=f, receipt=r, current_state=f.first_state,
                                           last_visit=timezone.now())
-                PlayerHistory.objects.create(player=p, state=f.first_state, start_time=p.last_visit)
+                PlayerHistory.objects.create(
+                    player=p, state=f.first_state, start_time=p.last_visit)
 
         return Response(data={'new_players_count': len(f.players.all()), 'previous_players_count': previous_players},
                         status=status.HTTP_200_OK)

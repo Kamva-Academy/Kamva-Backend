@@ -11,12 +11,20 @@ from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerial
 
 class EventSerializer(serializers.ModelSerializer):
     merchandise = MerchandiseSerializer(required=False)
+    is_manager = serializers.SerializerMethodField()
+
+    def get_is_manager(self, obj):
+        user = self.context.get('user', None)
+        if user in obj.modifiers:
+            return True
+        return False
 
     def create(self, validated_data):
         merchandise = validated_data.pop('merchandise', None)
 
         creator = self.context.get('user', None)
-        instance = super(EventSerializer, self).create({'creator': creator, **validated_data})
+        instance = super(EventSerializer, self).create(
+            {'creator': creator, **validated_data})
 
         if merchandise and merchandise.get('name', None) is None:
             merchandise['name'] = validated_data.get('name', 'unnamed_event')
@@ -81,7 +89,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = '__all__'
         read_only_fields = ['id', 'creator', 'is_approved', 'participants_size', 'user_registration_status',
-                            'is_paid', 'registration_form']
+                            'is_paid', 'registration_form', 'is_manager']
 
 
 class FSMSerializer(serializers.ModelSerializer):
@@ -187,7 +195,8 @@ class FSMSerializer(serializers.ModelSerializer):
                 representation['is_user_participating'] = receipt.is_participating
                 representation['registration_receipt'] = receipt.id
             else:
-                representation['user_registration_status'] = instance.registration_form.user_permission_status(user)
+                representation['user_registration_status'] = instance.registration_form.user_permission_status(
+                    user)
                 representation['is_paid'] = False
                 representation['is_user_participating'] = False
                 representation['registration_receipt'] = None

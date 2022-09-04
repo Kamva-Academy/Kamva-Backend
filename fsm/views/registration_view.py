@@ -7,13 +7,14 @@ from django.db.models import Count, F, Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError, PermissionDenied, NotFound
+from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.parsers import MultiPartParser
 
 from accounts.models import User, SchoolStudentship, Studentship, AcademicStudentship
+from accounts.utils import create_user, create_team
 from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
     RegistrationPerCitySerializer
@@ -40,7 +41,8 @@ class RegistrationViewSet(ModelViewSet):
         context = super().get_serializer_context()
         context.update({'user': self.request.user})
         context.update({'editable': True})
-        context.update({'domain': self.request.build_absolute_uri('/api/')[:-5]})
+        context.update(
+            {'domain': self.request.build_absolute_uri('/api/')[:-5]})
         return context
 
     def get_permissions(self):
@@ -100,7 +102,8 @@ class RegistrationViewSet(ModelViewSet):
     def my_invitations(self, request, pk=None):
         receipt = RegistrationReceipt.objects.filter(user=request.user, is_participating=True,
                                                      answer_sheet_of=self.get_object()).first()
-        invitations = Invitation.objects.filter(invitee=receipt, team__registration_form=self.get_object())
+        invitations = Invitation.objects.filter(
+            invitee=receipt, team__registration_form=self.get_object(), status=Invitation.InvitationStatus.Waiting)
         return Response(data=InvitationSerializer(invitations, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: RegistrationFormSerializer})
@@ -121,7 +124,8 @@ class RegistrationViewSet(ModelViewSet):
         serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt',
                                                          **request.data}, context=context)
         if serializer.is_valid(raise_exception=True):
-            register_permission_status = self.get_object().user_permission_status(context.get('user', None))
+            register_permission_status = self.get_object(
+            ).user_permission_status(context.get('user', None))
             if register_permission_status == RegistrationForm.RegisterPermissionStatus.DeadlineMissed:
                 raise ParseError(serialize_error('4036'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotStarted:
@@ -137,7 +141,8 @@ class RegistrationViewSet(ModelViewSet):
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotRightGender:
                 raise ParseError(serialize_error('4109'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.Permitted:
-                serializer.validated_data['answer_sheet_of'] = self.get_object()
+                serializer.validated_data['answer_sheet_of'] = self.get_object(
+                )
                 registration_receipt = serializer.save()
 
                 form = registration_receipt.answer_sheet_of
@@ -222,8 +227,10 @@ class RegistrationAdminViewSet(GenericViewSet):
                 for member in members:
                     if 'phone_number' not in member.keys():
                         continue
-                    phone_number = convert_with_punctuation_removal(member['phone_number'])
-                    national_code = convert_with_punctuation_removal(member['national_code'])
+                    phone_number = convert_with_punctuation_removal(
+                        member['phone_number'])
+                    national_code = convert_with_punctuation_removal(
+                        member['national_code'])
                     first_name = member['name'].split()[0]
                     last_name = member['name'][len(first_name):].strip()
                     grade = convert_with_punctuation_removal(member['grade'])
@@ -238,10 +245,12 @@ class RegistrationAdminViewSet(GenericViewSet):
                             gender=GENDER_MAPPING[member['gender']],
                         )
                     elif len(User.objects.filter(phone_number=phone_number)) > 0:
-                        user = User.objects.filter(phone_number=phone_number).first()
+                        user = User.objects.filter(
+                            phone_number=phone_number).first()
                         older_users.append(user.username)
                     else:
-                        user = User.objects.filter(username=national_code).first()
+                        user = User.objects.filter(
+                            username=national_code).first()
                     if len(SchoolStudentship.objects.filter(user=user)) <= 0:
                         school_studentship = SchoolStudentship.objects.create(
                             studentship_type=Studentship.StudentshipType.School,
@@ -252,14 +261,16 @@ class RegistrationAdminViewSet(GenericViewSet):
                             is_document_verified=True,
                         )
                     else:
-                        school_studentship = SchoolStudentship.objects.filter(user=user).first()
+                        school_studentship = SchoolStudentship.objects.filter(
+                            user=user).first()
                     if len(AcademicStudentship.objects.filter(user=user)) <= 0:
                         academic_studentship = AcademicStudentship.objects.create(
                             studentship_type=Studentship.StudentshipType.Academic,
                             user=user,
                         )
                     else:
-                        academic_studentship = AcademicStudentship.objects.filter(user=user).first()
+                        academic_studentship = AcademicStudentship.objects.filter(
+                            user=user).first()
                     if len(RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=user)) <= 0:
                         receipts.append(RegistrationReceipt.objects.create(
                             answer_sheet_of=registration_form,
@@ -291,8 +302,6 @@ class RegistrationAdminViewSet(GenericViewSet):
     def csv_registration(self, request, pk=None):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            result_teams = []
-            result_users = []
             in_memory_file = request.data.get('file')
             registration_form = self.get_object()
 
@@ -300,43 +309,43 @@ class RegistrationAdminViewSet(GenericViewSet):
             for data in csv.DictReader(StringIO(file)):
                 member = dict()
                 for k in data.keys():
-                    member[k] = data[k].strip()
+                    member[k] = data[k]
 
                 team_name = member['team_name']
                 username = member['username']
                 phone_number = member['phone_number']
                 password = member['password']
-                first_name = member['first_name'].strip()
-                last_name = member['last_name'].strip()
+                gender = member['gender']
+                first_name = member['first_name']
+                last_name = member['last_name']
+                grade = member['grade']
+                chat_room = member['chat_room']
 
-                team = Team.objects.filter(team_name=team_name)
-                if team is None:
-                    team = Team(
-                        registration_form=registration_form
-                    ).objects.create()
-                    team.name = team_name
-                    team.save()
-                result_teams.append(team_name)
+                if team_name is not None:
+                    team = create_team(team_name=team_name, registration_form=registration_form)
 
-                if len(User.objects.filter(Q(username=username) | Q(phone_number=phone_number))) <= 0:
-                    user = User.objects.create(
-                        username=username,
-                        first_name=first_name,
-                        last_name=last_name,
-                        phone_number=phone_number,
-                        password=password,
+                user = create_user(grade=grade, last_name=last_name, first_name=first_name, gender=gender,
+                                   password=password, phone_number=phone_number, username=username)
+
+                if len(SchoolStudentship.objects.filter(user=user)) <= 0:
+                    school_studentship = SchoolStudentship.objects.create(
+                        studentship_type=Studentship.StudentshipType.School,
+                        user=user,
+                        major=MAJOR_MAPPING[member['major']] if 'major' in member.keys() else MAJOR_MAPPING[
+                            'ریاضی'],
+                        grade=grade,
+                        is_document_verified=True,
                     )
 
-                elif len(User.objects.filter(phone_number=phone_number)) > 0:
-                    user = User.objects.filter(phone_number=phone_number).first()
-                else:
-                    user = User.objects.filter(username=username).first()
+                if len(AcademicStudentship.objects.filter(user=user)) <= 0:
+                    academic_studentship = AcademicStudentship.objects.create(
+                        studentship_type=Studentship.StudentshipType.Academic,
+                        user=user,
+                    )
 
-                if password is None:
-                    user.password = username
-                result_users.append(user.username)
+                receipt = RegistrationReceipt.objects.filter(
+                    answer_sheet_of=registration_form, user=user).first()
 
-                receipt = RegistrationReceipt.objects.filter(answer_sheet_of=registration_form, user=user).first()
                 if receipt is None:
                     receipt = RegistrationReceipt.objects.create(
                         answer_sheet_of=registration_form,
@@ -345,13 +354,43 @@ class RegistrationAdminViewSet(GenericViewSet):
                         status=RegistrationReceipt.RegistrationStatus.Accepted,
                         is_participating=True,
                     )
-                    team.team_head = user
-                else:
-                    receipt = RegistrationReceipt.objects.filter(
-                        answer_sheet_of=registration_form, user=user).first()
 
-                receipt.team = team
-                receipt.save()
+                if team_name is not None and team_name != "":
+                    team_with_same_head = Team.objects.filter(
+                        team_head=receipt).first()
+                    if team_with_same_head is not None:
+                        team_with_same_head.team_head = None
+                        team_with_same_head.save()
+                    if team.team_head is None:
+                        team.team_head = receipt
+                    if chat_room != "":
+                        team.chat_room = chat_room
+                    team.save()
+                    receipt.team = team
+                    receipt.save()
 
-            return Response({'users': result_users, 'teams': result_teams},
-                            status=status.HTTP_200_OK)
+            return Response("ok", status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def individual_csv_registration(self, request, pk=None):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            in_memory_file = request.data.get('file')
+
+            file = in_memory_file.read().decode('utf-8')
+            for data in csv.DictReader(StringIO(file)):
+                member = dict()
+                for k in data.keys():
+                    member[k] = data[k]
+
+                username = member['username']
+                phone_number = member['phone_number']
+                password = member['password']
+                gender = member['gender']
+                first_name = member['first_name']
+                last_name = member['last_name']
+                grade = member['grade']
+
+                create_user(grade=grade, last_name=last_name, first_name=first_name, gender=gender, password=password,
+                            phone_number=phone_number, username=username)

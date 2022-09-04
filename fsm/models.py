@@ -249,8 +249,8 @@ class Invitation(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')
     status = models.CharField(max_length=15, default=InvitationStatus.Waiting, choices=InvitationStatus.choices)
 
-    class Meta:
-        unique_together = ('invitee', 'team')
+    # class Meta:
+    #     unique_together = ('invitee', 'team')
 
 
 class Event(models.Model):

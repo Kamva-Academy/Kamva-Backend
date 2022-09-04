@@ -162,7 +162,7 @@ def create_user(file, request):
         if t.id == file.team_id:
             team = team
     if team is None:
-        raise NotFound(serialize_error('4110'))
+        raise NotFound(serialize_error('4112'))
     user = None
     for u in User.objects.all():
         if u.username == file.username:
