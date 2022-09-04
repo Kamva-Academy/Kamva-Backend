@@ -14,6 +14,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.parsers import MultiPartParser
 
 from accounts.models import User, SchoolStudentship, Studentship, AcademicStudentship
+from accounts.serializers import UserSerializer
 from accounts.utils import create_user, create_team
 from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
@@ -198,7 +199,7 @@ def convert_with_punctuation_removal(string):
 class RegistrationAdminViewSet(GenericViewSet):
     queryset = RegistrationForm.objects.all()
     serializer_class = BatchRegistrationSerializer
-    parser_classes = [MultiPartParser]
+    # parser_classes = [MultiPartParser]
     permission_classes = [IsRegistrationFormModifier]
     my_tags = ['registration']
 
@@ -299,7 +300,7 @@ class RegistrationAdminViewSet(GenericViewSet):
 
     @action(detail=True, methods=['post'])
     @transaction.atomic
-    def csv_registration(self, request, pk=None):
+    def register_csv(self, request, pk=None):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             in_memory_file = request.data.get('file')
@@ -373,24 +374,18 @@ class RegistrationAdminViewSet(GenericViewSet):
 
     @action(detail=True, methods=['post'])
     @transaction.atomic
-    def individual_csv_registration(self, request, pk=None):
-        serializer = self.get_serializer(data=request.data)
+    def register_individual(self, request, pk=None):
+        serializer = UserSerializer(
+            data=request.data, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
-            in_memory_file = request.data.get('file')
+            username = request.data.get('username')
+            phone_number = request.data.get('phone_number')
+            password = request.data.get('password')
+            gender = request.data.get('gender')
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
 
-            file = in_memory_file.read().decode('utf-8')
-            for data in csv.DictReader(StringIO(file)):
-                member = dict()
-                for k in data.keys():
-                    member[k] = data[k]
+            create_user(username=username, password=password, phone_number=phone_number, gender=gender,
+                        first_name=first_name, last_name=last_name)
+            return Response("ok", status=status.HTTP_200_OK)
 
-                username = member['username']
-                phone_number = member['phone_number']
-                password = member['password']
-                gender = member['gender']
-                first_name = member['first_name']
-                last_name = member['last_name']
-                grade = member['grade']
-
-                create_user(grade=grade, last_name=last_name, first_name=first_name, gender=gender, password=password,
-                            phone_number=phone_number, username=username)
