@@ -1,4 +1,3 @@
-import re
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -104,8 +103,7 @@ class ImageSerializer(WidgetSerializer):
 
     class Meta:
         model = Image
-        fields = ['id', 'name', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link']
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 

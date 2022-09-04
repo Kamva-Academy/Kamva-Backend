@@ -1,5 +1,6 @@
 import logging
 
+import pandas
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
 from drf_yasg.utils import swagger_auto_schema
@@ -12,13 +13,14 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from accounts.models import VerificationCode, User
+from accounts.models import VerificationCode, User, File
 from accounts.permissions import IsHimself
 from accounts.serializers import PhoneNumberSerializer, UserSerializer, VerificationCodeSerializer, AccountSerializer, \
-    MyTokenObtainPairSerializer
+    MyTokenObtainPairSerializer, FileUploadSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from errors.exceptions import ServiceUnavailable
+from fsm.models import Team, RegistrationReceipt, AnswerSheet, RegistrationForm
 
 logger = logging.getLogger(__name__)
 
@@ -147,3 +149,75 @@ class ChangePassword(GenericAPIView):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def create_user(file, request):
+    team = None
+    if file.team_id is None:
+        team = Team(
+            registration_form=request.data.get('registration_form')
+        ).objects.create()
+        team.save()
+    for t in Team.objects.all():
+        if t.id == file.team_id:
+            team = team
+    if team is None:
+        raise NotFound(serialize_error('4112'))
+    user = None
+    for u in User.objects.all():
+        if u.username == file.username:
+            user = u
+    if user is None:
+        user = User.objects.create(
+            username=file.username,
+            first_name=file.first_name,
+            last_name=file.last_name,
+            email=file.email,
+            phone_number=file.phone_number,
+        )
+        user.save()
+
+    if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) == 0:
+        receipt = RegistrationReceipt.objects.create(
+            answer_sheet_of=team.registration_form,
+            user=user,
+            answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+            status=RegistrationReceipt.RegistrationStatus.Accepted,
+            is_participating=True,
+            team=team)
+    else:
+        receipt = RegistrationReceipt.objects.filter(
+            answer_sheet_of=team.registration_form, user=user).first()
+    receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+    receipt.is_participating = True
+    receipt.team = team
+    receipt.save()
+
+
+class UploadFileView(GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = FileUploadSerializer
+
+    @swagger_auto_schema(tags=['accounts'],
+                         responses={200: AccountSerializer,
+                                    400: "error code 4002 for len(code) < 5, 4003 for invalid & 4005 for expired code",
+                                    })
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        file = serializer.validated_data['file']
+        reader = pandas.read_csv(file)
+        for _, row in reader.iterrows():
+            new_file = File(
+                username=row['username'],
+                team_id=row["team id"],
+                first_name=row['first name'],
+                last_name=row["last name"],
+                email=row["email"],
+                phone_number=row["phone number"],
+            )
+            new_file.save()
+            create_user(new_file, request)
+        return Response({"status": "success"},
+                        status.HTTP_201_CREATED)

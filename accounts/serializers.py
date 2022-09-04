@@ -11,7 +11,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from errors.error_codes import serialize_error
 from workshop_backend.settings.base import SMS_CODE_LENGTH, DISCOUNT_CODE_LENGTH
 from .models import User, VerificationCode, EducationalInstitute, School, University, SchoolStudentship, Studentship, \
-    AcademicStudentship, Merchandise, DiscountCode, Purchase
+    AcademicStudentship, Merchandise, DiscountCode, Purchase, File
 from .validators import phone_number_validator, grade_validator, price_validator
 
 logger = logging.getLogger(__name__)
@@ -315,3 +315,14 @@ class PurchaseSerializer(serializers.ModelSerializer):
         model = Purchase
         fields = '__all__'
         read_only_fields = ['id']
+
+
+class FileUploadSerializer(serializers.ModelSerializer):
+    file = serializers.FileField()
+
+
+class SaveFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = "__all__"
+
