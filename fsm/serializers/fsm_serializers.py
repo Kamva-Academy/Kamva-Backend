@@ -98,17 +98,10 @@ class FSMSerializer(serializers.ModelSerializer):
     mentors = MentorSerializer(many=True, read_only=True)
     first_state = StateSerializer(read_only=True)
     is_mentor = serializers.SerializerMethodField()
-    is_manager = serializers.SerializerMethodField()
 
     def get_is_mentor(self, obj):
         user = self.context.get('user', None)
         if user in obj.mentors.all():
-            return True
-        return False
-
-    def get_is_manager(self, obj):
-        user = self.context.get('user', None)
-        if user in obj.holder.admins.all():
             return True
         return False
 
