@@ -119,6 +119,8 @@ errors_dict = {'4000': 'phone number must be digit',
                '4109': 'this course is not available for your gender',
                '4110': 'you can\'t invite the same person twice',
                '4111': 'fsm has no state',
+               '4112': 'team id is not found',
+               '4113': 'there are some void required fields',
 
                '5000': 'sending SMS failed',
                '5001': 'zarinpal request failed, contact with support',

@@ -28,8 +28,16 @@ class AnswerFilterSet(FilterSet):
 
 
 class FSMFilterSet(FilterSet):
-    registrable = BooleanFilter(field_name='registration_form', method=filter_not_empty)
+    registrable = BooleanFilter(
+        field_name='registration_form', method=filter_not_empty)
 
     class Meta:
         model = FSM
         fields = ['event', 'registrable', 'is_active']
+
+
+class TeamFilterSet(FilterSet):
+
+    class Meta:
+        model = Team
+        fields = ['registration_form']

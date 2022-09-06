@@ -35,7 +35,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, ]
     filterset_class = FSMFilterSet
     my_tags = ['fsm']
 

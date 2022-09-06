@@ -19,6 +19,7 @@ from fsm.models import Team, Invitation, RegistrationReceipt, RegistrationForm, 
 from fsm.permissions import IsInvitationInvitee
 from fsm.serializers.answer_sheet_serializers import ReceiptGetSerializer, RegistrationReceiptSerializer
 from fsm.serializers.team_serializer import TeamSerializer, InvitationSerializer, InvitationResponseSerializer
+from fsm.filtersets import TeamFilterSet
 
 logger = logging.getLogger(__name__)
 
@@ -28,19 +29,12 @@ class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     filter_backends = [DjangoFilterBackend, ]
-    filterset_fields = ['registration_form']
+    filterset_class = TeamFilterSet
     my_tags = ['teams']
 
     serializer_action_classes = {
         'invite_member': InvitationSerializer
     }
-
-    @property
-    def paginator(self):
-        self._paginator = super(TeamViewSet, self).paginator
-        if self.action == 'list':
-            self._paginator = None
-        return self._paginator
 
     def get_serializer_class(self):
         try:

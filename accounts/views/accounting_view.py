@@ -1,5 +1,4 @@
 import logging
-
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
 from drf_yasg.utils import swagger_auto_schema
@@ -15,10 +14,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from accounts.models import VerificationCode, User
 from accounts.permissions import IsHimself
 from accounts.serializers import PhoneNumberSerializer, UserSerializer, VerificationCodeSerializer, AccountSerializer, \
-    MyTokenObtainPairSerializer
+    MyTokenObtainPairSerializer, FileUploadSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from errors.exceptions import ServiceUnavailable
+from fsm.models import Team, RegistrationReceipt, AnswerSheet, RegistrationForm
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,11 @@ class SendVerificationCode(GenericAPIView):
         serializer = PhoneNumberSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             phone_number = serializer.validated_data.get('phone_number', None)
-            verification_code = VerificationCode.objects.create_verification_code(phone_number=phone_number)
+            verification_code = VerificationCode.objects.create_verification_code(
+                phone_number=phone_number)
             try:
-                verification_code.send_sms(serializer.validated_data.get('code_type', None))
+                verification_code.send_sms(
+                    serializer.validated_data.get('code_type', None))
             except:
                 raise ServiceUnavailable(serialize_error('5000'))
             return Response({'detail': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
@@ -92,7 +94,8 @@ class UserViewSet(ModelViewSet):
 
             phone_number = serializer.validated_data.get('phone_number', None)
             if User.objects.filter(phone_number__exact=phone_number).count() > 0:
-                raise ParseError(serialize_error('4004', {'param1': phone_number}))
+                raise ParseError(serialize_error(
+                    '4004', {'param1': phone_number}))
 
             serializer = AccountSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
@@ -147,3 +150,46 @@ class ChangePassword(GenericAPIView):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def create_user(file, request):
+    team = None
+    if file.team_id is None:
+        team = Team(
+            registration_form=request.data.get('registration_form')
+        ).objects.create()
+        team.save()
+    for t in Team.objects.all():
+        if t.id == file.team_id:
+            team = team
+    if team is None:
+        raise NotFound(serialize_error('4112'))
+    user = None
+    for u in User.objects.all():
+        if u.username == file.username:
+            user = u
+    if user is None:
+        user = User.objects.create(
+            username=file.username,
+            first_name=file.first_name,
+            last_name=file.last_name,
+            email=file.email,
+            phone_number=file.phone_number,
+        )
+        user.save()
+
+    if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) == 0:
+        receipt = RegistrationReceipt.objects.create(
+            answer_sheet_of=team.registration_form,
+            user=user,
+            answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+            status=RegistrationReceipt.RegistrationStatus.Accepted,
+            is_participating=True,
+            team=team)
+    else:
+        receipt = RegistrationReceipt.objects.filter(
+            answer_sheet_of=team.registration_form, user=user).first()
+    receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
+    receipt.is_participating = True
+    receipt.team = team
+    receipt.save()

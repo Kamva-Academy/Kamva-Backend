@@ -38,11 +38,15 @@ class User(AbstractUser):
         Male = 'Male'
         Female = 'Female'
 
-    phone_number = models.CharField(max_length=15, blank=False, null=False, unique=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    phone_number = models.CharField(
+        max_length=15, blank=False, null=False, unique=True)
+    profile_picture = models.ImageField(
+        upload_to='profile_pictures/', blank=True, null=True)
     bio = models.CharField(max_length=300, blank=True, null=True)
-    gender = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices)
-    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
+    gender = models.CharField(max_length=10, null=True,
+                              blank=True, choices=Gender.choices)
+    id = models.UUIDField(primary_key=True, unique=True,
+                          default=uuid.uuid4, editable=False)
     national_code = models.CharField(max_length=10, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
@@ -77,7 +81,8 @@ class EducationalInstitute(PolymorphicModel):
         Other = 'Other'
 
     name = models.CharField(max_length=100, null=False, blank=False)
-    institute_type = models.CharField(max_length=10, null=False, blank=False, choices=InstituteType.choices)
+    institute_type = models.CharField(
+        max_length=10, null=False, blank=False, choices=InstituteType.choices)
     address = models.CharField(max_length=100, null=True, blank=True)
     province = models.CharField(max_length=50, null=True, blank=True)
     city = models.CharField(max_length=50, null=True, blank=True)
@@ -89,9 +94,12 @@ class EducationalInstitute(PolymorphicModel):
 
     is_approved = models.BooleanField(null=True, blank=True)
     date_added = models.DateField(auto_now_add=True)
-    owner = models.ForeignKey(User, related_name='owned_institutes', on_delete=models.SET_NULL, null=True, blank=True)
-    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    admins = models.ManyToManyField(User, related_name='institutes', blank=True)
+    owner = models.ForeignKey(User, related_name='owned_institutes',
+                              on_delete=models.SET_NULL, null=True, blank=True)
+    creator = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True)
+    admins = models.ManyToManyField(
+        User, related_name='institutes', blank=True)
 
     objects = InstituteManager()
 
@@ -117,8 +125,10 @@ class School(EducationalInstitute):
 
     principal_name = models.CharField(max_length=30, null=True, blank=True)
     principal_phone = models.CharField(max_length=15, null=True, blank=True)
-    school_type = models.CharField(max_length=15, null=True, blank=True, choices=SchoolType.choices)
-    gender_type = models.CharField(max_length=10, null=True, blank=True, choices=Gender.choices, default='Male')
+    school_type = models.CharField(
+        max_length=15, null=True, blank=True, choices=SchoolType.choices)
+    gender_type = models.CharField(
+        max_length=10, null=True, blank=True, choices=Gender.choices, default='Male')
 
 
 class University(EducationalInstitute):
@@ -130,10 +140,12 @@ class Studentship(PolymorphicModel):
         School = 'School'
         Academic = 'Academic'
 
-    studentship_type = models.CharField(max_length=10, null=False, blank=False, choices=StudentshipType.choices)
+    studentship_type = models.CharField(
+        max_length=10, null=False, blank=False, choices=StudentshipType.choices)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
-    document = models.FileField(upload_to='studentship_documents/', null=True, blank=True)
+    document = models.FileField(
+        upload_to='studentship_documents/', null=True, blank=True)
     is_document_verified = models.BooleanField(default=False)
 
 
@@ -146,10 +158,14 @@ class SchoolStudentship(Studentship):
         TechnicalTraining = 'TechnicalTraining'
         Others = 'Others'
 
-    school = models.ForeignKey(School, related_name='students', on_delete=models.SET_NULL, null=True)
-    grade = models.IntegerField(null=True, blank=True, validators=[MaxValueValidator(12), MinValueValidator(0)])
-    major = models.CharField(max_length=25, null=True, blank=True, choices=Major.choices)
-    user = models.OneToOneField(User, related_name='school_studentship', on_delete=models.CASCADE, null=False)
+    school = models.ForeignKey(
+        School, related_name='students', on_delete=models.SET_NULL, null=True)
+    grade = models.IntegerField(null=True, blank=True, validators=[
+                                MaxValueValidator(12), MinValueValidator(0)])
+    major = models.CharField(max_length=25, null=True,
+                             blank=True, choices=Major.choices)
+    user = models.OneToOneField(
+        User, related_name='school_studentship', on_delete=models.CASCADE, null=False)
 
 
 class AcademicStudentship(Studentship):
@@ -159,15 +175,20 @@ class AcademicStudentship(Studentship):
         PHD = 'PHD'
         Postdoc = 'Postdoc'
 
-    university = models.ForeignKey(University, related_name='academic_students', on_delete=models.SET_NULL, null=True)
-    degree = models.CharField(max_length=15, null=True, blank=True, choices=Degree.choices)
+    university = models.ForeignKey(
+        University, related_name='academic_students', on_delete=models.SET_NULL, null=True)
+    degree = models.CharField(max_length=15, null=True,
+                              blank=True, choices=Degree.choices)
     university_major = models.CharField(max_length=30, null=True, blank=True)
-    user = models.OneToOneField(User, related_name='academic_studentship', on_delete=models.CASCADE, null=False)
+    user = models.OneToOneField(
+        User, related_name='academic_studentship', on_delete=models.CASCADE, null=False)
 
 
 class Player(models.Model):
-    user = models.ForeignKey(User, related_name='workshops', on_delete=models.CASCADE)
-    fsm = models.ForeignKey('fsm.FSM', related_name='users', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User, related_name='workshops', on_delete=models.CASCADE)
+    fsm = models.ForeignKey(
+        'fsm.FSM', related_name='users', on_delete=models.CASCADE)
     # purchase = models.ForeignKey('accounts.Purchase', related_name='purchase', on_delete=models.SET_NULL, null=True)
     # registration_receipt = models.ForeignKey('fsm.RegistrationReceipt', on_delete=models.SET_NULL, null=True, blank=True)
     scores = models.JSONField(null=True, blank=True)
@@ -183,7 +204,8 @@ class Player(models.Model):
 
 
 class Merchandise(models.Model):
-    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, unique=True,
+                          default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50, null=True, blank=True)
     price = models.IntegerField(default=0)
     discounted_price = models.IntegerField(default=None, null=True)
@@ -223,8 +245,10 @@ class DiscountCodeManager(models.Manager):
 
 # TODO - add date validators for datetime fields
 class DiscountCode(models.Model):
-    code = models.CharField(max_length=10, unique=True, null=False, blank=False)
-    value = models.FloatField(null=False, blank=False, validators=[percentage_validator])
+    code = models.CharField(max_length=10, unique=True,
+                            null=False, blank=False)
+    value = models.FloatField(null=False, blank=False,
+                              validators=[percentage_validator])
     expiration_date = models.DateTimeField(blank=True, null=True)
     remaining = models.IntegerField(default=1)
     user = models.ForeignKey(User, related_name='discount_codes', on_delete=models.CASCADE, null=True, blank=True,
@@ -250,7 +274,8 @@ class VoucherManager(models.Manager):
 
 
 class Voucher(models.Model):
-    user = models.ForeignKey(User, related_name='vouchers', on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(
+        User, related_name='vouchers', on_delete=models.CASCADE, null=False)
     code = models.CharField(max_length=10, null=False)
     amount = models.IntegerField(null=False)
     remaining = models.IntegerField(null=False)
@@ -277,7 +302,8 @@ class Voucher(models.Model):
 class PurchaseManager(models.Manager):
     @transaction.atomic
     def create_purchase(self, **args):
-        uniq_code = User.objects.make_random_password(length=PURCHASE_UNIQ_CODE_LENGTH)
+        uniq_code = User.objects.make_random_password(
+            length=PURCHASE_UNIQ_CODE_LENGTH)
         return super(PurchaseManager, self).create(**{'uniq_code': uniq_code, **args})
 
 
@@ -291,13 +317,16 @@ class Purchase(models.Model):
     ref_id = models.CharField(blank=True, max_length=100, null=True)
     amount = models.IntegerField()
     authority = models.CharField(blank=True, max_length=37, null=True)
-    status = models.CharField(blank=False, default=Status.Started, choices=Status.choices, max_length=25)
+    status = models.CharField(
+        blank=False, default=Status.Started, choices=Status.choices, max_length=25)
     created_at = models.DateTimeField(auto_now_add=True)
     uniq_code = models.CharField(blank=False, max_length=100, default="")
 
-    user = models.ForeignKey(User, related_name='purchases', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User, related_name='purchases', on_delete=models.CASCADE)
 
-    merchandise = models.ForeignKey(Merchandise, related_name='purchases', on_delete=models.SET_NULL, null=True)
+    merchandise = models.ForeignKey(
+        Merchandise, related_name='purchases', on_delete=models.SET_NULL, null=True)
     voucher = models.ForeignKey(Voucher, related_name='purchases', on_delete=models.SET_NULL, null=True,
                                 blank=True, default=None)
     discount_code = models.ForeignKey(DiscountCode, related_name='purchases', on_delete=models.SET_NULL, null=True,
@@ -316,14 +345,16 @@ class Purchase(models.Model):
 class VerificationCodeManager(models.Manager):
     @transaction.atomic
     def create_verification_code(self, phone_number, time_zone='Asia/Tehran'):
-        code = User.objects.make_random_password(length=SMS_CODE_LENGTH, allowed_chars='1234567890')
-        other_codes = VerificationCode.objects.filter(phone_number=phone_number, is_valid=True)
+        code = User.objects.make_random_password(
+            length=SMS_CODE_LENGTH, allowed_chars='1234567890')
+        other_codes = VerificationCode.objects.filter(
+            phone_number=phone_number, is_valid=True)
         for c in other_codes:
             c.is_valid = False
             c.save()
         verification_code = VerificationCode.objects.create(code=code, phone_number=phone_number,
                                                             expiration_date=datetime.now(pytz.timezone(time_zone)) +
-                                                                            timedelta(minutes=SMS_CODE_DELAY))
+                                                            timedelta(minutes=SMS_CODE_DELAY))
         return verification_code
 
 
@@ -357,7 +388,8 @@ class MemberManager(BaseUserManager):
 
 class Member(AbstractBaseUser):
     objects = MemberManager()
-    username = models.CharField(unique=True, max_length=15, blank=True, null=True)
+    username = models.CharField(
+        unique=True, max_length=15, blank=True, null=True)
     is_participant = models.BooleanField(default=True)
     is_mentor = models.BooleanField(default=False)
     is_event_owner = models.BooleanField(default=False)
@@ -379,12 +411,8 @@ class Member(AbstractBaseUser):
     is_anonymous = False
     is_authenticated = False
 
-
-
     class Meta:
         db_table = "auth_user"
 
     def __str__(self):
         return self.username
-
-

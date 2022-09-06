@@ -14,6 +14,8 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.parsers import MultiPartParser
 
 from accounts.models import User, SchoolStudentship, Studentship, AcademicStudentship
+from accounts.serializers import UserSerializer
+from accounts.utils import create_user, create_team
 from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
     RegistrationPerCitySerializer
@@ -197,7 +199,7 @@ def convert_with_punctuation_removal(string):
 class RegistrationAdminViewSet(GenericViewSet):
     queryset = RegistrationForm.objects.all()
     serializer_class = BatchRegistrationSerializer
-    parser_classes = [MultiPartParser]
+    # parser_classes = [MultiPartParser]
     permission_classes = [IsRegistrationFormModifier]
     my_tags = ['registration']
 
@@ -298,7 +300,7 @@ class RegistrationAdminViewSet(GenericViewSet):
 
     @action(detail=True, methods=['post'])
     @transaction.atomic
-    def csv_registration(self, request, pk=None):
+    def register_csv(self, request, pk=None):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             in_memory_file = request.data.get('file')
@@ -321,27 +323,10 @@ class RegistrationAdminViewSet(GenericViewSet):
                 chat_room = member['chat_room']
 
                 if team_name is not None:
-                    team = Team.objects.filter(
-                        name=team_name, registration_form=registration_form).first()
-                    if team is None:
-                        team = Team.objects.create(
-                            registration_form=registration_form)
-                        team.name = team_name
-                        team.save()
+                    team = create_team(team_name=team_name, registration_form=registration_form)
 
-                user = User.objects.filter(username=username).first()
-                if user is None:
-                    user = User.objects.create(
-                        username=username,
-                        first_name=first_name,
-                        last_name=last_name,
-                        phone_number=phone_number,
-                        password=make_password(password),
-                        gender=gender,
-                    )
-
-                user.password = make_password(password)
-                user.save()
+                user = create_user(grade=grade, last_name=last_name, first_name=first_name, gender=gender,
+                                   password=password, phone_number=phone_number, username=username)
 
                 if len(SchoolStudentship.objects.filter(user=user)) <= 0:
                     school_studentship = SchoolStudentship.objects.create(
@@ -386,3 +371,21 @@ class RegistrationAdminViewSet(GenericViewSet):
                     receipt.save()
 
             return Response("ok", status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def register_individual(self, request, pk=None):
+        serializer = UserSerializer(
+            data=request.data, context=self.get_serializer_context())
+        if serializer.is_valid(raise_exception=True):
+            username = request.data.get('username')
+            phone_number = request.data.get('phone_number')
+            password = request.data.get('password')
+            gender = request.data.get('gender')
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+
+            create_user(username=username, password=password, phone_number=phone_number, gender=gender,
+                        first_name=first_name, last_name=last_name)
+            return Response("ok", status=status.HTTP_200_OK)
+

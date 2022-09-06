@@ -18,8 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(max_length=15, required=True, validators=[phone_number_validator])
-    code_type = serializers.ChoiceField(choices=['changePass', 'verify'], required=False)
+    phone_number = serializers.CharField(
+        max_length=15, required=True, validators=[phone_number_validator])
+    code_type = serializers.ChoiceField(
+        choices=['changePass', 'verify'], required=False)
 
     def validate(self, attrs):
         code_type = attrs.get('code_type', None)
@@ -28,7 +30,8 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
                 raise NotFound(serialize_error('4008'))
         else:
             if code_type == 'verify':
-                raise ParseError(serialize_error('4004', params={'param1': attrs.get('phone_number')}))
+                raise ParseError(serialize_error(
+                    '4004', params={'param1': attrs.get('phone_number')}))
 
         return attrs
 
@@ -38,7 +41,8 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
 
 
 class VerificationCodeSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(max_length=15, required=True, validators=[phone_number_validator])
+    phone_number = serializers.CharField(
+        max_length=15, required=True, validators=[phone_number_validator])
     code = serializers.CharField(max_length=SMS_CODE_LENGTH, required=True)
     password = serializers.CharField(required=True)
 
@@ -50,7 +54,8 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         code = attrs.get("code", None)
         phone_number = attrs.get("phone_number", None)
-        verification_code = VerificationCode.objects.filter(phone_number=phone_number, code=code, is_valid=True).first()
+        verification_code = VerificationCode.objects.filter(
+            phone_number=phone_number, code=code, is_valid=True).first()
 
         if not verification_code:
             raise ParseError(serialize_error('4003'))
@@ -66,27 +71,33 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
+    phone_number = serializers.CharField(
+        max_length=15, required=False, validators=[phone_number_validator])
     password = serializers.CharField(write_only=True, required=False)
     username = serializers.CharField(required=False)
 
     def create(self, validated_data):
-        validated_data['password'] = make_password(validated_data.get('password'))
+        validated_data['password'] = make_password(
+            validated_data.get('password'))
         validated_data['username'] = validated_data.get('phone_number')
         instance = super().create(validated_data)
-        SchoolStudentship.objects.create(user=instance, studentship_type=Studentship.StudentshipType.School)
-        AcademicStudentship.objects.create(user=instance, studentship_type=Studentship.StudentshipType.Academic)
+        SchoolStudentship.objects.create(
+            user=instance, studentship_type=Studentship.StudentshipType.School)
+        AcademicStudentship.objects.create(
+            user=instance, studentship_type=Studentship.StudentshipType.Academic)
         return instance
 
     def update(self, instance, validated_data):
-        validated_data['password'] = make_password(validated_data.get('password'))
+        validated_data['password'] = make_password(
+            validated_data.get('password'))
         instance.password = validated_data.get('password')
         instance.save()
         return instance
 
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'first_name', 'last_name', 'password', 'username', 'email']
+        fields = ['id', 'phone_number', 'first_name',
+                  'last_name', 'password', 'username', 'email']
         read_only_fields = ['id']
 
 
@@ -97,7 +108,8 @@ class MentorSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
+    phone_number = serializers.CharField(
+        max_length=15, required=False, validators=[phone_number_validator])
     username = serializers.CharField(required=False)
 
     class Meta:
@@ -108,7 +120,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    phone_number = serializers.CharField(max_length=15, required=False, validators=[phone_number_validator])
+    phone_number = serializers.CharField(
+        max_length=15, required=False, validators=[phone_number_validator])
     password = serializers.CharField(write_only=True, required=True)
     username = serializers.CharField(required=False)
     email = serializers.EmailField(required=False)
@@ -124,8 +137,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             'password': attrs.get('password')
         }
         user = User.objects.filter(email=attrs.get('email')).first() \
-               or User.objects.filter(username=attrs.get('username')).first() \
-               or User.objects.filter(phone_number=attrs.get('phone_number')).first()
+            or User.objects.filter(username=attrs.get('username')).first() \
+            or User.objects.filter(phone_number=attrs.get('phone_number')).first()
         if user:
             credentials['username'] = user.username
             try:
@@ -138,15 +151,22 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class InstituteSerializer(serializers.ModelSerializer):
     principal_name = serializers.CharField(max_length=30, required=False)
-    principal_phone = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
-    phone_number = serializers.CharField(max_length=15, validators=[phone_number_validator], required=False)
-    school_type = serializers.ChoiceField(choices=School.SchoolType.choices, required=False)
-    gender_type = serializers.ChoiceField(choices=School.Gender.choices, required=False)
+    principal_phone = serializers.CharField(
+        max_length=15, validators=[phone_number_validator], required=False)
+    phone_number = serializers.CharField(max_length=15, validators=[
+                                         phone_number_validator], required=False)
+    school_type = serializers.ChoiceField(
+        choices=School.SchoolType.choices, required=False)
+    gender_type = serializers.ChoiceField(
+        choices=School.Gender.choices, required=False)
 
     is_approved = serializers.BooleanField(read_only=True)
-    creator = serializers.PrimaryKeyRelatedField(many=False, required=False, read_only=True)
-    owner = serializers.PrimaryKeyRelatedField(many=False, required=False, read_only=True)
-    admins = serializers.PrimaryKeyRelatedField(many=True, required=False, read_only=True)
+    creator = serializers.PrimaryKeyRelatedField(
+        many=False, required=False, read_only=True)
+    owner = serializers.PrimaryKeyRelatedField(
+        many=False, required=False, read_only=True)
+    admins = serializers.PrimaryKeyRelatedField(
+        many=True, required=False, read_only=True)
 
     def create(self, validated_data):
         institute_type = validated_data.get('institute_type', None)
@@ -166,13 +186,18 @@ class InstituteSerializer(serializers.ModelSerializer):
 
 
 class StudentshipSerializer(serializers.ModelSerializer):
-    university = serializers.PrimaryKeyRelatedField(many=False, queryset=University.objects.all(), required=False)
-    degree = serializers.ChoiceField(choices=AcademicStudentship.Degree.choices, required=False)
+    university = serializers.PrimaryKeyRelatedField(
+        many=False, queryset=University.objects.all(), required=False)
+    degree = serializers.ChoiceField(
+        choices=AcademicStudentship.Degree.choices, required=False)
     university_major = serializers.CharField(max_length=30, required=False)
 
-    school = serializers.PrimaryKeyRelatedField(many=False, queryset=School.objects.all(), required=False)
-    grade = serializers.IntegerField(required=False, validators=[grade_validator])
-    major = serializers.ChoiceField(choices=SchoolStudentship.Major.choices, required=False)
+    school = serializers.PrimaryKeyRelatedField(
+        many=False, queryset=School.objects.all(), required=False)
+    grade = serializers.IntegerField(
+        required=False, validators=[grade_validator])
+    major = serializers.ChoiceField(
+        choices=SchoolStudentship.Major.choices, required=False)
 
     def create(self, validated_data):
         studentship_type = validated_data.get('studentship_type', None)
@@ -199,7 +224,8 @@ class StudentshipSerializer(serializers.ModelSerializer):
         return attrs
 
     def to_representation(self, instance):
-        representation = super(StudentshipSerializer, self).to_representation(instance)
+        representation = super(StudentshipSerializer,
+                               self).to_representation(instance)
         del representation['polymorphic_ctype']
         return representation
 
@@ -215,19 +241,23 @@ class ProfileSerializer(serializers.ModelSerializer):
     academic_studentship = StudentshipSerializer(read_only=True)
 
     def to_representation(self, instance):
-        representation = super(ProfileSerializer, self).to_representation(instance)
+        representation = super(
+            ProfileSerializer, self).to_representation(instance)
         representation.pop('password')
         return representation
 
     class Meta:
         model = User
         fields = '__all__'
-        read_only_fields = ['id', 'school_studentship', 'academic_studentship', 'username', 'phone_number', 'password']
+        read_only_fields = ['id', 'school_studentship',
+                            'academic_studentship', 'username', 'phone_number', 'password']
 
 
 class MerchandiseSerializer(serializers.ModelSerializer):
-    price = serializers.IntegerField(required=True, validators=[price_validator])
-    discounted_price = serializers.IntegerField(required=False, validators=[price_validator])
+    price = serializers.IntegerField(
+        required=True, validators=[price_validator])
+    discounted_price = serializers.IntegerField(
+        required=False, validators=[price_validator])
 
     class Meta:
         model = Merchandise
@@ -236,7 +266,8 @@ class MerchandiseSerializer(serializers.ModelSerializer):
 
 
 class DiscountCodeSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(max_length=150, required=False, write_only=True)
+    username = serializers.CharField(
+        max_length=150, required=False, write_only=True)
 
     def validate(self, attrs):
         merchandise = attrs.get('merchandise', None)
@@ -251,11 +282,13 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop('username') if 'username' in validated_data.keys() else None
+        validated_data.pop(
+            'username') if 'username' in validated_data.keys() else None
         return DiscountCode.objects.create_discount_code(**validated_data)
 
     def to_representation(self, instance):
-        representation = super(DiscountCodeSerializer, self).to_representation(instance)
+        representation = super(DiscountCodeSerializer,
+                               self).to_representation(instance)
         representation['first_name'] = instance.user.first_name if instance.user else None
         representation['last_name'] = instance.user.last_name if instance.user else None
         representation['phone_number'] = instance.user.phone_number if instance.user else None
@@ -263,13 +296,16 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscountCode
-        fields = ['id', 'code', 'value', 'expiration_date', 'remaining', 'user', 'merchandise', 'username']
+        fields = ['id', 'code', 'value', 'expiration_date',
+                  'remaining', 'user', 'merchandise', 'username']
         read_only_fields = ['id', 'code']
 
 
 class DiscountCodeValidationSerializer(serializers.ModelSerializer):
-    merchandise = serializers.PrimaryKeyRelatedField(required=True, queryset=Merchandise.objects.all())
-    code = serializers.CharField(max_length=DISCOUNT_CODE_LENGTH, required=False)
+    merchandise = serializers.PrimaryKeyRelatedField(
+        required=True, queryset=Merchandise.objects.all())
+    code = serializers.CharField(
+        max_length=DISCOUNT_CODE_LENGTH, required=False)
 
     def validate(self, attrs):
         code = attrs.get('code', None)
@@ -304,7 +340,8 @@ class DiscountCodeValidationSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountCode
         fields = '__all__'
-        read_only_fields = ['id', 'value', 'expiration_date', 'remaining', 'user']
+        read_only_fields = ['id', 'value',
+                            'expiration_date', 'remaining', 'user']
         extra_kwargs = {
             'code': {'validators': []}
         }
@@ -315,3 +352,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         model = Purchase
         fields = '__all__'
         read_only_fields = ['id']
+
+
+class FileUploadSerializer(serializers.ModelSerializer):
+    file = serializers.FileField()
