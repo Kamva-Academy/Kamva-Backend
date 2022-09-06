@@ -33,7 +33,6 @@ MarkupPy==1.14
 MarkupSafe==2.0.1
 odfpy==1.4.1
 openpyxl==3.0.9
-pandas==1.4.3
 packaging==21.3
 Pillow==9.0.0
 psycopg2-binary==2.8.5
