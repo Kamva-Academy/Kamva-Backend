@@ -1,6 +1,4 @@
 import logging
-
-import pandas
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
 from drf_yasg.utils import swagger_auto_schema
@@ -13,7 +11,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from accounts.models import VerificationCode, User, File
+from accounts.models import VerificationCode, User
 from accounts.permissions import IsHimself
 from accounts.serializers import PhoneNumberSerializer, UserSerializer, VerificationCodeSerializer, AccountSerializer, \
     MyTokenObtainPairSerializer, FileUploadSerializer
@@ -41,9 +39,11 @@ class SendVerificationCode(GenericAPIView):
         serializer = PhoneNumberSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             phone_number = serializer.validated_data.get('phone_number', None)
-            verification_code = VerificationCode.objects.create_verification_code(phone_number=phone_number)
+            verification_code = VerificationCode.objects.create_verification_code(
+                phone_number=phone_number)
             try:
-                verification_code.send_sms(serializer.validated_data.get('code_type', None))
+                verification_code.send_sms(
+                    serializer.validated_data.get('code_type', None))
             except:
                 raise ServiceUnavailable(serialize_error('5000'))
             return Response({'detail': 'Verification code sent successfully'}, status=status.HTTP_200_OK)
@@ -94,7 +94,8 @@ class UserViewSet(ModelViewSet):
 
             phone_number = serializer.validated_data.get('phone_number', None)
             if User.objects.filter(phone_number__exact=phone_number).count() > 0:
-                raise ParseError(serialize_error('4004', {'param1': phone_number}))
+                raise ParseError(serialize_error(
+                    '4004', {'param1': phone_number}))
 
             serializer = AccountSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
@@ -192,32 +193,3 @@ def create_user(file, request):
     receipt.is_participating = True
     receipt.team = team
     receipt.save()
-
-
-class UploadFileView(GenericAPIView):
-    permission_classes = (permissions.AllowAny,)
-    serializer_class = FileUploadSerializer
-
-    @swagger_auto_schema(tags=['accounts'],
-                         responses={200: AccountSerializer,
-                                    400: "error code 4002 for len(code) < 5, 4003 for invalid & 4005 for expired code",
-                                    })
-    @transaction.atomic
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        file = serializer.validated_data['file']
-        reader = pandas.read_csv(file)
-        for _, row in reader.iterrows():
-            new_file = File(
-                username=row['username'],
-                team_id=row["team id"],
-                first_name=row['first name'],
-                last_name=row["last name"],
-                email=row["email"],
-                phone_number=row["phone number"],
-            )
-            new_file.save()
-            create_user(new_file, request)
-        return Response({"status": "success"},
-                        status.HTTP_201_CREATED)
