@@ -31,6 +31,7 @@ class TeamViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, ]
     filterset_class = TeamFilterSet
     my_tags = ['teams']
+    pagination_class = None
 
     serializer_action_classes = {
         'invite_member': InvitationSerializer
