@@ -7,7 +7,7 @@ a.idea/*
 .venv/*
 .env/*
 static/*
-staticfiles/*
+# staticfiles/*
 media/*
 venv/*
 db.sqlite3
