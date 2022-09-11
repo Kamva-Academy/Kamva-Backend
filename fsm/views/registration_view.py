@@ -25,6 +25,7 @@ from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invit
 from fsm.permissions import IsRegistrationFormModifier
 from fsm.serializers.serializers import BatchRegistrationSerializer
 from fsm.serializers.team_serializer import InvitationSerializer
+from fsm.pagination import RegistrationReceiptSetPagination
 
 
 class RegistrationViewSet(ModelViewSet):
@@ -66,8 +67,13 @@ class RegistrationViewSet(ModelViewSet):
     @swagger_auto_schema(responses={200: RegistrationInfoSerializer})
     @action(detail=True, methods=['get'])
     def receipts(self, request, pk=None):
-        return Response(data=RegistrationInfoSerializer(self.get_object().registration_receipts, many=True).data,
-                        status=status.HTTP_200_OK)
+        queryset = self.get_object().registration_receipts.all()
+        paginator = RegistrationReceiptSetPagination()
+        page_queryset = paginator.paginate_queryset(queryset, request)
+        if page_queryset is not None:
+            serializer = RegistrationInfoSerializer(page_queryset, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(responses={200: RegistrationPerCitySerializer})
     @action(detail=True, methods=['get'])
@@ -323,7 +329,8 @@ class RegistrationAdminViewSet(GenericViewSet):
                 chat_room = member['chat_room']
 
                 if team_name is not None:
-                    team = create_team(team_name=team_name, registration_form=registration_form)
+                    team = create_team(team_name=team_name,
+                                       registration_form=registration_form)
 
                 user = create_user(grade=grade, last_name=last_name, first_name=first_name, gender=gender,
                                    password=password, phone_number=phone_number, username=username)
@@ -388,4 +395,3 @@ class RegistrationAdminViewSet(GenericViewSet):
             create_user(username=username, password=password, phone_number=phone_number, gender=gender,
                         first_name=first_name, last_name=last_name)
             return Response("ok", status=status.HTTP_200_OK)
-
