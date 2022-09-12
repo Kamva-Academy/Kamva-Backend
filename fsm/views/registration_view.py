@@ -232,23 +232,6 @@ class RegistrationAdminViewSet(GenericViewSet):
                                        registration_form=registration_form)
 
                 user = create_or_update_user(**data)
-
-                if len(SchoolStudentship.objects.filter(user=user)) <= 0:
-                    school_studentship = SchoolStudentship.objects.create(
-                        studentship_type=Studentship.StudentshipType.School,
-                        user=user,
-                        major=MAJOR_MAPPING[member['major']] if 'major' in member.keys() else MAJOR_MAPPING[
-                            'ریاضی'],
-                        grade=grade,
-                        is_document_verified=True,
-                    )
-
-                if len(AcademicStudentship.objects.filter(user=user)) <= 0:
-                    academic_studentship = AcademicStudentship.objects.create(
-                        studentship_type=Studentship.StudentshipType.Academic,
-                        user=user,
-                    )
-
                 receipt = create_registration_receipt(user, registration_form)
 
                 if team_name is not None and team_name != "":

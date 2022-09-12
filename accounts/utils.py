@@ -28,7 +28,6 @@ def find_registration_receipt(user, registration_form):
 
 
 def create_or_update_user(**data):
-    print("************", data)
     serializer = AccountSerializer(data=data)
     serializer.is_valid(raise_exception=True)
     validated_data = serializer.validated_data
@@ -36,7 +35,6 @@ def create_or_update_user(**data):
         Q(username=validated_data.get('username'))).first()
     user2 = User.objects.filter(
         Q(phone_number=validated_data.get('phone_number'))).first()
-    print(user1, user2)
     if user1 != user2:
         raise ParseError(serialize_error('4113'))
     elif user1 and user2:
