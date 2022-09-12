@@ -3,9 +3,10 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ParseError
 
+from accounts.serializers import AccountSerializer
 from accounts.models import User
 from errors.error_codes import serialize_error
-from fsm.models import RegistrationReceipt, Team
+from fsm.models import RegistrationReceipt, Team, AnswerSheet
 
 
 def find_user(data):
@@ -26,32 +27,39 @@ def find_registration_receipt(user, registration_form):
     return RegistrationReceipt.objects.filter(user=user, answer_sheet_of=registration_form).first()
 
 
-def create_user(**data):
-    username = data.get('username', None)
-    phone_number = data.get('phone_number', None)
-    password = data.get('password', None)
-    first_name = data.get('first_name', None)
-    last_name = data.get('last_name', None)
-    gender = data.get('gender', None)
-
-    if username is None or phone_number is None or first_name is None or last_name is None:
+def create_or_update_user(**data):
+    print("************", data)
+    serializer = AccountSerializer(data=data)
+    serializer.is_valid(raise_exception=True)
+    validated_data = serializer.validated_data
+    user1 = User.objects.filter(
+        Q(username=validated_data.get('username'))).first()
+    user2 = User.objects.filter(
+        Q(phone_number=validated_data.get('phone_number'))).first()
+    print(user1, user2)
+    if user1 != user2:
         raise ParseError(serialize_error('4113'))
+    elif user1 and user2:
+        serializer.update(user1, validated_data)
+        return user1
+    else:
+        return serializer.save()
 
-    user = User.objects.filter(username=username).first()
-    if user is None:
-        user = User.objects.create(
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            phone_number=phone_number,
-            password=make_password(password),
-            gender=gender,
+
+def create_registration_receipt(user, registration_form):
+    receipt = RegistrationReceipt.objects.filter(
+        answer_sheet_of=registration_form, user=user).first()
+
+    if receipt is None:
+        receipt = RegistrationReceipt.objects.create(
+            answer_sheet_of=registration_form,
+            answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
+            user=user,
+            status=RegistrationReceipt.RegistrationStatus.Accepted,
+            is_participating=True,
         )
-    if password is None:
-        user.password = make_password(password)
-        user.save()
 
-    return user
+    return receipt
 
 
 def create_team(**data):
