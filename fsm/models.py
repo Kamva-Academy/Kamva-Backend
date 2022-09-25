@@ -492,6 +492,7 @@ class Widget(PolymorphicModel):
         UploadFileProblem = 'UploadFileProblem'
 
     name = models.CharField(max_length=100, null=True, blank=True)
+    file = models.FileField(null=True, blank=True)
     paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='widgets')
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices, null=False, blank=False)
     creator = models.ForeignKey('accounts.User', related_name='widgets', null=True, blank=True,
@@ -505,7 +506,6 @@ class Widget(PolymorphicModel):
 
 class Description(Widget):
     text = models.TextField()
-    is_spoilbox = models.BooleanField(default=False)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
