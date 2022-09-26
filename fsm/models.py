@@ -8,7 +8,8 @@ class Paper(PolymorphicModel):
         Hint = 'Hint'
         Article = 'Article'
 
-    paper_type = models.CharField(max_length=25, blank=False, choices=PaperType.choices)
+    paper_type = models.CharField(
+        max_length=25, blank=False, choices=PaperType.choices)
     creator = models.ForeignKey('accounts.User', related_name='papers', null=True, blank=True,
                                 on_delete=models.SET_NULL)
     since = models.DateTimeField(null=True, blank=True)
@@ -42,7 +43,8 @@ class AnswerSheet(PolymorphicModel):
         StateAnswerSheet = "StateAnswerSheet"
 
     # form = models.ForeignKey(Form, null=True, default=None, on_delete=models.SET_NULL, related_name='answer_sheets')
-    answer_sheet_type = models.CharField(max_length=25, blank=False, choices=AnswerSheetType.choices)
+    answer_sheet_type = models.CharField(
+        max_length=25, blank=False, choices=AnswerSheetType.choices)
 
     def delete(self):
         self.answers.clear()
@@ -76,17 +78,21 @@ class RegistrationForm(Paper):
         Academic = 'Academic'
         All = 'All'
 
-    min_grade = models.IntegerField(default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
-    max_grade = models.IntegerField(default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
+    min_grade = models.IntegerField(
+        default=0, validators=[MaxValueValidator(12), MinValueValidator(0)])
+    max_grade = models.IntegerField(
+        default=12, validators=[MaxValueValidator(12), MinValueValidator(0)])
 
     # TODO - add filter for audience type
 
     conditions = models.TextField(null=True, blank=True)
 
-    accepting_status = models.CharField(max_length=15, default='AutoAccept', choices=AcceptingStatus.choices)
+    accepting_status = models.CharField(
+        max_length=15, default='AutoAccept', choices=AcceptingStatus.choices)
     gender_partition_status = models.CharField(max_length=25, default='BothPartitioned',
                                                choices=GenderPartitionStatus.choices)
-    audience_type = models.CharField(max_length=50, default='Student', choices=AudienceType.choices)
+    audience_type = models.CharField(
+        max_length=50, default='Student', choices=AudienceType.choices)
 
     has_certificate = models.BooleanField(default=True)
     certificates_ready = models.BooleanField(default=False)
@@ -177,10 +183,13 @@ class RegistrationReceipt(AnswerSheet):
                                         on_delete=models.SET_NULL)
     user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
                              null=True, blank=True)
-    status = models.CharField(max_length=25, blank=False, default='Waiting', choices=RegistrationStatus.choices)
+    status = models.CharField(max_length=25, blank=False,
+                              default='Waiting', choices=RegistrationStatus.choices)
     is_participating = models.BooleanField(default=False)
-    team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL, related_name='members', null=True, blank=True)
-    certificate = models.FileField(upload_to='certificates/', null=True, blank=True, default=None)
+    team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL,
+                             related_name='members', null=True, blank=True)
+    certificate = models.FileField(
+        upload_to='certificates/', null=True, blank=True, default=None)
 
     @property
     def purchases(self):
@@ -224,7 +233,8 @@ class TeamManager(models.Manager):
 
 
 class Team(models.Model):
-    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, unique=True,
+                          default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200, null=True, blank=True)
     registration_form = models.ForeignKey(RegistrationForm, related_name='teams', null=True, blank=True,
                                           on_delete=models.SET_NULL)
@@ -245,9 +255,12 @@ class Invitation(models.Model):
         Rejected = "Rejected"
         Accepted = "Accepted"
 
-    invitee = models.ForeignKey(RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team_members')
-    status = models.CharField(max_length=15, default=InvitationStatus.Waiting, choices=InvitationStatus.choices)
+    invitee = models.ForeignKey(
+        RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
+    team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name='team_members')
+    status = models.CharField(
+        max_length=15, default=InvitationStatus.Waiting, choices=InvitationStatus.choices)
 
     # class Meta:
     #     unique_together = ('invitee', 'team')
@@ -274,7 +287,8 @@ class Event(models.Model):
     is_approved = models.BooleanField(default=False)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
-    event_type = models.CharField(max_length=40, default=EventType.Individual, choices=EventType.choices)
+    event_type = models.CharField(
+        max_length=40, default=EventType.Individual, choices=EventType.choices)
     team_size = models.IntegerField(default=3)
     maximum_participant = models.IntegerField(null=True, blank=True)
     accessible_after_closure = models.BooleanField(default=False)
@@ -285,7 +299,8 @@ class Event(models.Model):
     @property
     def modifiers(self):
         modifiers = {self.creator} if self.creator is not None else set()
-        modifiers |= set(self.holder.admins.all()) if self.holder is not None else set()
+        modifiers |= set(self.holder.admins.all()
+                         ) if self.holder is not None else set()
         return modifiers
 
     @property
@@ -332,17 +347,20 @@ class FSM(models.Model):
                                 blank=True)
     holder = models.ForeignKey('accounts.EducationalInstitute', related_name='fsms', on_delete=models.SET_NULL,
                                null=True, blank=True)
-    mentors = models.ManyToManyField('accounts.User', related_name='fsms', blank=True)
+    mentors = models.ManyToManyField(
+        'accounts.User', related_name='fsms', blank=True)
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
+    cover_page = models.ImageField(
+        upload_to='workshop/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     first_state = models.OneToOneField('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                        related_name='my_fsm')
     fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
                                          choices=FSMLearningType.choices)
-    fsm_p_type = models.CharField(max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
+    fsm_p_type = models.CharField(
+        max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
     lock = models.CharField(max_length=10, null=True, blank=True)
     team_size = models.IntegerField(default=3)
 
@@ -356,15 +374,19 @@ class FSM(models.Model):
     @property
     def modifiers(self):
         modifiers = {self.creator} if self.creator is not None else set()
-        modifiers |= set(self.holder.admins.all()) if self.holder is not None else set()
+        modifiers |= set(self.holder.admins.all()
+                         ) if self.holder is not None else set()
         modifiers |= set(self.mentors.all())
         return modifiers
 
 
 class Player(models.Model):
-    user = models.ForeignKey(User, related_name='players', on_delete=models.CASCADE)
-    fsm = models.ForeignKey(FSM, related_name='players', on_delete=models.CASCADE)
-    receipt = models.ForeignKey(RegistrationReceipt, related_name='players', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User, related_name='players', on_delete=models.CASCADE)
+    fsm = models.ForeignKey(FSM, related_name='players',
+                            on_delete=models.CASCADE)
+    receipt = models.ForeignKey(
+        RegistrationReceipt, related_name='players', on_delete=models.CASCADE)
     current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='players')
     last_visit = models.DateTimeField(null=True, blank=True)
@@ -383,7 +405,8 @@ class Player(models.Model):
 
 class State(Paper):
     name = models.TextField(null=True, blank=True)
-    fsm = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='states')
+    fsm = models.ForeignKey(
+        FSM, on_delete=models.CASCADE, related_name='states')
 
     @transaction.atomic
     def delete(self):
@@ -406,7 +429,8 @@ class State(Paper):
 #
 
 class Hint(Paper):
-    reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='hints')
+    reference = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name='hints')
 
 
 class Tag(models.Model):
@@ -420,7 +444,8 @@ class Tag(models.Model):
 class Article(Paper):
     name = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    cover_page = models.ImageField(upload_to='workshop/', null=True, blank=True)
+    cover_page = models.ImageField(
+        upload_to='workshop/', null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name='articles')
     is_draft = models.BooleanField(default=True)
     publisher = models.ForeignKey('accounts.EducationalInstitute', related_name='articles', on_delete=models.SET_NULL,
@@ -446,8 +471,10 @@ class EdgeManager(models.Manager):
 
 # from tail to head
 class Edge(models.Model):
-    tail = models.ForeignKey(State, on_delete=models.CASCADE, related_name='outward_edges')
-    head = models.ForeignKey(State, on_delete=models.CASCADE, related_name='inward_edges')
+    tail = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name='outward_edges')
+    head = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name='inward_edges')
     is_back_enabled = models.BooleanField(default=True)
     min_score = models.FloatField(default=0.0)
     cost = models.FloatField(default=0.0)
@@ -467,8 +494,10 @@ class Edge(models.Model):
 
 
 class PlayerHistory(models.Model):
-    player = models.ForeignKey('fsm.Player', on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name='player_histories')
+    player = models.ForeignKey(
+        'fsm.Player', on_delete=models.CASCADE, related_name='histories')
+    state = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name='player_histories')
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     entered_by_edge = models.ForeignKey(Edge, related_name='histories', default=None, null=True, blank=True,
@@ -492,9 +521,11 @@ class Widget(PolymorphicModel):
         UploadFileProblem = 'UploadFileProblem'
 
     name = models.CharField(max_length=100, null=True, blank=True)
-    file = models.FileField(null=True, blank=True)
-    paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='widgets')
-    widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices, null=False, blank=False)
+    file = models.FileField(null=True, blank=True, upload_to='events-files/')
+    paper = models.ForeignKey(
+        Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='widgets')
+    widget_type = models.CharField(
+        max_length=30, choices=WidgetTypes.choices, null=False, blank=False)
     creator = models.ForeignKey('accounts.User', related_name='widgets', null=True, blank=True,
                                 on_delete=models.SET_NULL)
     duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
@@ -502,6 +533,10 @@ class Widget(PolymorphicModel):
 
     class Meta:
         order_with_respect_to = 'paper'
+
+    def make_file_empty(self):
+        self.file = None
+        self.save()
 
 
 class Description(Widget):
@@ -512,14 +547,14 @@ class Description(Widget):
 
 
 class Game(Widget):
-    link = models.TextField()
+    link = models.URLField()
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Video(Widget):
-    link = models.TextField()
+    link = models.URLField(null=True, blank=True)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -533,7 +568,7 @@ class Aparat(Widget):
 
 
 class Image(Widget):
-    link = models.TextField()
+    link = models.URLField(null=True, blank=True)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -552,7 +587,8 @@ class Problem(Widget):
 
     def unfinalize_older_answers(self, user):
         if isinstance(self.paper, State):
-            teammates = Team.objects.get_teammates_from_widget(user=user, widget=self)
+            teammates = Team.objects.get_teammates_from_widget(
+                user=user, widget=self)
             older_answers = PROBLEM_ANSWER_MAPPING[self.widget_type].objects.filter(problem=self, is_final_answer=True,
                                                                                     submitted_by__in=teammates)
             for a in older_answers:
@@ -572,7 +608,8 @@ class BigAnswerProblem(Problem):
 
 
 class MultiChoiceProblem(Problem):
-    max_choices = models.IntegerField(validators=[MinValueValidator(0)], default=1)
+    max_choices = models.IntegerField(
+        validators=[MinValueValidator(0)], default=1)
 
 
 class UploadFileProblem(Problem):
@@ -595,7 +632,8 @@ class Answer(PolymorphicModel):
         MultiChoiceAnswer = 'MultiChoiceAnswer'
         UploadFileAnswer = 'UploadFileAnswer'
 
-    answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices, null=False, blank=False)
+    answer_type = models.CharField(
+        max_length=20, choices=AnswerTypes.choices, null=False, blank=False)
     answer_sheet = models.ForeignKey(AnswerSheet, related_name='answers', null=True, blank=True,
                                      on_delete=models.SET_NULL)
     submitted_by = models.ForeignKey('accounts.User', related_name='submitted_answers',
@@ -636,8 +674,10 @@ class BigAnswer(Answer):
 
 
 class ChoiceSelection(models.Model):
-    multi_choice_answer = models.ForeignKey('MultiChoiceAnswer', on_delete=models.CASCADE)
-    choice = models.ForeignKey(Choice, on_delete=models.CASCADE, related_name='selections')
+    multi_choice_answer = models.ForeignKey(
+        'MultiChoiceAnswer', on_delete=models.CASCADE)
+    choice = models.ForeignKey(
+        Choice, on_delete=models.CASCADE, related_name='selections')
 
 
 class MultiChoiceAnswer(Answer):
@@ -669,7 +709,8 @@ class MultiChoiceAnswer(Answer):
 class UploadFileAnswer(Answer):
     problem = models.ForeignKey('fsm.UploadFileProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
-    answer_file = models.FileField(upload_to='answers', max_length=4000, blank=False)
+    answer_file = models.FileField(
+        upload_to='answers', max_length=4000, blank=False)
 
 
 class Font(models.Model):
@@ -684,13 +725,16 @@ class Font(models.Model):
 
 
 class CertificateTemplate(models.Model):
-    certificate_type = models.CharField(max_length=50, null=True, blank=True)  # i.e. gold, silver, etc.
-    template_file = models.FileField(upload_to='certificate_templates/', null=True, blank=True)
+    # i.e. gold, silver, etc.
+    certificate_type = models.CharField(max_length=50, null=True, blank=True)
+    template_file = models.FileField(
+        upload_to='certificate_templates/', null=True, blank=True)
     name_X = models.IntegerField(null=True, blank=True, default=None)
     name_Y = models.IntegerField(null=True, blank=True, default=None)
     registration_form = models.ForeignKey(RegistrationForm, on_delete=models.CASCADE,
                                           related_name='certificate_templates')
-    font = models.ForeignKey(Font, on_delete=models.SET_NULL, related_name='templates', null=True)
+    font = models.ForeignKey(
+        Font, on_delete=models.SET_NULL, related_name='templates', null=True)
     font_size = models.IntegerField(default=100)
 
 
@@ -704,11 +748,14 @@ PROBLEM_ANSWER_MAPPING = {
 
 # ---------
 class SubmittedAnswer(models.Model):
-    player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='submitted_answers')
+    player = models.ForeignKey(
+        'accounts.Player', on_delete=models.CASCADE, related_name='submitted_answers')
     publish_date = models.DateTimeField(null=True, blank=True)
     # team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='answers')
-    answer = models.OneToOneField(Answer, null=True, on_delete=models.CASCADE, unique=True)
-    problem = models.ForeignKey(Problem, null=True, on_delete=models.CASCADE, related_name='submitted_answers')
+    answer = models.OneToOneField(
+        Answer, null=True, on_delete=models.CASCADE, unique=True)
+    problem = models.ForeignKey(
+        Problem, null=True, on_delete=models.CASCADE, related_name='submitted_answers')
 
     def xanswer(self):
         try:
@@ -718,8 +765,10 @@ class SubmittedAnswer(models.Model):
 
 
 class PlayerWorkshop(models.Model):
-    player = models.ForeignKey('accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
-    workshop = models.ForeignKey(FSM, on_delete=models.CASCADE, related_name='player_workshop')
+    player = models.ForeignKey(
+        'accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
+    workshop = models.ForeignKey(
+        FSM, on_delete=models.CASCADE, related_name='player_workshop')
     current_state = models.ForeignKey(State, null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='player_workshop')
     last_visit = models.DateTimeField(null=True, blank=True)

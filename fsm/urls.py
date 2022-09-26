@@ -15,17 +15,22 @@ from .views.team_view import *
 
 router = DefaultRouter()
 
-urlpatterns = []
+urlpatterns = [
+    path('widget/upload_widget_file/<int:widget_id>/', upload_widget_file),
+]
 
 router.register(r'registration', RegistrationViewSet, basename='registration')
-router.register(r'registration', RegistrationAdminViewSet, basename='registration_admin')
-router.register(r'certificate_templates', CertificateTemplateViewSet, basename='certificate_templates')
+router.register(r'registration', RegistrationAdminViewSet,
+                basename='registration_admin')
+router.register(r'certificate_templates',
+                CertificateTemplateViewSet, basename='certificate_templates')
 router.register(r'fonts', FontViewSet, basename='fonts')
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'receipts', RegistrationReceiptViewSet, basename='receipts')
 router.register(r'team', TeamViewSet, basename='teams')
 router.register(r'invitations', InvitationViewSet, basename='invitations')
-router.register(r'upload_answer', UploadAnswerViewSet, basename='upload_answer')
+router.register(r'upload_answer', UploadAnswerViewSet,
+                basename='upload_answer')
 router.register(r'fsm', FSMViewSet, basename='fsms')
 router.register(r'state', StateViewSet, basename='states')
 router.register(r'edge', EdgeViewSet, basename='edges')

@@ -77,12 +77,14 @@ class GameSerializer(WidgetSerializer):
 
 
 class VideoSerializer(WidgetSerializer):
+    link = serializers.URLField(required=False)
+
     def create(self, validated_data):
         return super(VideoSerializer, self).create({'widget_type': Widget.WidgetTypes.Video, **validated_data})
 
     class Meta:
         model = Video
-        fields = ['id', 'name', 'paper', 'widget_type',
+        fields = ['id', 'name', 'file', 'paper', 'widget_type',
                   'creator', 'duplication_of', 'link']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
@@ -99,12 +101,15 @@ class AparatSerializer(WidgetSerializer):
 
 
 class ImageSerializer(WidgetSerializer):
+    link = serializers.URLField(required=False)
+
     def create(self, validated_data):
         return super(ImageSerializer, self).create({'widget_type': Widget.WidgetTypes.Image, **validated_data})
 
     class Meta:
         model = Image
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'link']
+        fields = ['id', 'name', 'file', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'link']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -115,8 +120,8 @@ class DescriptionSerializer(WidgetSerializer):
 
     class Meta:
         model = Description
-        fields = ['id', 'name', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'text', 'is_spoilbox']
+        fields = ['id', 'name', 'file', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'text']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
