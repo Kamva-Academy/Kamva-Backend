@@ -521,7 +521,7 @@ class Widget(PolymorphicModel):
         UploadFileProblem = 'UploadFileProblem'
 
     name = models.CharField(max_length=100, null=True, blank=True)
-    file = models.FileField(null=True, blank=True, upload_to='events-files/')
+    file = models.FileField(null=True, blank=True, upload_to='events/')
     paper = models.ForeignKey(
         Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='widgets')
     widget_type = models.CharField(
