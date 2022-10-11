@@ -23,7 +23,7 @@ DATABASES = {
     }
 }
 
-STATIC_ROOT = get_environment_var('STATIC_ROOT', 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, get_environment_var('STATIC_ROOT_FILE_NAME', 'staticfiles'))
 LOG_LEVEL = get_environment_var('LOG_LEVEL', 'INFO')
 
 LOGGING = {
