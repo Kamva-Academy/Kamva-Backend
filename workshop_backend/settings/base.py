@@ -30,6 +30,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Application definition
 
 INSTALLED_APPS = [
+    "minio_storage",
     'workshop_backend.apps.MyAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
