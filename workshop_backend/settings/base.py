@@ -30,25 +30,25 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Application definition
 
 INSTALLED_APPS = [
-    "minio_storage",
-    'workshop_backend.apps.MyAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'import_export',
     'rest_framework',
     'rest_framework.authtoken',
-    'accounts',
+    'import_export',
     'corsheaders',
-    'fsm',
-    'scoring',
     'drf_yasg',
     'polymorphic',
     'django_extensions',
     'django_filters',
-    'event_metadata',
+    "minio_storage",
+    'workshop_backend.apps.MyAdminConfig',
+    'accounts.apps.AccountConfig',
+    'fsm.apps.FsmConfig',
+    'scoring.apps.ScoringConfig',
+    'event_metadata.apps.EventMetadataConfig',
 ]
 
 # SITE_ID=1
