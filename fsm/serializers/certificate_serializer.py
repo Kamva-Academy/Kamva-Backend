@@ -100,7 +100,7 @@ def create_certificate(certificate_template, full_name):
         image_io = BytesIO()
         image.save(image_io, format='png')
         certificate_file_name = f'{certificate_template.template_file.name}-{full_name}.{extension}'
-        image_file = InMemoryUploadedFile(image_io, None, certificate_file_name, f'image/{extension}', image_to.tell(), None)
+        image_file = InMemoryUploadedFile(image_io, None, certificate_file_name, f'image/{extension}', image_io.tell(), None)
 
         return image_file
 
