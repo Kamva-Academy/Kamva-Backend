@@ -86,3 +86,5 @@ PAYMENT = {
     'FRONT_HOST_FAILURE': 'https://academy.rastaiha.ir/message/payment/failure',
 }
 SWAGGER_URL = None
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://kamva-backend.darkube.app']

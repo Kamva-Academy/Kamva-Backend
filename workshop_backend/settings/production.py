@@ -105,6 +105,9 @@ PAYMENT = {
 
 SWAGGER_URL = 'https://backend.rastaiha.ir/api/'
 
+CSRF_TRUSTED_ORIGINS = get_environment_var('CSRF_TRUSTED_ORIGINS', [])
+
+
 DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
 # STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
 MINIO_STORAGE_ENDPOINT = get_environment_var('MINIO_STORAGE_ENDPOINT', None)
