@@ -10,7 +10,7 @@
 
 ## APIs
 
-To see apis check http://127.0.0.1:8000/api after running projec on local
+To see apis check http://127.0.0.1:8000/api after running the project locally
  
 ## Deployment
 
