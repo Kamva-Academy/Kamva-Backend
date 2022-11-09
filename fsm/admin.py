@@ -9,6 +9,7 @@ from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, Regi
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag, Aparat
 
+from fsm.utils import get_django_file
 
 class EdgeAdmin(admin.ModelAdmin):
     model = Edge
@@ -410,9 +411,16 @@ class VideoCustomAdmin(admin.ModelAdmin):
     list_filter = ['name']
     search_fields = ['name']
 
+    def download_files(self, request, queryset):
+        for image in queryset:
+            image.file = get_django_file(image.link)
+            image.save()
+
+    actions = [download_files]
+
 
 @admin.register(Aparat)
-class VideoCustomAdmin(admin.ModelAdmin):
+class AparatCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']
     search_fields = ['name']
@@ -423,6 +431,13 @@ class ImageCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']
     search_fields = ['name']
+
+    def download_files(self, request, queryset):
+        for image in queryset:
+            image.file = get_django_file(image.link)
+            image.save()
+
+    actions = [download_files]
 
 
 @admin.register(Hint)
