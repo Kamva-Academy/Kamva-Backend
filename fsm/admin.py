@@ -407,12 +407,12 @@ class GameCustomAdmin(admin.ModelAdmin):
 
 
 def download_files_from_links(self, request, queryset):
-    for image in queryset:
+    for media in queryset:
         try:
-            link_file = get_django_file(image.link)
-            if not image.file:
-                image.file = link_file
-                image.save()
+            if not media.file:
+                link_file = get_django_file(media.link)
+                media.file = link_file
+                media.save()
         except:
             pass
 
