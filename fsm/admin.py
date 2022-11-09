@@ -413,7 +413,8 @@ class VideoCustomAdmin(admin.ModelAdmin):
 
     def download_files(self, request, queryset):
         for image in queryset:
-            image.file = get_django_file(image.link)
+            if(image.link and not image.file):
+                image.file = get_django_file(image.link)
             image.save()
 
     actions = [download_files]
@@ -434,7 +435,8 @@ class ImageCustomAdmin(admin.ModelAdmin):
 
     def download_files(self, request, queryset):
         for image in queryset:
-            image.file = get_django_file(image.link)
+            if(image.link and not image.file):
+                image.file = get_django_file(image.link)
             image.save()
 
     actions = [download_files]
