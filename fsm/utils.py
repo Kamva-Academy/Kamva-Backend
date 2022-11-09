@@ -7,7 +7,8 @@ import os
 def get_django_file(url: str):
     r = requests.get(url, allow_redirects=True)
 
-    print(r.content)
+    if not r.ok:
+        raise Exception("fail to fetch")
 
     file_name = url.rsplit('/', 1)[1]
     file_type = r.headers.get('content-type')

@@ -11,6 +11,7 @@ from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, Regi
 
 from fsm.utils import get_django_file
 
+
 class EdgeAdmin(admin.ModelAdmin):
     model = Edge
     list_display = ['id', 'text', 'head_name', 'tail_name', 'is_visible']
@@ -405,19 +406,23 @@ class GameCustomAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
 
+def download_files_from_links(self, request, queryset):
+    for image in queryset:
+        try:
+            link_file = get_django_file(image.link)
+            if not image.file:
+                image.file = link_file
+                image.save()
+        except:
+            pass
+
+
 @admin.register(Video)
 class VideoCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']
     search_fields = ['name']
-
-    def download_files(self, request, queryset):
-        for image in queryset:
-            if(image.link and not image.file):
-                image.file = get_django_file(image.link)
-            image.save()
-
-    actions = [download_files]
+    actions = [download_files_from_links]
 
 
 @admin.register(Aparat)
@@ -432,14 +437,7 @@ class ImageCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name']
     search_fields = ['name']
-
-    def download_files(self, request, queryset):
-        for image in queryset:
-            if(image.link and not image.file):
-                image.file = get_django_file(image.link)
-            image.save()
-
-    actions = [download_files]
+    actions = [download_files_from_links]
 
 
 @admin.register(Hint)
