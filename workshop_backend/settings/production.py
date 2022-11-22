@@ -1,8 +1,10 @@
+from datetime import timedelta
 from workshop_backend.settings.base import *
 
 DEBUG = get_environment_var('DEBUG', 'False') == 'True'
 
-SECRET_KEY = get_environment_var('SECRET_KEY', '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff(')
+SECRET_KEY = get_environment_var(
+    'SECRET_KEY', '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff(')
 
 ALLOWED_HOSTS = get_environment_var('ALLOWED_HOSTS', '*').split(',')
 
@@ -23,7 +25,8 @@ DATABASES = {
     }
 }
 
-STATIC_ROOT = os.path.join(BASE_DIR, get_environment_var('STATIC_ROOT_FILE_NAME', 'staticfiles'))
+STATIC_ROOT = os.path.join(BASE_DIR, get_environment_var(
+    'STATIC_ROOT_FILE_NAME', 'staticfiles'))
 # STATICFILES_DIRS = (
 #     os.path.join(BASE_DIR, 'media'),
 # )
@@ -72,7 +75,6 @@ LOGGING = {
 
 TESTING = False
 
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
@@ -105,13 +107,19 @@ PAYMENT = {
 
 SWAGGER_URL = 'https://backend.rastaiha.ir/api/'
 
-CSRF_TRUSTED_ORIGINS = ['https://kamva-backend.darkube.app', 'http://localhost:8000']
+CSRF_TRUSTED_ORIGINS = [
+    'https://backend.kamva.academy',
+    'https://kamva-backend.darkube.app',
+    'http://localhost:8000'
+]
 
 DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
 # STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
 MINIO_STORAGE_ENDPOINT = get_environment_var('MINIO_STORAGE_ENDPOINT', None)
-MINIO_STORAGE_ACCESS_KEY = get_environment_var('MINIO_STORAGE_ACCESS_KEY', None)
-MINIO_STORAGE_SECRET_KEY = get_environment_var('MINIO_STORAGE_SECRET_KEY', None)
+MINIO_STORAGE_ACCESS_KEY = get_environment_var(
+    'MINIO_STORAGE_ACCESS_KEY', None)
+MINIO_STORAGE_SECRET_KEY = get_environment_var(
+    'MINIO_STORAGE_SECRET_KEY', None)
 MINIO_STORAGE_USE_HTTPS = True
 MINIO_STORAGE_MEDIA_BUCKET_NAME = 'media'
 MINIO_STORAGE_STATIC_BUCKET_NAME = 'static'
