@@ -535,8 +535,13 @@ class Widget(PolymorphicModel):
         order_with_respect_to = 'paper'
 
     def make_file_empty(self):
-        self.file = None
-        self.save()
+        try:
+            self.file.delete()
+        except:
+            self.file = None
+            self.file.save()
+            pass
+        
 
 
 class Description(Widget):
