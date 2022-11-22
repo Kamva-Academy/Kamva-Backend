@@ -107,11 +107,7 @@ PAYMENT = {
 
 SWAGGER_URL = 'https://backend.rastaiha.ir/api/'
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://backend.kamva.academy',
-    'https://kamva-backend.darkube.app',
-    'http://localhost:8000'
-]
+CSRF_TRUSTED_ORIGINS = get_environment_var('CSRF_TRUSTED_ORIGINS', '*').split(',')
 
 DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
 # STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
