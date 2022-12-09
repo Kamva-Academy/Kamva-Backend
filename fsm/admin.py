@@ -282,7 +282,7 @@ class ProblemCustomAdmin(admin.ModelAdmin):
                             'first_name': ans.submitted_by.first_name,
                             'phone_number': ans.submitted_by.phone_number,
                             'last_name': ans.submitted_by.last_name,
-                            'school': ans.submitted_by.school_studentship.school.name,
+                            'school': ans.submitted_by.school_studentship.school.name if ans.submitted_by.school_studentship.school else None,
                             'grade': ans.submitted_by.school_studentship.grade,
                             'province': ans.submitted_by.province,
                             'city': ans.submitted_by.city,
