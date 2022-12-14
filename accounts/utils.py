@@ -28,6 +28,8 @@ def find_registration_receipt(user, registration_form):
 
 
 def create_or_update_user(**data):
+    # todo: fix TOF
+    data['phone_number'] = data.get('username')
     serializer = AccountSerializer(data=data)
     serializer.is_valid(raise_exception=True)
     validated_data = serializer.validated_data
