@@ -15,8 +15,8 @@ def get_receipt(user, fsm):
                                               is_participating=True).first()
 
 
-def get_player(user, fsm):
-    return user.players.filter(fsm=fsm, is_active=True).first()
+def get_player(user, receipt):
+    return user.players.filter(receipt=receipt, is_active=True).first()
 
 
 def move_on_edge(p, edge, departure_time, is_forward):

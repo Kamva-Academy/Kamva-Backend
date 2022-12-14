@@ -51,7 +51,8 @@ class EdgeViewSet(ModelViewSet):
         edge = self.get_object()
         fsm = edge.tail.fsm
         user = request.user
-        player = get_player(user, fsm)
+        receipt = get_receipt(user, fsm)
+        player = get_player(user, receipt)
         if player is None:
             raise ParseError(serialize_error('4082'))
         # todo check back enable
@@ -97,7 +98,8 @@ class EdgeViewSet(ModelViewSet):
         edge = self.get_object()
         fsm = edge.tail.fsm
         user = request.user
-        player = get_player(user, fsm)
+        receipt = get_receipt(user, fsm)
+        player = get_player(user, receipt)
         if player is None:
             raise ParseError(serialize_error('4082'))
         if not edge.is_visible:

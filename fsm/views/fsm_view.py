@@ -69,7 +69,7 @@ class FSMViewSet(viewsets.ModelViewSet):
         user = self.request.user
         logger.info(f'user {user.full_name} trying to enter fsm {fsm.name}')
         receipt = get_receipt(user, fsm)
-        player = get_player(user, fsm)
+        player = get_player(user, receipt)
 
         if receipt is None:
             raise ParseError(serialize_error('4079'))
