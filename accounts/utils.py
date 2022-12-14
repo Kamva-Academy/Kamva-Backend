@@ -39,7 +39,7 @@ def create_or_update_user(**data):
         Q(phone_number=validated_data.get('phone_number'))).first()
     # if user1 != user2:
     #     raise ParseError(serialize_error('4113'))
-    if user1 and user2:
+    if user1:
         serializer.update(user1, validated_data)
         return user1
     else:
