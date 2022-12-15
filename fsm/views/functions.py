@@ -15,15 +15,16 @@ def get_receipt(user, fsm):
                                               is_participating=True).first()
 
 
-def get_player(user, receipt):
-    return user.players.filter(receipt=receipt, is_active=True).first()
+def get_player(user, fsm, receipt):
+    return user.players.filter(fsm=fsm, receipt=receipt, is_active=True).first()
 
 
 def move_on_edge(p, edge, departure_time, is_forward):
     p.current_state = edge.head if is_forward else edge.tail
     p.last_visit = departure_time
     p.save()
-    last_state_history = PlayerHistory.objects.filter(player=p, state=edge.tail if is_forward else edge.head).last()
+    last_state_history = PlayerHistory.objects.filter(
+        player=p, state=edge.tail if is_forward else edge.head).last()
     if last_state_history:
         last_state_history.end_time = departure_time
         last_state_history.save()
@@ -51,7 +52,8 @@ def team_change_current_state(team, state):
     # create history
     team.current_state = state
     if state and len(PlayerHistory.objects.filter(team=team.id, state=state.id)) == 0:
-        history = PlayerHistory.objects.create(start_time=timezone.localtime(), team=team, state=state)
+        history = PlayerHistory.objects.create(
+            start_time=timezone.localtime(), team=team, state=state)
     team.save()
 
 
@@ -63,7 +65,8 @@ def user_change_current_state(participant, state):
 
 def user_get_current_state(player, fsm):
     try:
-        player_workshop = PlayerWorkshop.objects.filter(player=player, workshop=fsm).last()
+        player_workshop = PlayerWorkshop.objects.filter(
+            player=player, workshop=fsm).last()
         current_state = player_workshop.current_state
         if current_state is None:
             current_state = fsm.first_state
@@ -86,7 +89,8 @@ def current_state_widgets_json(state, player):
         last_answer = SubmittedAnswer.objects.filter(problem_id=widget.id, player=player) \
             .order_by('-publish_date')
         if len(last_answer) > 0:
-            submitted_answer = AnswerSerializer().to_representation(last_answer[0].xanswer())
+            submitted_answer = AnswerSerializer().to_representation(
+                last_answer[0].xanswer())
             widgetJson['last_submit'] = submitted_answer
         else:
             if 'answer' in widgetJson:
@@ -95,7 +99,8 @@ def current_state_widgets_json(state, player):
 
 
 def current_state_incoming_edge(state, player_workshop):
-    player_history = PlayerHistory.objects.filter(player_workshop=player_workshop, state=state).last()
+    player_history = PlayerHistory.objects.filter(
+        player_workshop=player_workshop, state=state).last()
     if player_history:
         edge = player_history.inward_edge
     else:
@@ -129,9 +134,11 @@ def send_signup_email(self, base_url, password=''):
     if self.participant.team is not None:
         options['team'] = self.participant.team.id
 
-    html_content = strip_spaces_between_tags(render_to_string('auth/signup_email.html', options))
+    html_content = strip_spaces_between_tags(
+        render_to_string('auth/signup_email.html', options))
     text_content = re.sub('<style[^<]+?</style>', '', html_content)
     text_content = strip_tags(text_content)
-    msg = EmailMultiAlternatives('تایید ثبت‌نام اولیه', text_content, 'Rastaiha <info@rastaiha.ir>', [self.email])
+    msg = EmailMultiAlternatives(
+        'تایید ثبت‌نام اولیه', text_content, 'Rastaiha <info@rastaiha.ir>', [self.email])
     msg.attach_alternative(html_content, "text/html")
     msg.send()

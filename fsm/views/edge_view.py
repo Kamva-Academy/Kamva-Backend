@@ -15,7 +15,7 @@ from fsm.models import Edge, FSM
 from fsm.permissions import IsEdgeModifier
 from fsm.serializers.fsm_serializers import EdgeSerializer, KeySerializer, TeamGetSerializer
 from fsm.serializers.player_serializer import PlayerSerializer
-from fsm.views.functions import get_player, move_on_edge, get_a_player_from_team
+from fsm.views.functions import get_receipt, get_player, move_on_edge, get_a_player_from_team
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class EdgeViewSet(ModelViewSet):
         fsm = edge.tail.fsm
         user = request.user
         receipt = get_receipt(user, fsm)
-        player = get_player(user, receipt)
+        player = get_player(user, fsm, receipt)
         if player is None:
             raise ParseError(serialize_error('4082'))
         # todo check back enable
@@ -99,7 +99,7 @@ class EdgeViewSet(ModelViewSet):
         fsm = edge.tail.fsm
         user = request.user
         receipt = get_receipt(user, fsm)
-        player = get_player(user, receipt)
+        player = get_player(user, fsm, receipt)
         if player is None:
             raise ParseError(serialize_error('4082'))
         if not edge.is_visible:

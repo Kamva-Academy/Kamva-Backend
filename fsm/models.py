@@ -397,7 +397,7 @@ class Player(models.Model):
         return self.receipt.team if self.receipt else None
 
     class Meta:
-        unique_together = ('user', 'fsm')
+        unique_together = ('user', 'fsm', 'receipt')
 
     def __str__(self):
         return f'{self.user.full_name} in {self.fsm.name}'
@@ -541,7 +541,6 @@ class Widget(PolymorphicModel):
             self.file = None
             self.file.save()
             pass
-        
 
 
 class Description(Widget):
