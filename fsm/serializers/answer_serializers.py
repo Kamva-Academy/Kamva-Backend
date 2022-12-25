@@ -1,5 +1,5 @@
+import os
 from datetime import datetime
-
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
@@ -78,7 +78,8 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
     def create(self, validated_data):
         choices = validated_data.pop('choices')
 
-        instance = super(MultiChoiceAnswerSerializer, self).create({'answer_type': 'MultiChoiceAnswer', **validated_data})
+        instance = super(MultiChoiceAnswerSerializer, self).create(
+            {'answer_type': 'MultiChoiceAnswer', **validated_data})
         instance.choices.add(*choices)
         instance.save()
         self.context['choices'] = choices
@@ -93,7 +94,8 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
 
             for c in choices:
                 if c.problem != problem:
-                    raise ParseError(serialize_error('4030', is_field_error=False))
+                    raise ParseError(serialize_error(
+                        '4030', is_field_error=False))
 
         return attrs
 
@@ -104,21 +106,25 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
         return super(MultiChoiceAnswerSerializer, self).to_internal_value(data)
 
     def to_representation(self, instance):
-        representation = super(MultiChoiceAnswerSerializer, self).to_representation(instance)
-        choices = [ChoiceSerializer(c).to_representation(c) for c in self.context.get('choices', [])]
+        representation = super(MultiChoiceAnswerSerializer,
+                               self).to_representation(instance)
+        choices = [ChoiceSerializer(c).to_representation(c)
+                   for c in self.context.get('choices', [])]
 
         representation['choices'] = choices
         return representation
 
 
 class FileAnswerSerializer(AnswerSerializer):
-    upload_file_answer = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=True)
+    upload_file_answer = serializers.PrimaryKeyRelatedField(
+        queryset=UploadFileAnswer.objects.all(), required=True)
 
     class Meta:
         model = UploadFileAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'answer_file', 'upload_file_answer']
-        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution', 'answer_file']
+        read_only_fields = ['id', 'submitted_by',
+                            'created_at', 'is_solution', 'answer_file']
         write_only_fields = ['upload_file_answer']
 
     def validate_upload_file_answer(self, upload_file_answer):
@@ -152,13 +158,15 @@ class FileAnswerSerializer(AnswerSerializer):
 
 
 class UploadFileAnswerSerializer(AnswerSerializer):
-    file_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    file_name = serializers.CharField(
+        max_length=50, required=False, write_only=True)
 
     class Meta:
         model = UploadFileAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
                   'problem', 'answer_file', 'file_name']
-        read_only_fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_solution']
+        read_only_fields = ['id', 'answer_type',
+                            'submitted_by', 'created_at', 'is_solution']
         write_only_fields = ['file_name']
 
     def validate(self, attrs):
@@ -172,18 +180,16 @@ class UploadFileAnswerSerializer(AnswerSerializer):
 
     def create(self, validated_data):
         answer_file = validated_data.get('answer_file', None)
-        file_name = validated_data.pop('file_name', None)
-        suffix = answer_file.name[answer_file.name.rfind('.'):]
+        file_name, file_extension = os.path.splitext(answer_file.name)
+        file_name = validated_data.pop('file_name', file_name)
         user = self.context.get('user', None)
-        if file_name:
-            answer_file.name = f'{file_name}-{user.username}{suffix}'
-        else:
-            problem = validated_data.get('problem', None)
-            answer_file.name = f'Q{problem.id}-{user.username}{suffix}' if problem else f'{answer_file.name}-{user.username}{suffix}'
+        problem = validated_data.get('problem', None)
+        answer_file.name = f'{file_name}_P{problem.id}_U{user.username}_T{datetime.now()}{file_extension}'
         return super(UploadFileAnswerSerializer, self).create({'answer_type': 'UploadFileAnswer', **validated_data})
 
     def to_representation(self, instance):
-        representation = super(UploadFileAnswerSerializer, self).to_representation(instance)
+        representation = super(UploadFileAnswerSerializer,
+                               self).to_representation(instance)
         answer_file = representation['answer_file']
         if answer_file.startswith('/api/'):
             domain = self.context.get('domain', None)
