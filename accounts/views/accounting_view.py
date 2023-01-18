@@ -50,13 +50,18 @@ class SendVerificationCode(GenericAPIView):
 
 
 class UserViewSet(ModelViewSet):
-    parser_classes = (MultiPartParser,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
     serializer_action_classes = {
         'create': VerificationCodeSerializer
     }
     my_tags = ['accounts']
+
+    def get_parser_classes(self):
+        if self.action == 'create':
+            return ()
+        else:
+            return (MultiPartParser,)
 
     def get_serializer_class(self):
         try:
