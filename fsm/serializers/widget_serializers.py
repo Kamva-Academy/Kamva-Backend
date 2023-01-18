@@ -145,7 +145,6 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
     @transaction.atomic
     def create(self, validated_data):
         has_answer = 'answer' in validated_data.keys()
-        print("!!!!!!!!!!", validated_data)
         if has_answer:
             answer = validated_data.pop('answer')
         instance = super().create(
