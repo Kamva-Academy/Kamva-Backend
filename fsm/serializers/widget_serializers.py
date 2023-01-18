@@ -177,29 +177,12 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 
 
 class BigAnswerProblemSerializer(WidgetSerializer):
-    solution = BigAnswerSerializer(required=False)
 
     class Meta:
         model = BigAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
                   'required', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
-
-    @transaction.atomic
-    def create(self, validated_data):
-        has_solution = 'solution' in validated_data.keys()
-        if has_solution:
-            solution = validated_data.pop('solution')
-        instance = super().create(
-            {'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
-        if has_solution:
-            serializer = BigAnswerSerializer(data={'problem': instance,
-                                                   'is_final_answer': True,
-                                                   'is_correct': True,
-                                                   **solution})
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-        return instance
 
 
 class MultiChoiceProblemSerializer(WidgetSerializer):
@@ -290,9 +273,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
         return representation
 
 
-class UploadFileProblemSerializer(WidgetSerializer):
-    solution = serializers.PrimaryKeyRelatedField(queryset=UploadFileAnswer.objects.all(), required=False,
-                                                  allow_null=False)
+class UploadFileProblemSerializer(WidgetSerializer):    
 
     class Meta:
         model = UploadFileProblem
@@ -300,25 +281,12 @@ class UploadFileProblemSerializer(WidgetSerializer):
                   'required', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
-    def validate_solution(self, solution):
-        if solution.problem is not None:
+    def validate_answer(self, answer):
+        if answer.problem is not None:
             raise ParseError(serialize_error('4047'))
-        elif solution.submitted_by != self.context.get('user', None):
+        elif answer.submitted_by != self.context.get('user', None):
             raise ParseError(serialize_error('4048'))
-        return solution
-
-    @transaction.atomic
-    def create(self, validated_data):
-        has_solution = 'solution' in validated_data.keys()
-        if has_solution:
-            solution = validated_data.pop('solution')
-        instance = super().create(
-            {'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
-        if has_solution:
-            solution.problem = instance
-            solution.is_correct = True
-            solution.save()
-        return instance
+        return answer
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
