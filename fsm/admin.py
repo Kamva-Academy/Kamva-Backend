@@ -265,7 +265,7 @@ class AnswerSheetCustomAdmin(admin.ModelAdmin):
 @admin.register(Problem)
 class ProblemCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type',
-                    'creator', 'max_score', 'required', 'max_corrections']
+                    'creator', 'required']
     list_display_links = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_filter = ['name', 'widget_type', 'required']
     search_fields = ['name']
@@ -355,8 +355,8 @@ class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
 @admin.register(Answer)
 class AnswerCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'answer_type', 'answer_sheet',
-                    'submitted_by', 'is_final_answer', 'is_solution']
-    list_filter = ['answer_type', 'is_final_answer', 'is_solution']
+                    'submitted_by', 'is_final_answer', 'is_correct']
+    list_filter = ['answer_type', 'is_final_answer', 'is_correct']
     search_fields = ['submitted_by__username']
 
 

@@ -42,9 +42,9 @@ class SmallAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = SmallAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'text']
-        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution']
+        read_only_fields = ['id', 'submitted_by', 'created_at']
 
 
 class BigAnswerSerializer(AnswerSerializer):
@@ -53,15 +53,15 @@ class BigAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = BigAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'text']
-        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution']
+        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_correct']
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ['id', 'text', 'problem', ]
+        fields = ['id', 'text', 'problem']
         read_only_fields = ['id', 'problem']
 
 
@@ -71,9 +71,9 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = MultiChoiceAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_solution']
+        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_correct']
 
     def create(self, validated_data):
         choices = validated_data.pop('choices')
@@ -121,10 +121,10 @@ class FileAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = UploadFileAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'answer_file', 'upload_file_answer']
         read_only_fields = ['id', 'submitted_by',
-                            'created_at', 'is_solution', 'answer_file']
+                            'created_at', 'is_correct', 'answer_file']
         write_only_fields = ['upload_file_answer']
 
     def validate_upload_file_answer(self, upload_file_answer):
@@ -163,10 +163,10 @@ class UploadFileAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = UploadFileAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'answer_file', 'file_name']
         read_only_fields = ['id', 'answer_type',
-                            'submitted_by', 'created_at', 'is_solution']
+                            'submitted_by', 'created_at', 'is_correct']
         write_only_fields = ['file_name']
 
     def validate(self, attrs):
@@ -213,7 +213,7 @@ class AnswerPolymorphicSerializer(PolymorphicSerializer):
 class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiChoiceAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_solution',
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'choices']
         read_only_fields = ['id', 'submitted_by']
 

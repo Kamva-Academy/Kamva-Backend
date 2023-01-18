@@ -579,15 +579,13 @@ class Image(Widget):
 
 
 class Problem(Widget):
-    text = models.TextField(null=True, blank=True)
-    help_text = models.TextField(null=True, blank=True)
-    max_score = models.FloatField(null=True, blank=True)
+    text = models.TextField()
     required = models.BooleanField(default=False)
-    max_corrections = models.IntegerField(null=True, blank=True)
+    solution = models.TextField(null=True, blank=True)
 
     @property
-    def solution(self):
-        return self.answers.filter(is_solution=True).first()
+    def answer(self):
+        return self.answers.filter(is_correct=True).first()
 
     def unfinalize_older_answers(self, user):
         if isinstance(self.paper, State):
@@ -636,15 +634,13 @@ class Answer(PolymorphicModel):
         MultiChoiceAnswer = 'MultiChoiceAnswer'
         UploadFileAnswer = 'UploadFileAnswer'
 
-    answer_type = models.CharField(
-        max_length=20, choices=AnswerTypes.choices, null=False, blank=False)
+    answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices)
     answer_sheet = models.ForeignKey(AnswerSheet, related_name='answers', null=True, blank=True,
                                      on_delete=models.SET_NULL)
-    submitted_by = models.ForeignKey('accounts.User', related_name='submitted_answers',
-                                     null=True, blank=True, on_delete=models.SET_NULL)
+    submitted_by = models.ForeignKey('accounts.User', related_name='submitted_answers', null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     is_final_answer = models.BooleanField(default=False)
-    is_solution = models.BooleanField(default=False)
+    is_correct = models.BooleanField(default=False)
 
     def __str__(self):
         return f'user: {self.submitted_by.username if self.submitted_by else "-"} - problem {self.problem.id}'
@@ -655,13 +651,12 @@ class Answer(PolymorphicModel):
 
 
 class SmallAnswer(Answer):
-    problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True, blank=True, on_delete=models.CASCADE,
-                                related_name='answers')
+    problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True, blank=True, on_delete=models.CASCADE, related_name='answers')
     text = models.TextField()
 
     def correction_status(self):
-        if self.problem.solution:
-            if self.text.strip() == self.problem.solution.text.strip():
+        if self.problem.answer:
+            if self.text.strip() == self.problem.answer.text.strip():
                 # TODO - check for semi-correct answers too
                 return RegistrationReceipt.CorrectionStatus.Correct
             return RegistrationReceipt.CorrectionStatus.Wrong
@@ -690,9 +685,9 @@ class MultiChoiceAnswer(Answer):
     choices = models.ManyToManyField(Choice, through=ChoiceSelection)
 
     def correction_status(self):
-        solution = self.problem.solution
-        if solution:
-            correct_choices = solution.choices.values_list(['choice'])
+        answer = self.problem.answer
+        if answer:
+            correct_choices = answer.choices.values_list(['choice'])
             for c in self.choices.values_list(['choice']):
                 if c not in correct_choices:
                     return RegistrationReceipt.CorrectionStatus.Wrong
@@ -700,10 +695,10 @@ class MultiChoiceAnswer(Answer):
         return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
     def get_correct_choices(self):
-        if self.problem.solution:
+        if self.problem.answer:
             correct_choices = set()
             for c in self.choices.values_list(['choice']):
-                if c in ChoiceSelection.objects.filter(multi_choice_answer=self.problem.solution).values_list(
+                if c in ChoiceSelection.objects.filter(multi_choice_answer=self.problem.answer).values_list(
                         ['choice']):
                     correct_choices.add(c)
             return correct_choices

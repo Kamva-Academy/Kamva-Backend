@@ -128,34 +128,52 @@ class DescriptionSerializer(WidgetSerializer):
 class ProblemSerializer(WidgetSerializer):
     class Meta:
         model = Problem
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
                   'required']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
 class SmallAnswerProblemSerializer(WidgetSerializer):
-    solution = SmallAnswerSerializer(required=False)
+    answer = SmallAnswerSerializer(required=False)
 
     class Meta:
         model = SmallAnswerProblem
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
-                  'required', 'solution']
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
+                  'required', 'answer', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     @transaction.atomic
     def create(self, validated_data):
-        has_solution = 'solution' in validated_data.keys()
-        if has_solution:
-            solution = validated_data.pop('solution')
+        has_answer = 'answer' in validated_data.keys()
+        print("!!!!!!!!!!", validated_data)
+        if has_answer:
+            answer = validated_data.pop('answer')
         instance = super().create(
             {'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
-        if has_solution:
+        if has_answer:
             serializer = SmallAnswerSerializer(data={'problem': instance,
                                                      'is_final_answer': True,
-                                                     'is_solution': True,
-                                                     **solution})
+                                                     'is_correct': True,
+                                                     **answer})
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
+        return instance
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        has_answer = 'answer' in validated_data.keys()
+        if has_answer:
+            answer = validated_data.pop('answer')
+        instance = super().update(instance, {**validated_data})
+        if has_answer:
+            answer_object = instance.answer
+            if answer_object:
+                answer_object.text = answer['text']
+                answer_object.save()
+            else:
+                serializer = SmallAnswerSerializer(data={'problem': instance, 'is_final_answer': True, 'is_correct': True, **answer})
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save()
         return instance
 
 
@@ -164,7 +182,7 @@ class BigAnswerProblemSerializer(WidgetSerializer):
 
     class Meta:
         model = BigAnswerProblem
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
                   'required', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
@@ -178,7 +196,7 @@ class BigAnswerProblemSerializer(WidgetSerializer):
         if has_solution:
             serializer = BigAnswerSerializer(data={'problem': instance,
                                                    'is_final_answer': True,
-                                                   'is_solution': True,
+                                                   'is_correct': True,
                                                    **solution})
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -193,7 +211,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
     class Meta:
         model = MultiChoiceProblem
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
                   'required', 'max_choices', 'choices', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
@@ -223,7 +241,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
         if has_solution:
             multi_choice_solution = MultiChoiceAnswer.objects.create(**{'problem': instance,
                                                                         'is_final_answer': True,
-                                                                        'is_solution': True,
+                                                                        'is_correct': True,
                                                                         'submitted_by': self.context.get('user', None),
                                                                         'answer_type': 'MultiChoiceAnswer'})
             choice_selections = [choice_objects[s] for s in solution]
@@ -267,9 +285,9 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        if instance.solution and not instance.paper.is_exam:
-            representation['solution'] = MultiChoiceSolutionSerializer(instance.solution).to_representation(
-                instance.solution)
+        if instance.answer and not instance.paper.is_exam:
+            representation['answer'] = MultiChoiceSolutionSerializer(instance.answer).to_representation(
+                instance.answer)
         return representation
 
 
@@ -279,7 +297,7 @@ class UploadFileProblemSerializer(WidgetSerializer):
 
     class Meta:
         model = UploadFileProblem
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text', 'help_text', 'max_score',
+        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
                   'required', 'solution']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
@@ -299,15 +317,15 @@ class UploadFileProblemSerializer(WidgetSerializer):
             {'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
         if has_solution:
             solution.problem = instance
-            solution.is_solution = True
+            solution.is_correct = True
             solution.save()
         return instance
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        if instance.solution and not instance.paper.is_exam:
-            representation['solution'] = UploadFileAnswerSerializer(
-            ).to_representation(instance.solution)
+        if instance.answer and not instance.paper.is_exam:
+            representation['answer'] = UploadFileAnswerSerializer(
+            ).to_representation(instance.answer)
         return representation
 
 

@@ -75,6 +75,15 @@ class WidgetViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
+    @swagger_auto_schema(responses={200: MockWidgetSerializer})
+    @transaction.atomic
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = WidgetPolymorphicSerializer(instance, data=request.data, partial=True, context=self.get_serializer_context())
+        if serializer.is_valid(raise_exception=True):
+            self.perform_update(serializer)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+
     @swagger_auto_schema(responses={200: MockAnswerSerializer}, tags=['answers'])
     @transaction.atomic
     @action(detail=True, methods=['post'], serializer_class=AnswerPolymorphicSerializer,

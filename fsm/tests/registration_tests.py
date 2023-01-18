@@ -63,8 +63,6 @@ registration_form_creation_test_case_response = {
             "creator": 2,
             "duplication_of": None,
             "text": "mcp1",
-            "help_text": None,
-            "max_score": None,
             "max_choices": 2,
             "choices": [
                 {
@@ -95,7 +93,7 @@ registration_form_creation_test_case_response = {
                 # "submitted_by": 2,
                 # "created_at": None,
                 "is_final_answer": True,
-                # "is_solution": True,
+                "is_correct": True,
                 "problem": 140,
                 "choices": [
                     157,
@@ -152,7 +150,7 @@ register_test_case_response = {
             "submitted_by": 2,
             "created_at": None,
             "is_final_answer": False,
-            "is_solution": False,
+            "is_correct": False,
             "problem": 175,
             "text": "far"
         }
