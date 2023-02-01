@@ -7,8 +7,7 @@ from import_export.admin import ExportActionMixin
 from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, Hint, Widget, Video, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
-    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag, Aparat, InviteeUsernameQuestion, \
-    InviteeUsernameResponse
+    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag, Aparat
 
 from fsm.utils import get_django_file
 
@@ -465,16 +464,6 @@ class UploadFileProblemCustomAdmin(admin.ModelAdmin):
     list_display_links = ['id', 'name']
     list_filter = ['widget_type']
     search_fields = ['name']
-
-
-@admin.register(InviteeUsernameQuestion)
-class InviteeUsernameQuestionAdmin(admin.ModelAdmin):
-    pass
-
-@admin.register(InviteeUsernameResponse)
-class InviteeUsernameResponseAdmin(admin.ModelAdmin):
-    pass
-
 
 
 admin.site.register(Paper, PaperAdmin)
