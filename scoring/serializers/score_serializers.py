@@ -32,8 +32,8 @@ class ScoreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Score
-        fields = ['value', 'score_type', 'answer']
-        read_only_fields = ['score_type', 'answer']
+        fields = ['value', 'type', 'answer']
+        read_only_fields = ['type', 'answer']
 
 
 class CommentSerializer(serializers.ModelSerializer):

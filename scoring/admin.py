@@ -3,13 +3,18 @@ import csv
 from django.contrib import admin
 from django.http import HttpResponse
 
-from scoring.models import ScoreType, Score, Comment, Condition, Criteria
+from scoring.models import ScoreType, Score, Comment, Condition, Criteria, ScorePackage
+
+
+@admin.register(ScorePackage)
+class ScorePackageAdmin(admin.ModelAdmin):
+    pass 
 
 
 @admin.register(Score)
 class ScoreCustomAdmin(admin.ModelAdmin):
-    list_display = ['value', 'score_type', 'submitted_by']
-    list_filter = ['score_type', 'answer__submitted_by']
+    list_display = ['value', 'type', 'submitted_by']
+    list_filter = ['type', 'answer__submitted_by']
     raw_id_fields = ["answer", ]
 
     def submitted_by(self, obj):

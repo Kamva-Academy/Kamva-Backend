@@ -1,12 +1,12 @@
 from django.db import models
 
-from fsm.models import Widget
+from scoring.models import Scorable
 from polymorphic.models import PolymorphicModel
 
 
 ############ QUESTIONS ############
 
-class Question(Widget):
+class Question(Scorable):
     text = models.TextField()
     required = models.BooleanField(default=False)
 
