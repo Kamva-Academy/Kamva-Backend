@@ -519,7 +519,7 @@ class Widget(PolymorphicModel):
         BigAnswerProblem = 'BigAnswerProblem'
         MultiChoiceProblem = 'MultiChoiceProblem'
         UploadFileProblem = 'UploadFileProblem'
-        InviteeUsernameQuestion = 'InviteeUsernameQuestion'
+        Scorable = 'Scorable'
 
     name = models.CharField(max_length=100, null=True, blank=True)
     file = models.FileField(null=True, blank=True, upload_to='events/')

@@ -9,7 +9,14 @@ from django.core.exceptions import ValidationError
 
 
 class Scorable(Widget):
-    pass
+    class ScorableTypes(models.TextChoices):
+        Problem = 'Question'
+        Question = 'Problem'
+
+    scorable_type = models.CharField(max_length=30, choices=ScorableTypes.choices)
+
+    def __str__(self):
+        return f'<{self.id}-{self.widget_type}>'
 
 
 class ScoreType(models.Model):

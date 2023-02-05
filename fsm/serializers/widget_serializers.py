@@ -13,6 +13,9 @@ from fsm.models import Player, Game, Video, Image, Description, Problem, SmallAn
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer, AnswerPolymorphicSerializer
 from fsm.serializers.validators import multi_choice_answer_validator
+from scoring.models import Scorable
+from utils.lazy_ref import LazyRefSerializer
+ScorablePolymorphicSerializer = LazyRefSerializer('scoring.serializers.score_serializers.ScorablePolymorphicSerializer')
 
 
 class WidgetSerializer(serializers.ModelSerializer):
@@ -309,6 +312,7 @@ class WidgetPolymorphicSerializer(PolymorphicSerializer):
         BigAnswerProblem: BigAnswerProblemSerializer,
         MultiChoiceProblem: MultiChoiceProblemSerializer,
         UploadFileProblem: UploadFileProblemSerializer,
+        Scorable: ScorablePolymorphicSerializer,
     }
 
     resource_type_field_name = 'widget_type'

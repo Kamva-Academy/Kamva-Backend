@@ -3,8 +3,12 @@ import csv
 from django.contrib import admin
 from django.http import HttpResponse
 
-from scoring.models import ScoreType, Score, Comment, Condition, Criteria, ScorePackage
+from scoring.models import ScoreType, Score, Comment, Condition, Criteria, ScorePackage, Scorable
 
+
+@admin.register(Scorable)
+class ScorableAdmin(admin.ModelAdmin):
+    pass 
 
 @admin.register(ScorePackage)
 class ScorePackageAdmin(admin.ModelAdmin):

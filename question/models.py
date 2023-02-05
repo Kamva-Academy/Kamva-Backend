@@ -7,8 +7,12 @@ from polymorphic.models import PolymorphicModel
 ############ QUESTIONS ############
 
 class Question(Scorable):
+    class ScorableTypes(models.TextChoices):
+        InviteeUsername = 'InviteeUsername'
+
     text = models.TextField()
     required = models.BooleanField(default=False)
+    question_type = models.CharField(max_length=30, choices=ScorableTypes.choices)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
