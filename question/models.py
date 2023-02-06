@@ -1,6 +1,5 @@
 from django.db import models
-
-from scoring.models import Scorable
+from scoring.models import Scorable, Deliverable
 from polymorphic.models import PolymorphicModel
 
 
@@ -23,17 +22,15 @@ class InviteeUsernameQuestion(Question):
 
 ############ RESPONSES ############
 
-class Response(PolymorphicModel):
+class Response(Deliverable):
     class AnswerTypes(models.TextChoices):
         InviteeUsernameResponse = 'InviteeUsernameResponse'
 
     response_type = models.CharField(max_length=30, choices=AnswerTypes.choices)
-    # link to the form that the related question is
-    submitted_by = models.ForeignKey('accounts.User', related_name='submitted_responses', null=True, blank=True, on_delete=models.SET_NULL)
-    created_at = models.DateTimeField(auto_now_add=True)
+    answer_sheet = models.ForeignKey('fsm.AnswerSheet', related_name='questions', null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
-        return f'user: {self.submitted_by.username if self.submitted_by else "-"} - question {self.question.id}'
+        return f'user: {self.deliverer.username} - question: {self.question.id}'
 
     @property
     def question(self):

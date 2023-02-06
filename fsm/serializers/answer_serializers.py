@@ -7,7 +7,10 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 from errors.error_codes import serialize_error
 from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
 from fsm.serializers.validators import multi_choice_answer_validator
-
+from question.models import InviteeUsernameResponse
+# from utils.lazy_ref import LazyRefSerializer
+# from question.serializers.invitee_username import InviteeUsernameResponseSerializer
+# InviteeUsernameResponseSerializer = LazyRefSerializer('question.serializers.invitee_username.InviteeUsernameResponseSerializer')
 
 class AnswerSerializer(serializers.ModelSerializer):
 
@@ -198,18 +201,6 @@ class UploadFileAnswerSerializer(AnswerSerializer):
         return representation
 
 
-class AnswerPolymorphicSerializer(PolymorphicSerializer):
-    model_serializer_mapping = {
-        # Answer: AnswerSerializer,
-        SmallAnswer: SmallAnswerSerializer,
-        BigAnswer: BigAnswerSerializer,
-        MultiChoiceAnswer: MultiChoiceAnswerSerializer,
-        UploadFileAnswer: FileAnswerSerializer
-    }
-
-    resource_type_field_name = 'answer_type'
-
-
 class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiChoiceAnswer
@@ -223,3 +214,20 @@ class MockAnswerSerializer(serializers.Serializer):
     BigAnswerSerializer = BigAnswerSerializer(required=False)
     MultiChoiceAnswerSerializer = MultiChoiceAnswerSerializer(required=False)
     UploadFileAnswerSerializer = UploadFileAnswerSerializer(required=False)
+
+from question.serializers.invitee_username import InviteeUsernameResponseSerializer
+
+class AnswerPolymorphicSerializer(PolymorphicSerializer):
+    model_serializer_mapping = {
+        # Answer: AnswerSerializer,
+        SmallAnswer: SmallAnswerSerializer,
+        BigAnswer: BigAnswerSerializer,
+        MultiChoiceAnswer: MultiChoiceAnswerSerializer,
+        UploadFileAnswer: FileAnswerSerializer,
+        # todo: fix inheritance
+        InviteeUsernameResponse: InviteeUsernameResponseSerializer,
+    }
+
+    resource_type_field_name = 'answer_type'
+
+

@@ -11,11 +11,10 @@ from fsm.models import Player, Game, Video, Image, Description, Problem, SmallAn
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
     Paper, Widget, Team, Aparat
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
-    UploadFileAnswerSerializer, MultiChoiceSolutionSerializer, AnswerPolymorphicSerializer
+    UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
+
 from fsm.serializers.validators import multi_choice_answer_validator
 from scoring.models import Scorable
-from utils.lazy_ref import LazyRefSerializer
-ScorablePolymorphicSerializer = LazyRefSerializer('scoring.serializers.score_serializers.ScorablePolymorphicSerializer')
 
 
 class WidgetSerializer(serializers.ModelSerializer):
@@ -38,6 +37,7 @@ class WidgetSerializer(serializers.ModelSerializer):
         return super(WidgetSerializer, self).validate(attrs)
 
     def to_representation(self, instance):
+        from fsm.serializers.answer_polymorphic import AnswerPolymorphicSerializer
         representation = super(
             WidgetSerializer, self).to_representation(instance)
         if 'solution' in representation.keys() and instance.paper.is_exam:
@@ -297,25 +297,6 @@ class UploadFileProblemSerializer(WidgetSerializer):
             representation['answer'] = UploadFileAnswerSerializer(
             ).to_representation(instance.answer)
         return representation
-
-
-class WidgetPolymorphicSerializer(PolymorphicSerializer):
-    model_serializer_mapping = {
-        # Widget: WidgetSerializer,
-        Description: DescriptionSerializer,
-        Image: ImageSerializer,
-        Video: VideoSerializer,
-        Aparat: AparatSerializer,
-        Game: GameSerializer,
-        # Problem: ProblemSerializer,
-        SmallAnswerProblem: SmallAnswerProblemSerializer,
-        BigAnswerProblem: BigAnswerProblemSerializer,
-        MultiChoiceProblem: MultiChoiceProblemSerializer,
-        UploadFileProblem: UploadFileProblemSerializer,
-        Scorable: ScorablePolymorphicSerializer,
-    }
-
-    resource_type_field_name = 'widget_type'
 
 
 class MockWidgetSerializer(serializers.Serializer):

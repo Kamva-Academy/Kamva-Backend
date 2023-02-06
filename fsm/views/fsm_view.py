@@ -25,7 +25,8 @@ from fsm.serializers.fsm_serializers import FSMSerializer, KeySerializer, EdgeSe
     TeamGetSerializer
 from fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer, EdgeSimpleSerializer
 from fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
-from fsm.serializers.widget_serializers import MockWidgetSerializer, WidgetPolymorphicSerializer
+from fsm.serializers.widget_serializers import MockWidgetSerializer
+from fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 from fsm.views.functions import get_player, get_receipt, get_a_player_from_team
 
 logger = logging.getLogger(__name__)

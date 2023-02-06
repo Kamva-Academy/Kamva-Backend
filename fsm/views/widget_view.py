@@ -15,7 +15,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from fsm.permissions import CanAnswerWidget, MentorPermission
 from fsm.serializers.answer_serializers import AnswerPolymorphicSerializer, MockAnswerSerializer
-from fsm.serializers.widget_serializers import WidgetPolymorphicSerializer, MockWidgetSerializer
+from fsm.serializers.widget_serializers import MockWidgetSerializer
+from fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 
 
 @api_view(['POST'])

@@ -8,6 +8,19 @@ from polymorphic.models import PolymorphicModel
 from django.core.exceptions import ValidationError
 
 
+class Deliverable(PolymorphicModel):
+    class DeliverableTypes(models.TextChoices):
+        Answer = 'Answer'
+        Response = 'Response'
+
+    deliverable_type = models.CharField(max_length=20, choices=DeliverableTypes.choices)
+    deliverer = models.ForeignKey('accounts.User', related_name='deliverer', on_delete=models.CASCADE)
+    creation_time = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f'user: {self.deliverer.username}'
+
+
 class Scorable(Widget):
     class ScorableTypes(models.TextChoices):
         Problem = 'Question'

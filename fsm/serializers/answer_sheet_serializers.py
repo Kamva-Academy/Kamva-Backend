@@ -18,11 +18,9 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         answers = validated_data.pop('answers') if 'answers' in validated_data.keys() else []
-
         instance = super(AnswerSheetSerializer, self).create(validated_data)
         context = self.context
         context['answer_sheet'] = instance
-
         for a in answers:
             serializer = AnswerPolymorphicSerializer(data=a, context=context)
             if serializer.is_valid(raise_exception=True):
