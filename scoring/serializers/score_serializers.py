@@ -11,7 +11,11 @@ class ScorableSerializer(WidgetSerializer):
 
 
 class DeliverableSerializer(serializers.ModelSerializer):
-    pass
+    
+    def create(self, validated_data):
+        user = self.context.get('user', None)
+        return super().create({'deliverer': user, **validated_data})
+
 
 
 class ScoreTypeSerializer(serializers.ModelSerializer):

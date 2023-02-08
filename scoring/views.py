@@ -7,7 +7,6 @@ from rest_framework.decorators import api_view
 from fsm.models import Answer
 from scoring.models import ScoreType, Score, Comment
 from scoring.serializers.score_serializers import ScoreTypeSerializer, ScoreSerializer, CommentSerializer
-# Create your views here.
 
 
 class ScoreTypeViewSet(viewsets.ModelViewSet):
