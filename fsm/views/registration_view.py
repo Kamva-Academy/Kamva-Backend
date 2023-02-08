@@ -128,8 +128,7 @@ class RegistrationViewSet(ModelViewSet):
     def register(self, request, pk=None):
         context = self.get_serializer_context()
         context['answer_sheet_of'] = self.get_object()
-        serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt',
-                                                         **request.data}, context=context)
+        serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt', **request.data}, context=context)
         if serializer.is_valid(raise_exception=True):
             register_permission_status = self.get_object(
             ).user_permission_status(context.get('user', None))
@@ -148,8 +147,7 @@ class RegistrationViewSet(ModelViewSet):
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotRightGender:
                 raise ParseError(serialize_error('4109'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.Permitted:
-                serializer.validated_data['answer_sheet_of'] = self.get_object(
-                )
+                serializer.validated_data['answer_sheet_of'] = self.get_object()
                 registration_receipt = serializer.save()
 
                 form = registration_receipt.answer_sheet_of

@@ -19,19 +19,7 @@ from fsm.serializers.widget_serializers import MockWidgetSerializer
 from fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser])
-@transaction.atomic
-def upload_widget_file(request, widget_id):
-    file = request.FILES.get('file', None)
-    widget = Widget.objects.get(id=widget_id)
-    widget.file = file
-    widget.save()
-    return Response(WidgetPolymorphicSerializer(widget).data, status.HTTP_200_OK)
-
-
-class WidgetViewSet(viewsets.ModelViewSet):
+class QuestionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes([MultiPartParser])
     queryset = Widget.objects.all()
@@ -61,7 +49,7 @@ class WidgetViewSet(viewsets.ModelViewSet):
             {'domain': self.request.build_absolute_uri('/api/')[:-5]})
         return context
 
-    @swagger_auto_schema(tags=['widgets'])
+    @swagger_auto_schema(tags=['question'])
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, ])
     def make_widget_file_empty(self, request, *args, **kwargs):
         self.get_object().make_file_empty()

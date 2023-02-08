@@ -519,6 +519,7 @@ class Widget(PolymorphicModel):
         BigAnswerProblem = 'BigAnswerProblem'
         MultiChoiceProblem = 'MultiChoiceProblem'
         UploadFileProblem = 'UploadFileProblem'
+        Scorable = 'Scorable'
 
     name = models.CharField(max_length=100, null=True, blank=True)
     file = models.FileField(null=True, blank=True, upload_to='events/')
@@ -577,6 +578,7 @@ class Image(Widget):
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
+############ PROBLEMS ############
 
 class Problem(Widget):
     text = models.TextField()
@@ -626,6 +628,7 @@ class Choice(models.Model):
     def __str__(self):
         return self.text
 
+############ ANSWERS ############
 
 class Answer(PolymorphicModel):
     class AnswerTypes(models.TextChoices):
@@ -710,6 +713,9 @@ class UploadFileAnswer(Answer):
                                 related_name='answers')
     answer_file = models.FileField(
         upload_to='answers', max_length=4000, blank=False)
+
+
+########################
 
 
 class Font(models.Model):

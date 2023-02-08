@@ -7,7 +7,6 @@ from rest_framework.decorators import api_view
 from fsm.models import Answer
 from scoring.models import ScoreType, Score, Comment
 from scoring.serializers.score_serializers import ScoreTypeSerializer, ScoreSerializer, CommentSerializer
-# Create your views here.
 
 
 class ScoreTypeViewSet(viewsets.ModelViewSet):
@@ -57,14 +56,14 @@ def set_answer_score(request):
     value = request.data.get('score')
 
     score = Score.objects.filter(
-        answer__id=answer_id, score_type__id=score_type_id)
+        answer__id=answer_id, type=score_type)
 
     if len(score) > 0:
         score = score[0]
         score.value = value
         score.save()
     else:
-        Score(value=value, answer=answer, score_type=score_type).save()
+        Score(value=value, answer=answer, type=score_type).save()
 
     return Response({'ok'}, status.HTTP_200_OK)
 

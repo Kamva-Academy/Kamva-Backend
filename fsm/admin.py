@@ -290,7 +290,7 @@ class ProblemCustomAdmin(admin.ModelAdmin):
                             'national_code': ans.submitted_by.national_code,
                             }
                 for score in ans.scores.all():
-                    ans_dict[score.score_type.name] = score.value
+                    ans_dict[score.type.name] = score.value
                 answers.append(ans_dict)
             problems[p] = answers
 

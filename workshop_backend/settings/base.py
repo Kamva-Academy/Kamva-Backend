@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'fsm.apps.FsmConfig',
     'scoring.apps.ScoringConfig',
     'event_metadata.apps.EventMetadataConfig',
+    'question.apps.QuestionConfig',
 ]
 
 # SITE_ID=1
