@@ -3,7 +3,7 @@ from django.db import models
 from accounts.models import *
 from django.db.models import IntegerField, Model, Sum
 from django.core.validators import MaxValueValidator, MinValueValidator
-from fsm.models import Answer, Paper, Widget
+from fsm.models import Widget
 from polymorphic.models import PolymorphicModel
 from django.core.exceptions import ValidationError
 
@@ -34,7 +34,7 @@ class Scorable(Widget):
 
 class ScoreType(models.Model):
     name = models.CharField(max_length=50, null=False, blank=False)
-    papers = models.ManyToManyField(Paper, related_name='score_types')
+    papers = models.ManyToManyField('fsm.Paper', related_name='score_types')
 
     def __str__(self):
         return self.name
@@ -57,19 +57,19 @@ class ScorePackage(models.Model):
 class Score(models.Model):
     value = IntegerField(default=0)
     type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
-    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='scores')
+    deliverable = models.ForeignKey(Deliverable, on_delete=models.CASCADE, related_name='scores')
 
     class Meta:
-        unique_together = ('answer', 'type')
+        unique_together = ('deliverable', 'type')
 
     def __str__(self):
-        return f'{self.value} × {self.score_type}'
+        return f'{self.value} × {self.type}'
 
 
 class Comment(models.Model):
     content = models.TextField(null=False, blank=False)
     writer = models.ForeignKey('accounts.User', related_name='comments', null=True, blank=True, on_delete=models.SET_NULL)
-    answer = models.ForeignKey(Answer, on_delete=models.CASCADE)
+    deliverable = models.ForeignKey(Deliverable, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.content[:30]
@@ -87,7 +87,7 @@ class Condition(BaseCondition):
     score_type = models.ForeignKey(ScoreType, related_name='conditions', on_delete=models.CASCADE)
 
     def evaluate(self, user: User) -> bool:
-        score_sum = Score.objects.filter(score_type=self.score_type, answer__submitted_by=user).aggregate(
+        score_sum = Score.objects.filter(type=self.score_type, deliverable__deliverer=user).aggregate(
             Sum('value')).get('value__sum', 0)
         return (score_sum if score_sum is not None else 0) >= self.amount
 

@@ -21,9 +21,9 @@ class InviteeUsernameResponseSerializer(ResponseSerializer):
         for score_package in score_packages:
             score_type = score_package.type
             number = score_package.number
-            serializer = ScoreSerializer(data={'value':number, 'type': score_type, 'deliverable': response})
-            if serializer.is_valid():
-                serializer.save()
+            serializer = ScoreSerializer(data={'value':number, 'type': score_type.id, 'deliverable': response.id})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
         return response
 
     class Meta:

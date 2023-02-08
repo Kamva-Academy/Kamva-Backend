@@ -18,11 +18,11 @@ class ScorePackageAdmin(admin.ModelAdmin):
 @admin.register(Score)
 class ScoreCustomAdmin(admin.ModelAdmin):
     list_display = ['value', 'type', 'submitted_by']
-    list_filter = ['type', 'answer__submitted_by']
-    raw_id_fields = ["answer", ]
+    list_filter = ['type', 'deliverable__deliverer']
+    raw_id_fields = ['deliverable']
 
     def submitted_by(self, obj):
-        return obj.answer.submitted_by
+        return obj.deliverable.deliverer
 
 
 @admin.register(Criteria)

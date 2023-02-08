@@ -33,17 +33,16 @@ class ScoreSerializer(serializers.ModelSerializer):
         return super().create({**validated_data})
 
     def update(self, instance, validated_data):
-        if 'answer' not in validated_data.keys():
-            validated_data['answer'] = instance.answer
-        elif validated_data.get('answer', None) != instance.answer:
+        if 'deliverable' not in validated_data.keys():
+            validated_data['deliverable'] = instance.deliverable
+        elif validated_data.get('deliverable', None) != instance.deliverable:
             # not so sure about the error code
             raise ParseError(serialize_error('4102'))
         return super(ScoreSerializer, self).update(instance, {**validated_data})
 
     class Meta:
         model = Score
-        fields = ['value', 'type', 'answer']
-        read_only_fields = ['type', 'answer']
+        fields = ['value', 'type', 'deliverable']
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -53,14 +52,14 @@ class CommentSerializer(serializers.ModelSerializer):
         return super().create({**validated_data})
 
     def update(self, instance, validated_data):
-        if 'answer' not in validated_data.keys():
-            validated_data['answer'] = instance.answer
-        elif validated_data.get('answer', None) != instance.answer:
+        if 'deliverable' not in validated_data.keys():
+            validated_data['deliverable'] = instance.deliverable
+        elif validated_data.get('deliverable', None) != instance.deliverable:
             raise ParseError(serialize_error('4102'))
         return super(CommentSerializer, self).update(instance, {**validated_data})
 
     class Meta:
         model = Comment
-        fields = ['content', 'writer', 'answer']
-        read_only_fields = ['writer', 'answer']
+        fields = ['content', 'writer', 'deliverable']
+        read_only_fields = ['writer', 'deliverable']
 
