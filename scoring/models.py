@@ -59,8 +59,8 @@ class Score(models.Model):
     type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     deliverable = models.ForeignKey(Deliverable, on_delete=models.CASCADE, related_name='scores')
 
-    class Meta:
-        unique_together = ('deliverable', 'type')
+    # class Meta:
+    #     unique_together = ('deliverable', 'type')
 
     def __str__(self):
         return f'{self.value} × {self.type}'
