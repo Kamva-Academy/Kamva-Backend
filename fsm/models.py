@@ -164,63 +164,6 @@ class RegistrationForm(Paper):
         return f'<{self.id}-{self.paper_type}>:{self.event_or_fsm.name if self.event_or_fsm else None}'
 
 
-class RegistrationReceipt(AnswerSheet):
-    class RegistrationStatus(models.TextChoices):
-        Accepted = "Accepted"
-        Rejected = "Rejected"
-        Waiting = "Waiting"
-
-    class CorrectionStatus(models.TextChoices):
-        Correct = "Correct"
-        Wrong = "Wrong"
-        ManualCorrectionRequired = "ManualCorrectionRequired"
-        NoCorrectionRequired = "NoCorrectionRequired"
-        NoSolutionAvailable = "NoSolutionAvailable"
-        Other = "Other"
-
-    # should be in every answer sheet child
-    answer_sheet_of = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True, blank=True,
-                                        on_delete=models.SET_NULL)
-    user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
-                             null=True, blank=True)
-    status = models.CharField(max_length=25, blank=False,
-                              default='Waiting', choices=RegistrationStatus.choices)
-    is_participating = models.BooleanField(default=False)
-    team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL,
-                             related_name='members', null=True, blank=True)
-    certificate = models.FileField(
-        upload_to='certificates/', null=True, blank=True, default=None)
-
-    @property
-    def purchases(self):
-        if self.answer_sheet_of.event_or_fsm.merchandise:
-            return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
-        return Purchase.objects.none()
-
-    @property
-    def is_paid(self):
-        return len(self.purchases.filter(
-            status=Purchase.Status.Success)) > 0 if self.answer_sheet_of.event_or_fsm.merchandise else True
-
-    class Meta:
-        unique_together = ('answer_sheet_of', 'user',)
-
-    def correction_status(self):
-        for a in self.answers.all():
-            if isinstance(a, (SmallAnswer, MultiChoiceAnswer)):
-                correction_status = a.correction_status()
-                if correction_status == self.CorrectionStatus.Wrong:
-                    return self.CorrectionStatus.Wrong
-                elif correction_status != self.CorrectionStatus.Correct:
-                    return self.CorrectionStatus.NoCorrectionRequired
-            else:
-                return self.CorrectionStatus.ManualCorrectionRequired
-        return self.CorrectionStatus.Correct
-
-    def __str__(self):
-        return f'{self.id}:{self.user.full_name}{"+" if self.is_participating else "x"}'
-
-
 class TeamManager(models.Manager):
 
     def get_team_from_widget(self, user, widget):
@@ -238,7 +181,7 @@ class Team(models.Model):
     name = models.CharField(max_length=200, null=True, blank=True)
     registration_form = models.ForeignKey(RegistrationForm, related_name='teams', null=True, blank=True,
                                           on_delete=models.SET_NULL)
-    team_head = models.OneToOneField(RegistrationReceipt, related_name='headed_team', null=True, blank=True,
+    team_head = models.OneToOneField('RegistrationReceipt', related_name='headed_team', null=True, blank=True,
                                      on_delete=models.SET_NULL)
 
     chat_room = models.CharField(max_length=200, null=True, blank=True)
@@ -256,7 +199,7 @@ class Invitation(models.Model):
         Accepted = "Accepted"
 
     invitee = models.ForeignKey(
-        RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
+        'RegistrationReceipt', on_delete=models.CASCADE, related_name='invitations')
     team = models.ForeignKey(
         Team, on_delete=models.CASCADE, related_name='team_members')
     status = models.CharField(
@@ -386,7 +329,7 @@ class Player(models.Model):
     fsm = models.ForeignKey(FSM, related_name='players',
                             on_delete=models.CASCADE)
     receipt = models.ForeignKey(
-        RegistrationReceipt, related_name='players', on_delete=models.CASCADE)
+        'RegistrationReceipt', related_name='players', on_delete=models.CASCADE)
     current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='players')
     last_visit = models.DateTimeField(null=True, blank=True)
@@ -751,7 +694,71 @@ PROBLEM_ANSWER_MAPPING = {
 }
 
 
+############ FORM / RECEIPT ############
+
+from scoring.models import Deliverable
+
+# TODO: class RegistrationReceipt(Deliverable):
+class RegistrationReceipt(AnswerSheet):
+    class RegistrationStatus(models.TextChoices):
+        Accepted = "Accepted"
+        Rejected = "Rejected"
+        Waiting = "Waiting"
+
+    class CorrectionStatus(models.TextChoices):
+        Correct = "Correct"
+        Wrong = "Wrong"
+        ManualCorrectionRequired = "ManualCorrectionRequired"
+        NoCorrectionRequired = "NoCorrectionRequired"
+        NoSolutionAvailable = "NoSolutionAvailable"
+        Other = "Other"
+
+    # should be in every answer sheet child
+    answer_sheet_of = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True, blank=True,
+                                        on_delete=models.SET_NULL)
+    user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
+                             null=True, blank=True)
+    status = models.CharField(max_length=25, blank=False,
+                              default='Waiting', choices=RegistrationStatus.choices)
+    is_participating = models.BooleanField(default=False)
+    team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL,
+                             related_name='members', null=True, blank=True)
+    certificate = models.FileField(
+        upload_to='certificates/', null=True, blank=True, default=None)
+
+    @property
+    def purchases(self):
+        if self.answer_sheet_of.event_or_fsm.merchandise:
+            return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
+        return Purchase.objects.none()
+
+    @property
+    def is_paid(self):
+        return len(self.purchases.filter(
+            status=Purchase.Status.Success)) > 0 if self.answer_sheet_of.event_or_fsm.merchandise else True
+
+    class Meta:
+        unique_together = ('answer_sheet_of', 'user',)
+
+    def correction_status(self):
+        for a in self.answers.all():
+            if isinstance(a, (SmallAnswer, MultiChoiceAnswer)):
+                correction_status = a.correction_status()
+                if correction_status == self.CorrectionStatus.Wrong:
+                    return self.CorrectionStatus.Wrong
+                elif correction_status != self.CorrectionStatus.Correct:
+                    return self.CorrectionStatus.NoCorrectionRequired
+            else:
+                return self.CorrectionStatus.ManualCorrectionRequired
+        return self.CorrectionStatus.Correct
+
+    def __str__(self):
+        return f'{self.id}:{self.user.full_name}{"+" if self.is_participating else "x"}'
+
+
 # ---------
+
+
 class SubmittedAnswer(models.Model):
     player = models.ForeignKey(
         'accounts.Player', on_delete=models.CASCADE, related_name='submitted_answers')
