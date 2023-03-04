@@ -159,8 +159,16 @@ class HintSerializer(PaperSerializer):
         read_only_fields = ['id', 'creator']
 
 
-class EdgeSimpleSerializer(serializers.ModelSerializer):
+class StateSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = State
+        fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
+        read_only_fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
 
+
+class EdgeSimpleSerializer(serializers.ModelSerializer):
+    head = StateSimpleSerializer()
+    
     def to_representation(self, instance):
         representation = super(EdgeSimpleSerializer, self).to_representation(instance)
         representation['str'] = str(instance)
@@ -203,13 +211,6 @@ class StateSerializer(PaperSerializer):
         fields = ['id', 'widgets', 'name', 'creator', 'fsm', 'hints', 'inward_edges', 'outward_edges', 'since', 'till',
                   'duration', 'is_exam']
         read_only_fields = ['id', 'creator', 'hints', 'inward_edges', 'outward_edges']
-
-
-class StateSimpleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = State
-        fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
-        read_only_fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
 
 
 class PaperPolymorphicSerializer(PolymorphicSerializer):
