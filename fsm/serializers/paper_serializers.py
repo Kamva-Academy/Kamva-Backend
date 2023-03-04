@@ -167,12 +167,8 @@ class StateSimpleSerializer(serializers.ModelSerializer):
 
 
 class EdgeSimpleSerializer(serializers.ModelSerializer):
+    tail = StateSimpleSerializer()
     head = StateSimpleSerializer()
-    
-    def to_representation(self, instance):
-        representation = super(EdgeSimpleSerializer, self).to_representation(instance)
-        representation['str'] = str(instance)
-        return representation
 
     class Meta:
         model = Edge
