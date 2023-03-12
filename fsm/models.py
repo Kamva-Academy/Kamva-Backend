@@ -6,6 +6,7 @@ class Paper(PolymorphicModel):
         RegistrationForm = 'RegistrationForm'
         State = 'State'
         Hint = 'Hint'
+        WidgetHint = 'WidgetHint'
         Article = 'Article'
 
     paper_type = models.CharField(
@@ -485,6 +486,10 @@ class Widget(PolymorphicModel):
             self.file = None
             self.file.save()
             pass
+
+
+class WidgetHint(Paper):
+    reference = models.ForeignKey(Widget, on_delete=models.CASCADE, related_name='hints')
 
 
 class Description(Widget):

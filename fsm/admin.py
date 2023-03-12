@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
 from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
-    Invitation, CertificateTemplate, Font, FSM, State, Hint, Widget, Video, Image, Player, Game, SmallAnswerProblem, \
+    Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag, Aparat
 
@@ -442,6 +442,12 @@ class ImageCustomAdmin(admin.ModelAdmin):
 
 @admin.register(Hint)
 class HintCustomAdmin(admin.ModelAdmin):
+    list_display = ['id', 'paper_type', 'creator']
+    list_filter = ['paper_type']
+
+
+@admin.register(WidgetHint)
+class WidgetHintCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'paper_type', 'creator']
     list_filter = ['paper_type']
 

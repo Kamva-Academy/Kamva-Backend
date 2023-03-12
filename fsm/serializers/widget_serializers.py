@@ -15,11 +15,17 @@ from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerS
 
 from fsm.serializers.validators import multi_choice_answer_validator
 from scoring.models import Scorable
+from rest_framework import serializers
 
 
 class WidgetSerializer(serializers.ModelSerializer):
     widget_type = serializers.ChoiceField(
         choices=Widget.WidgetTypes.choices, required=True)
+    hints = serializers.SerializerMethodField()
+
+    def get_hints(self, obj):
+        from fsm.serializers.paper_serializers import WidgetHintSerializer
+        return WidgetHintSerializer(obj.hints, many=True).data
 
     def create(self, validated_data):
         return super().create({'creator': self.context.get('user', None), **validated_data})
@@ -142,7 +148,7 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
     class Meta:
         model = SmallAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'answer', 'solution']
+                  'required', 'answer', 'solution', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     @transaction.atomic

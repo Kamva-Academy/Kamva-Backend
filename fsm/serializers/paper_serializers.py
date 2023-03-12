@@ -5,7 +5,7 @@ from rest_framework.exceptions import ParseError, PermissionDenied, ValidationEr
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
-from fsm.models import Event, FSM, RegistrationForm, Article, Hint, Edge, State, Tag
+from fsm.models import Event, WidgetHint, FSM, RegistrationForm, Article, Hint, Edge, State, Tag
 from fsm.serializers.certificate_serializer import CertificateTemplateSerializer
 from fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 
@@ -159,6 +159,16 @@ class HintSerializer(PaperSerializer):
         read_only_fields = ['id', 'creator']
 
 
+class WidgetHintSerializer(PaperSerializer):
+    widgets = WidgetPolymorphicSerializer(many=True, required=False)
+
+    class Meta:
+        model = WidgetHint
+        ref_name = 'hint'
+        fields = ['id', 'widgets', 'creator', 'reference']
+        read_only_fields = ['id', 'creator']
+ 
+
 class StateSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = State
@@ -215,8 +225,8 @@ class PaperPolymorphicSerializer(PolymorphicSerializer):
         'RegistrationForm': RegistrationFormSerializer,
         'Article': ArticleSerializer,
         'State': StateSerializer,
-        'Hint': HintSerializer
-
+        'Hint': HintSerializer,
+        'WidgetHint': WidgetHintSerializer
     }
 
     resource_type_field_name = 'paper_type'
