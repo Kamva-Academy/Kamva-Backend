@@ -9,7 +9,7 @@ from .views.edge_view import *
 from .views.registration_receipt_view import RegistrationReceiptViewSet
 from .views.registration_view import RegistrationViewSet, RegistrationAdminViewSet
 from .views.certificate_view import CertificateTemplateViewSet, FontViewSet
-from .views.state_view import StateViewSet, HintViewSet
+from .views.state_view import StateViewSet, HintViewSet, WidgetHintViewSet
 from .views.widget_view import *
 from .views.team_view import *
 
@@ -35,6 +35,7 @@ router.register(r'fsm', FSMViewSet, basename='fsms')
 router.register(r'state', StateViewSet, basename='states')
 router.register(r'edge', EdgeViewSet, basename='edges')
 router.register(r'hint', HintViewSet, basename='hints')
+router.register(r'widget-hint', WidgetHintViewSet, basename='widget-hints')
 router.register(r'widget', WidgetViewSet, basename='widgets')
 router.register(r'player', PlayerViewSet, basename='players')
 router.register(r'answers', AnswerViewSet, basename='answers')

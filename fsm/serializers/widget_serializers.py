@@ -81,7 +81,7 @@ class GameSerializer(WidgetSerializer):
     class Meta:
         model = Game
         fields = ['id', 'name', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link']
+                  'creator', 'duplication_of', 'link', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -94,7 +94,7 @@ class VideoSerializer(WidgetSerializer):
     class Meta:
         model = Video
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link']
+                  'creator', 'duplication_of', 'link', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -105,7 +105,7 @@ class AparatSerializer(WidgetSerializer):
     class Meta:
         model = Aparat
         fields = ['id', 'name', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'video_id']
+                  'creator', 'duplication_of', 'video_id', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -118,7 +118,7 @@ class ImageSerializer(WidgetSerializer):
     class Meta:
         model = Image
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link']
+                  'creator', 'duplication_of', 'link', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -130,7 +130,7 @@ class DescriptionSerializer(WidgetSerializer):
     class Meta:
         model = Description
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'text']
+                  'creator', 'duplication_of', 'text', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -190,7 +190,7 @@ class BigAnswerProblemSerializer(WidgetSerializer):
     class Meta:
         model = BigAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'solution']
+                  'required', 'solution', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 

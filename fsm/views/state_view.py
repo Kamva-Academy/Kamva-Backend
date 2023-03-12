@@ -5,9 +5,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from fsm.models import State, Hint
+from fsm.models import State, Hint, WidgetHint
 from fsm.permissions import IsStateModifier, IsHintModifier
-from fsm.serializers.paper_serializers import StateSerializer, ChangeWidgetOrderSerializer, HintSerializer
+from fsm.serializers.paper_serializers import StateSerializer, ChangeWidgetOrderSerializer, HintSerializer, WidgetHintSerializer
 
 
 class StateViewSet(viewsets.ModelViewSet):
@@ -78,3 +78,22 @@ class HintViewSet(viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             self.get_object().set_widget_order(serializer.validated_data.get('order'))
         return Response(data=StateSerializer(self.get_object()).data, status=status.HTTP_200_OK)
+
+
+class WidgetHintViewSet(viewsets.ModelViewSet):
+    serializer_class = WidgetHintSerializer
+    queryset = WidgetHint.objects.all()
+    my_tags = ['state']
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except(KeyError, AttributeError):
+            return super().get_serializer_class()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'user': self.request.user})
+        context.update({'editable': True})
+        context.update({'domain': self.request.build_absolute_uri('/api/')[:-5]})
+        return context

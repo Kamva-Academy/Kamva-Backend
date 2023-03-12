@@ -162,6 +162,11 @@ class HintSerializer(PaperSerializer):
 class WidgetHintSerializer(PaperSerializer):
     widgets = WidgetPolymorphicSerializer(many=True, required=False)
 
+    @transaction.atomic
+    def create(self, validated_data):
+        user = self.context.get('user', None)
+        return super(WidgetHintSerializer, self).create({'paper_type': 'Widgethint', 'creator': user, **validated_data})
+
     class Meta:
         model = WidgetHint
         ref_name = 'hint'
