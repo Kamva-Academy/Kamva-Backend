@@ -372,8 +372,7 @@ class State(Paper):
 #
 
 class Hint(Paper):
-    reference = models.ForeignKey(
-        State, on_delete=models.CASCADE, related_name='hints')
+    reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='hints')
 
 
 class Tag(models.Model):
@@ -450,6 +449,7 @@ class PlayerHistory(models.Model):
     def __str__(self):
         return f'{self.player.id}-{self.state.name}'
 
+############ Widget ############
 
 class Widget(PolymorphicModel):
     class WidgetTypes(models.TextChoices):
