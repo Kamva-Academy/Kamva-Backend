@@ -138,7 +138,7 @@ class ProblemSerializer(WidgetSerializer):
     class Meta:
         model = Problem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required']
+                  'required', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -203,7 +203,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
     class Meta:
         model = MultiChoiceProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'max_choices', 'choices', 'solution']
+                  'required', 'max_choices', 'choices', 'solution', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     def validate(self, attrs):
@@ -287,7 +287,7 @@ class UploadFileProblemSerializer(WidgetSerializer):
     class Meta:
         model = UploadFileProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'solution']
+                  'required', 'solution', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     def validate_answer(self, answer):
