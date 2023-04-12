@@ -262,7 +262,7 @@ class DiscountCode(models.Model):
 
     @staticmethod
     def calculate_discount(value, price):
-        return (price * (1 - value) // 100) * 100
+        return ((price * (1 - value) + 50) // 100) * 100
 
 
 class VoucherManager(models.Manager):
