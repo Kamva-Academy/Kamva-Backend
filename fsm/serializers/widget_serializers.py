@@ -206,6 +206,11 @@ class BigAnswerProblemSerializer(WidgetSerializer):
                   'required', 'solution', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
+    @transaction.atomic
+    def create(self, validated_data):
+        instance = super().create({'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
+        return instance
+
 
 class MultiChoiceProblemSerializer(WidgetSerializer):
     # todo - this is bullshit move it to representation
@@ -317,6 +322,10 @@ class UploadFileProblemSerializer(WidgetSerializer):
             ).to_representation(instance.answer)
         return representation
 
+    @transaction.atomic
+    def create(self, validated_data):
+        instance = super().create({'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
+        return instance
 
 class MockWidgetSerializer(serializers.Serializer):
     GameSerializer = GameSerializer(required=False)
