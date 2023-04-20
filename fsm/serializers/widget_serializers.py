@@ -98,6 +98,19 @@ class VideoSerializer(WidgetSerializer):
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
+class AudioSerializer(WidgetSerializer):
+    link = serializers.URLField(required=False)
+
+    def create(self, validated_data):
+        return super(AudioSerializer, self).create({'widget_type': Widget.WidgetTypes.Audio, **validated_data})
+
+    class Meta:
+        model = Video
+        fields = ['id', 'name', 'file', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'link', 'hints']
+        read_only_fields = ['id', 'creator', 'duplication_of']
+
+
 class AparatSerializer(WidgetSerializer):
     def create(self, validated_data):
         return super(AparatSerializer, self).create({'widget_type': Widget.WidgetTypes.Aparat, **validated_data})

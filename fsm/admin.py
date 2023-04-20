@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
 from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
-    Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Image, Player, Game, SmallAnswerProblem, \
+    Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag, Aparat
 
@@ -424,6 +424,13 @@ class VideoCustomAdmin(admin.ModelAdmin):
     list_filter = ['name']
     search_fields = ['name']
     actions = [download_files_from_links]
+
+
+@admin.register(Audio)
+class AudioCustomAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
+    list_filter = ['name']
+    search_fields = ['name']
 
 
 @admin.register(Aparat)
