@@ -48,17 +48,6 @@ def get_a_player_from_team(team, fsm):
             player = players.first()
         return player
 
-
-def team_change_current_state(team, state):
-    # fsm change checked
-    # create history
-    team.current_state = state
-    if state and len(PlayerHistory.objects.filter(team=team.id, state=state.id)) == 0:
-        history = PlayerHistory.objects.create(
-            start_time=timezone.localtime(), team=team, state=state)
-    team.save()
-
-
 def user_change_current_state(participant, state):
     # TODO change_current_state body
     # check if it is in history or next state
@@ -98,16 +87,6 @@ def current_state_widgets_json(state, player):
             if 'answer' in widgetJson:
                 widgetJson.pop('answer')
     return widgets
-
-
-def current_state_incoming_edge(state, player_workshop):
-    player_history = PlayerHistory.objects.filter(
-        player_workshop=player_workshop, state=state).last()
-    if player_history:
-        edge = player_history.inward_edge
-    else:
-        return
-    return edge
 
 
 def register_individual_workshop(workshop, participant):

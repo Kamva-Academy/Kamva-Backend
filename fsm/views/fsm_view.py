@@ -102,18 +102,13 @@ class FSMViewSet(viewsets.ModelViewSet):
                                                      context=self.get_serializer_context())
                 if serializer.is_valid(raise_exception=True):
                     player_history = serializer.save()
+
         else:
             # if any state has been deleted and player has no current state:
             if player.current_state is None:
                 player.current_state = fsm.first_state
                 player.save()
 
-            player_history = PlayerHistory.objects.filter(
-                player=player, state=player.current_state).last()
-            if player_history is None:
-                logger.info(
-                    f'user {user.full_name} has player [id:{player.id}] without corresponding history')
-            #     raise NotFound(serialize_error('4081'))
         return Response(PlayerSerializer(context=self.get_serializer_context()).to_representation(player),
                         status=status.HTTP_200_OK)
 
