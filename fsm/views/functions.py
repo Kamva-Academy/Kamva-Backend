@@ -70,25 +70,6 @@ def user_get_current_state(player, fsm):
     return current_state
 
 
-def current_state_widgets_json(state, player):
-    widgets = []
-    for widget in state.widgets():
-        widgetJson = WidgetSerializer().to_representation(widget)
-        # widgetJson.pop('answer', None)
-        widgets.append(widgetJson)
-
-        last_answer = SubmittedAnswer.objects.filter(problem_id=widget.id, player=player) \
-            .order_by('-publish_date')
-        if len(last_answer) > 0:
-            submitted_answer = AnswerSerializer().to_representation(
-                last_answer[0].xanswer())
-            widgetJson['last_submit'] = submitted_answer
-        else:
-            if 'answer' in widgetJson:
-                widgetJson.pop('answer')
-    return widgets
-
-
 def register_individual_workshop(workshop, participant):
     player_workshop = PlayerWorkshop.objects.create(workshop=workshop, player=participant,
                                                     current_state=workshop.first_state, last_visit=timezone.now())

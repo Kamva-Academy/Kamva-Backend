@@ -771,24 +771,6 @@ class RegistrationReceipt(AnswerSheet):
 
 # ---------
 
-
-class SubmittedAnswer(models.Model):
-    player = models.ForeignKey(
-        'accounts.Player', on_delete=models.CASCADE, related_name='submitted_answers')
-    publish_date = models.DateTimeField(null=True, blank=True)
-    # team_history = models.ForeignKey('TeamHistory', null=True, on_delete=models.CASCADE, related_name='answers')
-    answer = models.OneToOneField(
-        Answer, null=True, on_delete=models.CASCADE, unique=True)
-    problem = models.ForeignKey(
-        Problem, null=True, on_delete=models.CASCADE, related_name='submitted_answers')
-
-    def xanswer(self):
-        try:
-            return Answer.objects.filter(id=self.answer.id).first()
-        except:
-            return None
-
-
 class PlayerWorkshop(models.Model):
     player = models.ForeignKey(
         'accounts.Player', on_delete=models.CASCADE, related_name='player_workshop')
