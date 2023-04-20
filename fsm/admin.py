@@ -78,6 +78,7 @@ class RegistrationFormAdmin(admin.ModelAdmin):
     def get_registration_status_for_users(self, request, queryset):
         if len(queryset) > 0:
             selected = queryset.values_list('pk', flat=True)[0]
+            # TODO: fix bug
             return HttpResponseRedirect(f'/api/admin/export_registration_data/?q={selected}')
 
     model = RegistrationForm
