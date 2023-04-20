@@ -23,8 +23,10 @@ def move_on_edge(p, edge, departure_time, is_forward):
     p.current_state = edge.head if is_forward else edge.tail
     p.last_visit = departure_time
     p.save()
-    last_state_history = PlayerHistory.objects.filter(
-        player=p, state=edge.tail if is_forward else edge.head).last()
+    try:
+        last_state_history = PlayerHistory.objects.get(player=p, state=edge.tail if is_forward else edge.head, end_time=None)
+    except:
+        last_state_history = None
     if last_state_history:
         last_state_history.end_time = departure_time
         last_state_history.save()
