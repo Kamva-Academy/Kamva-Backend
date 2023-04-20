@@ -9,7 +9,7 @@ from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
 from fsm.models import Player, Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
-    Paper, Widget, Team, Aparat
+    Paper, Widget, Team, Aparat, Audio
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
 
@@ -105,7 +105,7 @@ class AudioSerializer(WidgetSerializer):
         return super(AudioSerializer, self).create({'widget_type': Widget.WidgetTypes.Audio, **validated_data})
 
     class Meta:
-        model = Video
+        model = Audio
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
                   'creator', 'duplication_of', 'link', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
