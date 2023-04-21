@@ -363,8 +363,8 @@ class AnswerCustomAdmin(admin.ModelAdmin):
 
 @admin.register(BigAnswer)
 class BigAnswerCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'widget_type', 'creator']
-    list_filter = ['problem__name']
+    list_display = ['id', 'name', 'is_final_answer']
+    list_filter = ['problem', 'is_final_answer']
 
     def name(self, obj):
         return obj.problem.name
