@@ -356,8 +356,8 @@ class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
 @admin.register(Answer)
 class AnswerCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'answer_type', 'answer_sheet',
-                    'submitted_by', 'is_final_answer', 'is_correct']
-    list_filter = ['answer_type', 'is_final_answer', 'is_correct']
+                    'submitted_by', 'is_final_answer', 'is_correct', 'created_at']
+    list_filter = ['answer_type', 'is_final_answer', 'is_correct', 'created_at']
     search_fields = ['submitted_by__username']
 
 
