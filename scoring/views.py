@@ -32,14 +32,14 @@ def get_answer_scores_and_comments(request):
     answer_scores = []
     for score_type in paper.score_types.all():
         score = Score.objects.filter(
-            score_type=score_type, answer__id=answer_id)
+            type=score_type, deliverable__id=answer_id)
         item = {
             'type': ScoreTypeSerializer(score_type).data,
             'score': ScoreSerializer(score[0]).data if len(score) > 0 else None
         }
         answer_scores.append(item)
 
-    comments = Comment.objects.filter(answer__id=answer_id)
+    comments = Comment.objects.filter(deliverable__id=answer_id)
     comments_serializer = CommentSerializer(data=comments, many=True)
     comments_serializer.is_valid()
 
@@ -55,15 +55,14 @@ def set_answer_score(request):
     score_type = ScoreType.objects.get(id=score_type_id)
     value = request.data.get('score')
 
-    score = Score.objects.filter(
-        answer__id=answer_id, type=score_type)
+    score = Score.objects.filter(deliverable__id=answer_id, type=score_type)
 
     if len(score) > 0:
         score = score[0]
         score.value = value
         score.save()
     else:
-        Score(value=value, answer=answer, type=score_type).save()
+        Score(value=value, deliverable=answer, type=score_type).save()
 
     return Response({'ok'}, status.HTTP_200_OK)
 
@@ -75,7 +74,7 @@ def create_comment(request):
     answer_id = request.data.get('answer_id')
     answer = Answer.objects.get(id=answer_id)
     user = request.user
-    Comment(content=content, writer=user, answer=answer).save()
+    Comment(content=content, writer=user, deliverable=answer).save()
 
     comments = Comment.objects.filter(answer__id=answer_id)
     comments_serializer = CommentSerializer(data=comments, many=True)
