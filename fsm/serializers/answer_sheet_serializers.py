@@ -8,6 +8,7 @@ from accounts.serializers import StudentshipSerializer
 from errors.error_codes import serialize_error
 from fsm.models import AnswerSheet, RegistrationReceipt, Problem
 from fsm.serializers.answer_serializers import AnswerPolymorphicSerializer
+from accounts.serializers import UserSerializer
 
 
 class AnswerSheetSerializer(serializers.ModelSerializer):
@@ -44,6 +45,7 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
 
 class RegistrationReceiptSerializer(AnswerSheetSerializer):
     answers = AnswerPolymorphicSerializer(many=True, required=False)
+    user = UserSerializer(required=False)
 
     class Meta:
         model = RegistrationReceipt
