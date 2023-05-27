@@ -1,4 +1,5 @@
 from accounts.models import *
+from abc import abstractmethod
 
 
 class Paper(PolymorphicModel):
@@ -604,6 +605,10 @@ class Answer(PolymorphicModel):
     def __str__(self):
         return f'user: {self.submitted_by.username if self.submitted_by else "-"} - problem {self.problem.id}'
 
+    @abstractmethod
+    def get_string_answer(self):
+        pass
+
     @property
     def problem(self):
         return self.problem
@@ -621,6 +626,9 @@ class SmallAnswer(Answer):
             return RegistrationReceipt.CorrectionStatus.Wrong
         return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
+    def get_string_answer(self):
+        return self.text
+
     def __str__(self):
         return self.text
 
@@ -629,6 +637,9 @@ class BigAnswer(Answer):
     problem = models.ForeignKey('fsm.BigAnswerProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
     text = models.TextField()
+
+    def get_string_answer(self):
+        return self.text
 
 
 class ChoiceSelection(models.Model):
@@ -642,6 +653,10 @@ class MultiChoiceAnswer(Answer):
     problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, blank=True, on_delete=models.CASCADE,
                                 related_name='answers')
     choices = models.ManyToManyField(Choice, through=ChoiceSelection)
+
+    def get_string_answer(self):
+        # todo
+        pass
 
     def correction_status(self):
         answer = self.problem.answer
@@ -669,6 +684,9 @@ class UploadFileAnswer(Answer):
                                 related_name='answers')
     answer_file = models.FileField(
         upload_to='answers', max_length=4000, blank=False)
+
+    def get_string_answer(self):
+        return self.answer_file
 
 
 ########################

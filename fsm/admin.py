@@ -97,11 +97,17 @@ def download_csv(modeladmin, request, queryset):
     import csv
     f = open('registration_receipts.csv', 'w')
     writer = csv.writer(f)
-    writer.writerow(['user', 'answer_sheet_type',
-                    'answer_sheet_of', 'status', 'is_participating', 'team'])
-    for s in queryset:
-        writer.writerow([s.user, s.answer_sheet_type,
-                        s.answer_sheet_of, s.status, s.is_participating, s.team])
+    writer.writerow(['user', 'status', 'is_participating', 'team'])
+    for registration_receipt in queryset:
+        row = [registration_receipt.user, registration_receipt.status, registration_receipt.is_participating, registration_receipt.team]
+        for answer in registration_receipt.answers.all():
+            row.append(answer.get_string_answer())
+        writer.writerow(row)
+    f.close()
+    f = open('registration_receipts.csv', 'r')
+    response = HttpResponse(f, content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=registration_receipts.csv'
+    return response
 
 
 class RegistrationReceiptsAdmin(admin.ModelAdmin):
@@ -357,7 +363,8 @@ class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
 class AnswerCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'answer_type', 'answer_sheet',
                     'submitted_by', 'is_final_answer', 'is_correct', 'created_at']
-    list_filter = ['answer_type', 'is_final_answer', 'is_correct', 'created_at']
+    list_filter = ['answer_type', 'is_final_answer',
+                   'is_correct', 'created_at']
     search_fields = ['submitted_by__username']
 
 
