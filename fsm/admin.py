@@ -97,11 +97,23 @@ def download_csv(modeladmin, request, queryset):
     import csv
     f = open('registration_receipts.csv', 'w')
     writer = csv.writer(f)
-    writer.writerow(['user', 'status', 'is_participating', 'team'])
+    a_receipt = queryset[0]
+    problems = []
+    for widget in a_receipt.answer_sheet_of.widgets.all():
+        print(widget.widget_type)
+        if 'problem' in widget.widget_type.lower():
+            problem = widget
+            problems.append(problem.id)
+    header = ['user', 'status', 'is_participating', 'team']
+    writer.writerow(
+        header + [f'widget {problem}' for problem in problems])
     for registration_receipt in queryset:
-        row = [registration_receipt.user, registration_receipt.status, registration_receipt.is_participating, registration_receipt.team]
-        for answer in registration_receipt.answers.all():
-            row.append(answer.get_string_answer())
+        row = [registration_receipt.user, registration_receipt.status,
+               registration_receipt.is_participating, registration_receipt.team]
+        for problem_id in problems:
+            for answer in registration_receipt.answers.all():
+                if answer.problem.id == problem_id:
+                    row.append(answer.get_string_answer())
         writer.writerow(row)
     f.close()
     f = open('registration_receipts.csv', 'r')
