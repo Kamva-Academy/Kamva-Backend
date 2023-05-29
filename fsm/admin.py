@@ -110,10 +110,12 @@ def download_csv(modeladmin, request, queryset):
     for registration_receipt in queryset:
         row = [registration_receipt.user, registration_receipt.status,
                registration_receipt.is_participating, registration_receipt.team]
+        answers = registration_receipt.answers.all()
         for problem_id in problems:
-            for answer in registration_receipt.answers.all():
+            for answer in answers:
                 if answer.problem.id == problem_id:
                     row.append(answer.get_string_answer())
+                    break
         writer.writerow(row)
     f.close()
     f = open('registration_receipts.csv', 'r')
