@@ -25,6 +25,10 @@ class UploadFileQuestionAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(InviteeUsernameQuestion)
+class InviteeUsernameQuestionAdmin(admin.ModelAdmin):
+    pass
+
 ############ ANSWERS ############
 
 
@@ -45,4 +49,9 @@ class LongAnswerAdmin(admin.ModelAdmin):
 
 @admin.register(UploadFileAnswer)
 class UploadFileAnswerAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(InviteeUsernameAnswer)
+class InviteeUsernameAnswerAdmin(admin.ModelAdmin):
     pass
