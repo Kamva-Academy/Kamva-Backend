@@ -7,7 +7,7 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 from errors.error_codes import serialize_error
 from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
 from fsm.serializers.validators import multi_choice_answer_validator
-# from question.models import InviteeUsernameAnswer
+from question.models import InviteeUsernameAnswer
 # from utils.lazy_ref import LazyRefSerializer
 # from question.serializers.invitee_username import InviteeUsernameResponseSerializer
 # InviteeUsernameResponseSerializer = LazyRefSerializer('question.serializers.invitee_username.InviteeUsernameResponseSerializer')
@@ -215,7 +215,7 @@ class MockAnswerSerializer(serializers.Serializer):
     MultiChoiceAnswerSerializer = MultiChoiceAnswerSerializer(required=False)
     UploadFileAnswerSerializer = UploadFileAnswerSerializer(required=False)
 
-# from question.serializers.invitee_username import InviteeUsernameAnswerSerializer
+from question.serializers.invitee_username import InviteeUsernameAnswerSerializer
 
 class AnswerPolymorphicSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
@@ -225,7 +225,7 @@ class AnswerPolymorphicSerializer(PolymorphicSerializer):
         MultiChoiceAnswer: MultiChoiceAnswerSerializer,
         UploadFileAnswer: FileAnswerSerializer,
         # todo: fix inheritance
-        # InviteeUsernameAnswer: InviteeUsernameAnswerSerializer,
+        InviteeUsernameAnswer: InviteeUsernameAnswerSerializer,
     }
 
     resource_type_field_name = 'answer_type'

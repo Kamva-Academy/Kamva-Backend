@@ -1,5 +1,5 @@
 from rest_polymorphic.serializers import PolymorphicSerializer
-# from question.models import Question
+from question.models import Question
 from question.serializers.question_polymorphic import QuestionPolymorphicSerializer
 from fsm.serializers.widget_serializers import DescriptionSerializer, ImageSerializer, VideoSerializer, AudioSerializer, AparatSerializer, \
     GameSerializer, SmallAnswerProblemSerializer, BigAnswerProblemSerializer, MultiChoiceProblemSerializer, UploadFileProblemSerializer
@@ -19,7 +19,7 @@ class WidgetPolymorphicSerializer(PolymorphicSerializer):
         Aparat: AparatSerializer,
         Game: GameSerializer,
         # Problem,
-        # Question: QuestionPolymorphicSerializer,
+        Question: QuestionPolymorphicSerializer,
         SmallAnswerProblem: SmallAnswerProblemSerializer,
         BigAnswerProblem: BigAnswerProblemSerializer,
         MultiChoiceProblem: MultiChoiceProblemSerializer,
