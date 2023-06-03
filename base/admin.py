@@ -1,3 +1,15 @@
 from django.contrib import admin
 
-# Register your models here.
+from base.models import *
+
+############ QUESTIONS ############
+
+
+@admin.register(Paper)
+class PaperAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Widget)
+class WidgetAdmin(admin.ModelAdmin):
+    pass
