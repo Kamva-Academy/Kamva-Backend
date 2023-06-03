@@ -1,5 +1,5 @@
 from datetime import timedelta
-from workshop_backend.settings.base import *
+from kamva_backend.settings.base import *
 
 DEBUG = get_environment_var('DEBUG', 'False') == 'True'
 
@@ -65,7 +65,7 @@ LOGGING = {
             'level': LOG_LEVEL,
             'propagate': True,
         },
-        'workshop_backend': {
+        'kamva_backend': {
             'handlers': ['file', 'console'],
             'level': LOG_LEVEL,
             'propagate': True,

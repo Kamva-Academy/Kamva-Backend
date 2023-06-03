@@ -26,7 +26,7 @@ import re
 from accounts.validators import percentage_validator
 from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
-from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
+from kamva_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
     DISCOUNT_CODE_LENGTH, PURCHASE_UNIQ_CODE_LENGTH
 
 logger = logging.getLogger(__file__)

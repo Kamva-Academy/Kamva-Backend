@@ -79,7 +79,7 @@ class RegistrationReceiptViewSet(GenericViewSet, RetrieveModelMixin, DestroyMode
             #     # TODO - I did the dirty way to force us change it to notification sooner
             #     def send_update_notification_sms(user, token):
             #         # text to put in kavenegar: 'کاربر گرامی، تغییری در وضعیت ثبت‌نام شما در '{token}' ایجاد شده است. به کاموا مراجعه کنید: kamva.academy'
-            #         from workshop_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY
+            #         from kamva_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY
             #         api = KAVENEGAR_TOKEN
             #         params = {
             #             'receptor': user.phone_number,
