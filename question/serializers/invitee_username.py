@@ -36,7 +36,7 @@ class InviteeUsernameAnswerSerializer(AnswerSerializer):
                         data={'value': number, 'type': score_type.id, 'deliverable': invitee_response.id})
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
-        return super().create({'response_type': 'InviteeUsernameResponse', **validated_data})
+        return super().create({'response_type': 'InviteeUsernameAnswer', **validated_data})
 
     class Meta:
         model = InviteeUsernameAnswer

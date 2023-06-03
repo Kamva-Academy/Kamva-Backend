@@ -1,8 +1,9 @@
 from rest_polymorphic.serializers import PolymorphicSerializer
 from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
-from question.models import InviteeUsernameResponse
+from question.models import InviteeUsernameAnswer
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, MultiChoiceAnswerSerializer, FileAnswerSerializer
-from question.serializers.invitee_username import InviteeUsernameResponseSerializer
+from question.serializers.invitee_username import InviteeUsernameAnswerSerializer
+
 
 class AnswerPolymorphicSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
@@ -10,7 +11,7 @@ class AnswerPolymorphicSerializer(PolymorphicSerializer):
         BigAnswer: BigAnswerSerializer,
         MultiChoiceAnswer: MultiChoiceAnswerSerializer,
         UploadFileAnswer: FileAnswerSerializer,
-        InviteeUsernameResponse: InviteeUsernameResponseSerializer,
+        InviteeUsernameAnswer: InviteeUsernameAnswerSerializer,
     }
 
     resource_type_field_name = 'answer_type'
