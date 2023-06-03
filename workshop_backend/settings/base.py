@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'scoring.apps.ScoringConfig',
     'event_metadata.apps.EventMetadataConfig',
     'question.apps.QuestionConfig',
+    'base.apps.BaseConfig',
 ]
 
 # SITE_ID=1
