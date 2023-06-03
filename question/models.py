@@ -1,31 +1,18 @@
 from abc import abstractmethod
 from django.db import models
-from fsm.models import PROBLEM_ANSWER_MAPPING, AnswerSheet, RegistrationReceipt, State, Team, Widget
-from scoring.models import Deliverable, Scorable, Score
+from fsm.models import RegistrationReceipt, State, Team
+from base.models import Widget
+from scoring.models import Deliverable
 from django.core.validators import MinValueValidator
 
 ############ QUESTIONS ############
-
-
-class Question(Scorable):
-    class ScorableTypes(models.TextChoices):
-        InviteeUsername = 'InviteeUsername'
-
-    text = models.TextField()
-    required = models.BooleanField(default=False)
-    question_type = models.CharField(
-        max_length=30, choices=ScorableTypes.choices)
-
-    def __str__(self):
-        return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Question(Widget):
     text = models.TextField()
     is_required = models.BooleanField(default=False)
     solution = models.TextField(null=True, blank=True)
-    score = models.ForeignKey(
-        Score, null=True, blank=True, on_delete=models.SET_NULL)
+    # score = models.ForeignKey(Score, null=True, blank=True, on_delete=models.SET_NULL)
 
     @property
     def answer(self):
@@ -86,8 +73,7 @@ class Answer(Deliverable):
         UploadFileAnswer = 'UploadFileAnswer'
 
     answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices)
-    answer_sheet = models.ForeignKey(AnswerSheet, related_name='new_answers', null=True, blank=True,
-                                     on_delete=models.SET_NULL)
+
     submitted_by = models.ForeignKey(
         'accounts.User', related_name='new_submitted_answers', null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -186,3 +172,11 @@ class InviteeUsernameAnswer(Answer):
     question = models.ForeignKey(
         InviteeUsernameQuestion, on_delete=models.CASCADE, related_name='answers')
     username = models.CharField(max_length=15)
+
+
+PROBLEM_ANSWER_MAPPING = {
+    'ShortAnswerQuestion': ShortAnswer,
+    'LongAnswerQuestion': LongAnswer,
+    'MultiChoiceQuestion': MultiChoiceAnswer,
+    'UploadFileQuestion': UploadFileAnswer,
+}
