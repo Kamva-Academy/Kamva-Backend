@@ -1,12 +1,14 @@
-from scoring.serializers.score_serializers import ScorableSerializer, DeliverableSerializer
-from question.models import Response
+from fsm.serializers.widget_serializers import WidgetSerializer
+from scoring.serializers.score_serializers import DeliverableSerializer
+from question.models import Answer
 
-class QuestionSerializer(ScorableSerializer):
+
+class QuestionSerializer(WidgetSerializer):
     pass
 
 
-class ResponseSerializer(DeliverableSerializer):
-    
+class AnswerSerializer(DeliverableSerializer):
+
     class meta:
-        model = Response
+        model = Answer
         fields = ['id', 'name', 'paper', 'widget_type']

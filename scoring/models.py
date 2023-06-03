@@ -1,8 +1,6 @@
-from operator import mod
 from django.db import models
 from accounts.models import *
-from django.db.models import IntegerField, Model, Sum
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import IntegerField, Sum
 from fsm.models import Widget
 from polymorphic.models import PolymorphicModel
 from django.core.exceptions import ValidationError
@@ -13,10 +11,12 @@ class Deliverable(PolymorphicModel):
         Answer = 'Answer'
         Response = 'Response'
 
-    deliverable_type = models.CharField(max_length=20, choices=DeliverableTypes.choices)
-    deliverer = models.ForeignKey('accounts.User', related_name='deliverer', on_delete=models.CASCADE)
+    deliverable_type = models.CharField(
+        max_length=20, choices=DeliverableTypes.choices)
+    deliverer = models.ForeignKey(
+        'accounts.User', related_name='deliverer', on_delete=models.CASCADE)
     creation_time = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f'user: {self.deliverer.username}'
 
@@ -26,7 +26,8 @@ class Scorable(Widget):
         Problem = 'Question'
         Question = 'Problem'
 
-    scorable_type = models.CharField(max_length=30, choices=ScorableTypes.choices)
+    scorable_type = models.CharField(
+        max_length=30, choices=ScorableTypes.choices)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>'
@@ -41,13 +42,16 @@ class ScoreType(models.Model):
 
 
 class ScorePackage(models.Model):
-    type = models.ForeignKey(ScoreType, on_delete=models.CASCADE, related_name='score_packages')
+    type = models.ForeignKey(
+        ScoreType, on_delete=models.CASCADE, related_name='score_packages')
     number = models.IntegerField(default=1)
-    scorable = models.ForeignKey(Scorable, on_delete=models.CASCADE, related_name='score_packages')
+    scorable = models.ForeignKey(
+        Scorable, on_delete=models.CASCADE, related_name='score_packages')
 
     def clean(self):
         if not self.type in self.scorable.paper.score_types.all():
-            raise ValidationError('selected score-type is not in the scorable\'s paper\'s score-types')
+            raise ValidationError(
+                'selected score-type is not in the scorable\'s paper\'s score-types')
         return self
 
     def __str__(self):
@@ -57,7 +61,8 @@ class ScorePackage(models.Model):
 class Score(models.Model):
     value = IntegerField(default=0)
     type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
-    deliverable = models.ForeignKey(Deliverable, on_delete=models.CASCADE, related_name='scores')
+    deliverable = models.ForeignKey(
+        Deliverable, on_delete=models.CASCADE, related_name='scores')
 
     class Meta:
         unique_together = ('deliverable', 'type')
@@ -68,7 +73,8 @@ class Score(models.Model):
 
 class Comment(models.Model):
     content = models.TextField(null=False, blank=False)
-    writer = models.ForeignKey('accounts.User', related_name='comments', null=True, blank=True, on_delete=models.SET_NULL)
+    writer = models.ForeignKey('accounts.User', related_name='comments',
+                               null=True, blank=True, on_delete=models.SET_NULL)
     deliverable = models.ForeignKey(Deliverable, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -84,7 +90,8 @@ class BaseCondition(PolymorphicModel):
 class Condition(BaseCondition):
     name = models.CharField(max_length=50, null=True, blank=True)
     amount = models.IntegerField(default=0)
-    score_type = models.ForeignKey(ScoreType, related_name='conditions', on_delete=models.CASCADE)
+    score_type = models.ForeignKey(
+        ScoreType, related_name='conditions', on_delete=models.CASCADE)
 
     def evaluate(self, user: User) -> bool:
         score_sum = Score.objects.filter(type=self.score_type, deliverable__deliverer=user).aggregate(
@@ -100,14 +107,17 @@ class Criteria(BaseCondition):
         And = "And"
         Or = "Or"
 
-    conditions = models.ManyToManyField(BaseCondition, related_name='criterias')
-    operand = models.CharField(max_length=25, blank=False, null=False, choices=Operand.choices)
+    conditions = models.ManyToManyField(
+        BaseCondition, related_name='criterias')
+    operand = models.CharField(
+        max_length=25, blank=False, null=False, choices=Operand.choices)
 
     def evaluate(self, user: User) -> bool:
         result = self.operand == 'And'
         for condition in self.conditions.all():
             evaluation = condition.evaluate(user)
-            result = (result and evaluation) if self.operand == 'And' else (result or evaluation)
+            result = (result and evaluation) if self.operand == 'And' else (
+                result or evaluation)
         return result
 
     def __str__(self):
