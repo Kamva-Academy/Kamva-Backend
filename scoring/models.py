@@ -1,9 +1,7 @@
 from django.db import models
-from accounts.models import *
-from django.db.models import IntegerField, Sum
-from fsm.models import Widget
+from accounts.models import EducationalInstitute, User
+from django.db.models import Sum
 from polymorphic.models import PolymorphicModel
-from django.core.exceptions import ValidationError
 from base.models import Creatable
 
 
@@ -33,6 +31,8 @@ class Score(models.Model):
     value = models.JSONField()
     deliverable = models.ForeignKey(
         Deliverable, on_delete=models.CASCADE, related_name='scores', unique=True)
+    institute = models.ForeignKey(
+        EducationalInstitute, on_delete=models.CASCADE, related_name='scores')
 
     def __str__(self):
         return f'{self.value}'
