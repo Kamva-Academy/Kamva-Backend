@@ -14,7 +14,6 @@ from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerS
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
 
 from fsm.serializers.validators import multi_choice_answer_validator
-from scoring.models import Scorable
 from rest_framework import serializers
 
 

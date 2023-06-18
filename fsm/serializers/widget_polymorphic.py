@@ -6,7 +6,6 @@ from fsm.serializers.widget_serializers import DescriptionSerializer, ImageSeria
 from fsm.models import Player, Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
     Paper, Widget, Team, Aparat, Audio
-from scoring.models import Scorable
 
 
 class WidgetPolymorphicSerializer(PolymorphicSerializer):
