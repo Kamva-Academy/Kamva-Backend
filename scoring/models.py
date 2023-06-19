@@ -28,7 +28,7 @@ class ScoreType(models.Model):
 
 
 class Score(models.Model):
-    value = models.JSONField()
+    value = models.JSONField(null=True)
     deliverable = models.ForeignKey(
         Deliverable, on_delete=models.CASCADE, related_name='scores', unique=True)
     institute = models.ForeignKey(

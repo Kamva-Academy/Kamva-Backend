@@ -14,7 +14,7 @@ from django.db import transaction
 
 from base.permissions import CanSubmitAnswer
 from question_widget.models import PROBLEM_ANSWER_MAPPING
-from question_widget.serializers.answer_polymorphic import AnswerPolymorphicSerializer, MockAnswerSerializer
+from question_widget.serializers.answer_polymorphic_serializer import AnswerPolymorphicSerializer, MockAnswerSerializer
 from base.serializers.widget_serializers import MockWidgetSerializer
 from base.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 

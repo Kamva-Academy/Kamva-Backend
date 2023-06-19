@@ -9,7 +9,7 @@ from question_widget.filtersets import AnswerFilterSet
 from question_widget.models import Answer, UploadFileAnswer
 from question_widget.permissions import IsAnswerModifier, MentorCorrectionPermission
 from question_widget.serializers.answer_serializers import UploadFileAnswerSerializer
-from question_widget.serializers.answer_polymorphic import AnswerPolymorphicSerializer
+from question_widget.serializers.answer_polymorphic_serializer import AnswerPolymorphicSerializer
 
 
 class UploadAnswerViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin):

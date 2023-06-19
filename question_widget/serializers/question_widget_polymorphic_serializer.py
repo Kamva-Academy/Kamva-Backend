@@ -1,6 +1,6 @@
 from rest_polymorphic.serializers import PolymorphicSerializer
 from question_widget.models import InviteeUsernameQuestion
-from question_widget.serializers.invitee_username import InviteeUsernameQuestionSerializer
+from question_widget.serializers.question_widget_serializers import InviteeUsernameQuestionSerializer
 
 
 class QuestionPolymorphicSerializer(PolymorphicSerializer):

@@ -1,16 +1,11 @@
 import os
 from datetime import datetime
-from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
-from rest_polymorphic.serializers import PolymorphicSerializer
 from errors.error_codes import serialize_error
-from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
+from question_widget.models import ShortAnswer, LongAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice
 from fsm.serializers.validators import multi_choice_answer_validator
-from question_widget.models import InviteeUsernameAnswer
-# from utils.lazy_ref import LazyRefSerializer
-# from question_widget.serializers.invitee_username import InviteeUsernameResponseSerializer
-# InviteeUsernameResponseSerializer = LazyRefSerializer('question_widget.serializers.invitee_username.InviteeUsernameResponseSerializer')
+
 
 class AnswerSerializer(serializers.ModelSerializer):
 
@@ -39,23 +34,23 @@ class AnswerSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class SmallAnswerSerializer(AnswerSerializer):
+class ShortAnswerSerializer(AnswerSerializer):
     def create(self, validated_data):
         return super().create({'answer_type': 'SmallAnswer', **validated_data})
 
     class Meta:
-        model = SmallAnswer
+        model = ShortAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'text']
         read_only_fields = ['id', 'submitted_by', 'created_at']
 
 
-class BigAnswerSerializer(AnswerSerializer):
+class LongAnswerSerializer(AnswerSerializer):
     def create(self, validated_data):
         return super().create({'answer_type': 'BigAnswer', **validated_data})
 
     class Meta:
-        model = BigAnswer
+        model = LongAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'text']
         read_only_fields = ['id', 'submitted_by', 'created_at', 'is_correct']
@@ -207,27 +202,3 @@ class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'choices']
         read_only_fields = ['id', 'submitted_by']
-
-
-class MockAnswerSerializer(serializers.Serializer):
-    SmallAnswerSerializer = SmallAnswerSerializer(required=False)
-    BigAnswerSerializer = BigAnswerSerializer(required=False)
-    MultiChoiceAnswerSerializer = MultiChoiceAnswerSerializer(required=False)
-    UploadFileAnswerSerializer = UploadFileAnswerSerializer(required=False)
-
-from question_widget.serializers.question_widget_serializers import InviteeUsernameAnswerSerializer
-
-class AnswerPolymorphicSerializer(PolymorphicSerializer):
-    model_serializer_mapping = {
-        # Answer: AnswerSerializer,
-        SmallAnswer: SmallAnswerSerializer,
-        BigAnswer: BigAnswerSerializer,
-        MultiChoiceAnswer: MultiChoiceAnswerSerializer,
-        UploadFileAnswer: FileAnswerSerializer,
-        # todo: fix inheritance
-        InviteeUsernameAnswer: InviteeUsernameAnswerSerializer,
-    }
-
-    resource_type_field_name = 'answer_type'
-
-
