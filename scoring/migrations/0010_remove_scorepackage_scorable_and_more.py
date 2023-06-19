@@ -65,7 +65,11 @@ class Migration(migrations.Migration):
             name='deliverable',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='scores', to='scoring.deliverable', unique=True),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name='score',
+            name='value',
+        ),
+        migrations.AddField(
             model_name='score',
             name='value',
             field=models.JSONField(),
