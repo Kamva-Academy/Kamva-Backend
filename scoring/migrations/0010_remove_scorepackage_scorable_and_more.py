@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='score',
             name='value',
-            field=models.JSONField(),
+            field=models.JSONField(null=True),
         ),
         migrations.DeleteModel(
             name='Scorable',
