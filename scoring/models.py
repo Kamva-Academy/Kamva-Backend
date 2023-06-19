@@ -32,7 +32,7 @@ class Score(models.Model):
     deliverable = models.ForeignKey(
         Deliverable, on_delete=models.CASCADE, related_name='scores', unique=True)
     institute = models.ForeignKey(
-        EducationalInstitute, on_delete=models.CASCADE, related_name='scores')
+        EducationalInstitute, on_delete=models.CASCADE, related_name='scores', null=True)
 
     def __str__(self):
         return f'{self.value}'
