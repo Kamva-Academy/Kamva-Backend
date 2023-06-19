@@ -1,8 +1,8 @@
 from rest_polymorphic.serializers import PolymorphicSerializer
 from fsm.models import SmallAnswer, BigAnswer, MultiChoiceAnswer, UploadFileAnswer, Choice, SmallAnswerProblem, Answer
-from question.models import InviteeUsernameAnswer
+from question_widget.models import InviteeUsernameAnswer
 from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, MultiChoiceAnswerSerializer, FileAnswerSerializer
-from question.serializers.invitee_username import InviteeUsernameAnswerSerializer
+from question_widget.serializers.invitee_username import InviteeUsernameAnswerSerializer
 
 
 class AnswerPolymorphicSerializer(PolymorphicSerializer):

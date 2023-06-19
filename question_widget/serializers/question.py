@@ -1,6 +1,6 @@
 from fsm.serializers.widget_serializers import WidgetSerializer
 from scoring.serializers.score_serializers import DeliverableSerializer
-from question.models import Answer
+from question_widget.models import Answer
 
 
 class QuestionSerializer(WidgetSerializer):

@@ -1,5 +1,5 @@
-from question.serializers.question import QuestionSerializer, AnswerSerializer
-from question.models import InviteeUsernameQuestion, InviteeUsernameAnswer
+from question_widget.serializers.question import QuestionSerializer, AnswerSerializer
+from question_widget.models import InviteeUsernameQuestion, InviteeUsernameAnswer
 from scoring.models import Score
 from scoring.serializers.score_serializers import ScoreSerializer
 from fsm.serializers.answer_serializers import AnswerSerializer

@@ -23,8 +23,8 @@ urlpatterns = [
     path('api/fsm/', include('fsm.urls')),
     path('api/scoring/', include('scoring.urls')),
     path('api/base/', include('base.urls')),
-    path('api/content/', include('content.urls')),
-    path('api/question/', include('question.urls')),
+    path('api/content/', include('content_widget.urls')),
+    path('api/question/', include('question_widget.urls')),
 ]
 
 

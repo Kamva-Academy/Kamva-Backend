@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from question.views.answer_view import UploadAnswerViewSet, AnswerViewSet
+from question_widget.views.answer_view import UploadAnswerViewSet, AnswerViewSet
 
 router = DefaultRouter()
 
