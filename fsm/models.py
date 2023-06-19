@@ -1,6 +1,8 @@
 from accounts.models import *
 from abc import abstractmethod
 
+################ BASE #################
+
 
 class Paper(PolymorphicModel):
     class PaperType(models.TextChoices):
@@ -39,6 +41,303 @@ class Paper(PolymorphicModel):
         return f"{self.paper_type}"
 
 
+class Hint(Paper):
+    reference = models.ForeignKey(
+        'fsm.State', on_delete=models.CASCADE, related_name='hints')
+
+
+################ TEAM #################
+
+
+class TeamManager(models.Manager):
+
+    def get_team_from_widget(self, user, widget):
+        form = widget.paper.fsm.registration_form or widget.paper.fsm.event.registration_form
+        return Team.objects.filter(registration_form=form, members__user=user).first()
+
+    def get_teammates_from_widget(self, user, widget):
+        team = self.get_team_from_widget(user, widget)
+        return team.members.values_list('user', flat=True) if team is not None else [user]
+
+
+class Team(models.Model):
+    id = models.UUIDField(primary_key=True, unique=True,
+                          default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    registration_form = models.ForeignKey('fsm.RegistrationForm', related_name='teams', null=True, blank=True,
+                                          on_delete=models.SET_NULL)
+    team_head = models.OneToOneField('RegistrationReceipt', related_name='headed_team', null=True, blank=True,
+                                     on_delete=models.SET_NULL)
+
+    chat_room = models.CharField(max_length=200, null=True, blank=True)
+
+    objects = TeamManager()
+
+    def __str__(self):
+        return f'{self.name}:{",".join(member.user.full_name for member in self.members.all())}'
+
+
+class Invitation(models.Model):
+    class InvitationStatus(models.TextChoices):
+        Waiting = "Waiting"
+        Rejected = "Rejected"
+        Accepted = "Accepted"
+
+    invitee = models.ForeignKey(
+        'RegistrationReceipt', on_delete=models.CASCADE, related_name='invitations')
+    team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name='team_members')
+    status = models.CharField(
+        max_length=15, default=InvitationStatus.Waiting, choices=InvitationStatus.choices)
+
+    # class Meta:
+    #     unique_together = ('invitee', 'team')
+
+
+################ COURSE #################
+
+
+class Event(models.Model):
+    class EventType(models.TextChoices):
+        Team = "Team"
+        Individual = "Individual"
+
+    merchandise = models.OneToOneField('accounts.Merchandise', related_name='event', on_delete=models.SET_NULL,
+                                       null=True, blank=True)
+    registration_form = models.OneToOneField('fsm.RegistrationForm', related_name='event', on_delete=models.SET_NULL,
+                                             null=True, blank=True)
+    creator = models.ForeignKey('accounts.User', related_name='events', on_delete=models.SET_NULL, null=True,
+                                blank=True)
+    holder = models.ForeignKey('accounts.EducationalInstitute', related_name='events', on_delete=models.SET_NULL,
+                               null=True, blank=True)
+
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    cover_page = models.ImageField(upload_to='events/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_approved = models.BooleanField(default=False)
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    event_type = models.CharField(
+        max_length=40, default=EventType.Individual, choices=EventType.choices)
+    team_size = models.IntegerField(default=3)
+    maximum_participant = models.IntegerField(null=True, blank=True)
+    accessible_after_closure = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def modifiers(self):
+        modifiers = {self.creator} if self.creator is not None else set()
+        modifiers |= set(self.holder.admins.all()
+                         ) if self.holder is not None else set()
+        return modifiers
+
+    @property
+    def participants(self):
+        if self.registration_form:
+            return self.registration_form.registration_receipts.filter(is_participating=True)
+        return RegistrationReceipt.objects.none()
+
+    def delete(self, using=None, keep_parents=False):
+        self.registration_form.delete() if self.registration_form is not None else None
+        self.merchandise.delete() if self.merchandise is not None else None
+        return super(Event, self).delete(using, keep_parents)
+
+
+################ FSM #################
+
+
+class FSMManager(models.Manager):
+    @transaction.atomic
+    def create(self, **args):
+        fsm = super().create(**args)
+        fsm.mentors.add(fsm.creator)
+        # ct = ContentType.objects.get_for_model(institute)
+        # assign_perm(Permission.objects.filter(codename='add_admin', content_type=ct).first(), institute.owner, institute)
+        # these permission settings worked correctly but were too messy
+        fsm.save()
+        return fsm
+
+
+class FSM(models.Model):
+    class FSMLearningType(models.TextChoices):
+        Supervised = 'Supervised'
+        Unsupervised = 'Unsupervised'
+
+    class FSMPType(models.TextChoices):
+        Team = 'Team'
+        Individual = 'Individual'
+        Hybrid = 'Hybrid'
+
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
+                              blank=True)
+    merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True,
+                                       blank=True)
+    registration_form = models.OneToOneField('fsm.RegistrationForm', related_name='fsm', on_delete=models.SET_NULL, null=True,
+                                             blank=True)
+    creator = models.ForeignKey('accounts.User', related_name='created_fsms', on_delete=models.SET_NULL, null=True,
+                                blank=True)
+    holder = models.ForeignKey('accounts.EducationalInstitute', related_name='fsms', on_delete=models.SET_NULL,
+                               null=True, blank=True)
+    mentors = models.ManyToManyField(
+        'accounts.User', related_name='fsms', blank=True)
+
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    cover_page = models.ImageField(
+        upload_to='workshop/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    first_state = models.OneToOneField('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
+                                       related_name='my_fsm')
+    fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
+                                         choices=FSMLearningType.choices)
+    fsm_p_type = models.CharField(
+        max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
+    lock = models.CharField(max_length=10, null=True, blank=True)
+    team_size = models.IntegerField(default=3)
+
+    objects = FSMManager()
+
+    # TODO - make locks as mixins
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def modifiers(self):
+        modifiers = {self.creator} if self.creator is not None else set()
+        modifiers |= set(self.holder.admins.all()
+                         ) if self.holder is not None else set()
+        modifiers |= set(self.mentors.all())
+        return modifiers
+
+
+class Player(models.Model):
+    user = models.ForeignKey(
+        User, related_name='players', on_delete=models.CASCADE)
+    fsm = models.ForeignKey(FSM, related_name='players',
+                            on_delete=models.CASCADE)
+    receipt = models.ForeignKey(
+        'RegistrationReceipt', related_name='players', on_delete=models.CASCADE)
+    current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
+                                      related_name='players')
+    last_visit = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    @property
+    def team(self):
+        return self.receipt.team if self.receipt else None
+
+    class Meta:
+        unique_together = ('user', 'fsm', 'receipt')
+
+    def __str__(self):
+        return f'{self.user.full_name} in {self.fsm.name}'
+
+
+class State(Paper):
+    name = models.TextField(null=True, blank=True)
+    fsm = models.ForeignKey(
+        FSM, on_delete=models.CASCADE, related_name='states')
+
+    @transaction.atomic
+    def delete(self):
+        try:
+            if self.my_fsm:
+                fsm = self.fsm
+                fsm.first_state = fsm.states.exclude(id=self.id).first()
+                fsm.save()
+        except:
+            pass
+        return super(State, self).delete()
+
+    def __str__(self):
+        return f'{self.name} in {str(self.fsm)}'
+
+
+class EdgeManager(models.Manager):
+    @transaction.atomic
+    def create(self, **args):
+        lock = args.get('lock', None)
+        has_lock = False
+        if lock:
+            has_lock = True
+        return super(EdgeManager, self).create(**{'has_lock': has_lock, **args})
+
+    def update(self, instance, **args):
+        lock = args.get('lock', None)
+        has_lock = False
+        if lock or instance.lock:
+            has_lock = True
+        return super(EdgeManager, self).update(instance, **{'has_lock': has_lock, **args})
+
+
+# from tail to head
+class Edge(models.Model):
+    tail = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name='outward_edges')
+    head = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name='inward_edges')
+    is_back_enabled = models.BooleanField(default=True)
+    min_score = models.FloatField(default=0.0)
+    cost = models.FloatField(default=0.0)
+    priority = models.IntegerField(null=True, blank=True)
+    lock = models.CharField(max_length=10, null=True, blank=True)
+    has_lock = models.BooleanField(default=False)
+    is_visible = models.BooleanField(default=False)
+    text = models.TextField(null=True, blank=True)
+
+    objects = EdgeManager()
+
+    class Meta:
+        unique_together = ('tail', 'head')
+
+    def __str__(self):
+        return f'از {self.tail.name} به {self.head.name}'
+
+
+class PlayerHistory(models.Model):
+    player = models.ForeignKey(
+        'fsm.Player', on_delete=models.CASCADE, related_name='histories')
+    state = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name='player_histories')
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    entered_by_edge = models.ForeignKey(Edge, related_name='histories', default=None, null=True, blank=True,
+                                        on_delete=models.SET_NULL)
+    reverse_enter = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.player.id}-{self.state.name}'
+
+
+################ ARTICLE #################
+
+
+class Tag(models.Model):
+    name = models.CharField(unique=True, max_length=25)
+    created_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Article(Paper):
+    name = models.CharField(max_length=100, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    cover_page = models.ImageField(
+        upload_to='workshop/', null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name='articles')
+    is_draft = models.BooleanField(default=True)
+    publisher = models.ForeignKey('accounts.EducationalInstitute', related_name='articles', on_delete=models.SET_NULL,
+                                  null=True, blank=True)
+
+
+############ FORM / RECEIPT ############
+
+
 class AnswerSheet(PolymorphicModel):
     class AnswerSheetType(models.TextChoices):
         RegistrationReceipt = "RegistrationReceipt"
@@ -51,6 +350,63 @@ class AnswerSheet(PolymorphicModel):
     def delete(self):
         self.answers.clear()
         return super(AnswerSheet, self).delete()
+
+
+class RegistrationReceipt(AnswerSheet):
+    class RegistrationStatus(models.TextChoices):
+        Accepted = "Accepted"
+        Rejected = "Rejected"
+        Waiting = "Waiting"
+
+    class CorrectionStatus(models.TextChoices):
+        Correct = "Correct"
+        Wrong = "Wrong"
+        ManualCorrectionRequired = "ManualCorrectionRequired"
+        NoCorrectionRequired = "NoCorrectionRequired"
+        NoSolutionAvailable = "NoSolutionAvailable"
+        Other = "Other"
+
+    # should be in every answer sheet child
+    answer_sheet_of = models.ForeignKey('fsm.RegistrationForm', related_name='registration_receipts', null=True, blank=True,
+                                        on_delete=models.SET_NULL)
+    user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
+                             null=True, blank=True)
+    status = models.CharField(max_length=25, blank=False,
+                              default='Waiting', choices=RegistrationStatus.choices)
+    is_participating = models.BooleanField(default=False)
+    team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL,
+                             related_name='members', null=True, blank=True)
+    certificate = models.FileField(
+        upload_to='certificates/', null=True, blank=True, default=None)
+
+    @property
+    def purchases(self):
+        if self.answer_sheet_of.event_or_fsm.merchandise:
+            return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
+        return Purchase.objects.none()
+
+    @property
+    def is_paid(self):
+        return len(self.purchases.filter(
+            status=Purchase.Status.Success)) > 0 if self.answer_sheet_of.event_or_fsm.merchandise else True
+
+    class Meta:
+        unique_together = ('answer_sheet_of', 'user',)
+
+    def correction_status(self):
+        for a in self.answers.all():
+            if isinstance(a, (SmallAnswer, MultiChoiceAnswer)):
+                correction_status = a.correction_status()
+                if correction_status == self.CorrectionStatus.Wrong:
+                    return self.CorrectionStatus.Wrong
+                elif correction_status != self.CorrectionStatus.Correct:
+                    return self.CorrectionStatus.NoCorrectionRequired
+            else:
+                return self.CorrectionStatus.ManualCorrectionRequired
+        return self.CorrectionStatus.Correct
+
+    def __str__(self):
+        return f'{self.id}:{self.user.full_name}{"+" if self.is_participating else "x"}'
 
 
 class RegistrationForm(Paper):
@@ -166,292 +522,8 @@ class RegistrationForm(Paper):
         return f'<{self.id}-{self.paper_type}>:{self.event_or_fsm.name if self.event_or_fsm else None}'
 
 
-class TeamManager(models.Manager):
-
-    def get_team_from_widget(self, user, widget):
-        form = widget.paper.fsm.registration_form or widget.paper.fsm.event.registration_form
-        return Team.objects.filter(registration_form=form, members__user=user).first()
-
-    def get_teammates_from_widget(self, user, widget):
-        team = self.get_team_from_widget(user, widget)
-        return team.members.values_list('user', flat=True) if team is not None else [user]
-
-
-class Team(models.Model):
-    id = models.UUIDField(primary_key=True, unique=True,
-                          default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=200, null=True, blank=True)
-    registration_form = models.ForeignKey(RegistrationForm, related_name='teams', null=True, blank=True,
-                                          on_delete=models.SET_NULL)
-    team_head = models.OneToOneField('RegistrationReceipt', related_name='headed_team', null=True, blank=True,
-                                     on_delete=models.SET_NULL)
-
-    chat_room = models.CharField(max_length=200, null=True, blank=True)
-
-    objects = TeamManager()
-
-    def __str__(self):
-        return f'{self.name}:{",".join(member.user.full_name for member in self.members.all())}'
-
-
-class Invitation(models.Model):
-    class InvitationStatus(models.TextChoices):
-        Waiting = "Waiting"
-        Rejected = "Rejected"
-        Accepted = "Accepted"
-
-    invitee = models.ForeignKey(
-        'RegistrationReceipt', on_delete=models.CASCADE, related_name='invitations')
-    team = models.ForeignKey(
-        Team, on_delete=models.CASCADE, related_name='team_members')
-    status = models.CharField(
-        max_length=15, default=InvitationStatus.Waiting, choices=InvitationStatus.choices)
-
-    # class Meta:
-    #     unique_together = ('invitee', 'team')
-
-
-class Event(models.Model):
-    class EventType(models.TextChoices):
-        Team = "Team"
-        Individual = "Individual"
-
-    merchandise = models.OneToOneField('accounts.Merchandise', related_name='event', on_delete=models.SET_NULL,
-                                       null=True, blank=True)
-    registration_form = models.OneToOneField(RegistrationForm, related_name='event', on_delete=models.SET_NULL,
-                                             null=True, blank=True)
-    creator = models.ForeignKey('accounts.User', related_name='events', on_delete=models.SET_NULL, null=True,
-                                blank=True)
-    holder = models.ForeignKey('accounts.EducationalInstitute', related_name='events', on_delete=models.SET_NULL,
-                               null=True, blank=True)
-
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-    cover_page = models.ImageField(upload_to='events/', null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    is_approved = models.BooleanField(default=False)
-    start_date = models.DateTimeField(null=True, blank=True)
-    end_date = models.DateTimeField(null=True, blank=True)
-    event_type = models.CharField(
-        max_length=40, default=EventType.Individual, choices=EventType.choices)
-    team_size = models.IntegerField(default=3)
-    maximum_participant = models.IntegerField(null=True, blank=True)
-    accessible_after_closure = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def modifiers(self):
-        modifiers = {self.creator} if self.creator is not None else set()
-        modifiers |= set(self.holder.admins.all()
-                         ) if self.holder is not None else set()
-        return modifiers
-
-    @property
-    def participants(self):
-        if self.registration_form:
-            return self.registration_form.registration_receipts.filter(is_participating=True)
-        return RegistrationReceipt.objects.none()
-
-    def delete(self, using=None, keep_parents=False):
-        self.registration_form.delete() if self.registration_form is not None else None
-        self.merchandise.delete() if self.merchandise is not None else None
-        return super(Event, self).delete(using, keep_parents)
-
-
-class FSMManager(models.Manager):
-    @transaction.atomic
-    def create(self, **args):
-        fsm = super().create(**args)
-        fsm.mentors.add(fsm.creator)
-        # ct = ContentType.objects.get_for_model(institute)
-        # assign_perm(Permission.objects.filter(codename='add_admin', content_type=ct).first(), institute.owner, institute)
-        # these permission settings worked correctly but were too messy
-        fsm.save()
-        return fsm
-
-
-class FSM(models.Model):
-    class FSMLearningType(models.TextChoices):
-        Supervised = 'Supervised'
-        Unsupervised = 'Unsupervised'
-
-    class FSMPType(models.TextChoices):
-        Team = 'Team'
-        Individual = 'Individual'
-        Hybrid = 'Hybrid'
-
-    event = models.ForeignKey(Event, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
-                              blank=True)
-    merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True,
-                                       blank=True)
-    registration_form = models.OneToOneField(RegistrationForm, related_name='fsm', on_delete=models.SET_NULL, null=True,
-                                             blank=True)
-    creator = models.ForeignKey('accounts.User', related_name='created_fsms', on_delete=models.SET_NULL, null=True,
-                                blank=True)
-    holder = models.ForeignKey('accounts.EducationalInstitute', related_name='fsms', on_delete=models.SET_NULL,
-                               null=True, blank=True)
-    mentors = models.ManyToManyField(
-        'accounts.User', related_name='fsms', blank=True)
-
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-    cover_page = models.ImageField(
-        upload_to='workshop/', null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    first_state = models.OneToOneField('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
-                                       related_name='my_fsm')
-    fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
-                                         choices=FSMLearningType.choices)
-    fsm_p_type = models.CharField(
-        max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
-    lock = models.CharField(max_length=10, null=True, blank=True)
-    team_size = models.IntegerField(default=3)
-
-    objects = FSMManager()
-
-    # TODO - make locks as mixins
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def modifiers(self):
-        modifiers = {self.creator} if self.creator is not None else set()
-        modifiers |= set(self.holder.admins.all()
-                         ) if self.holder is not None else set()
-        modifiers |= set(self.mentors.all())
-        return modifiers
-
-
-class Player(models.Model):
-    user = models.ForeignKey(
-        User, related_name='players', on_delete=models.CASCADE)
-    fsm = models.ForeignKey(FSM, related_name='players',
-                            on_delete=models.CASCADE)
-    receipt = models.ForeignKey(
-        'RegistrationReceipt', related_name='players', on_delete=models.CASCADE)
-    current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
-                                      related_name='players')
-    last_visit = models.DateTimeField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-
-    @property
-    def team(self):
-        return self.receipt.team if self.receipt else None
-
-    class Meta:
-        unique_together = ('user', 'fsm', 'receipt')
-
-    def __str__(self):
-        return f'{self.user.full_name} in {self.fsm.name}'
-
-
-class State(Paper):
-    name = models.TextField(null=True, blank=True)
-    fsm = models.ForeignKey(
-        FSM, on_delete=models.CASCADE, related_name='states')
-
-    @transaction.atomic
-    def delete(self):
-        try:
-            if self.my_fsm:
-                fsm = self.fsm
-                fsm.first_state = fsm.states.exclude(id=self.id).first()
-                fsm.save()
-        except:
-            pass
-        return super(State, self).delete()
-
-    def __str__(self):
-        return f'{self.name} in {str(self.fsm)}'
-
-
-# class StateAnswerSheet(AnswerSheet):
-#     answer_sheet_of = models.ForeignKey(State, related_name='answer_sheets', on_delete=models.CASCADE)
-#     player = models.ForeignKey(Player, related_name='answer_sheets', on_delete=models.CASCADE)
-#
-
-class Hint(Paper):
-    reference = models.ForeignKey(State, on_delete=models.CASCADE, related_name='hints')
-
-
-class Tag(models.Model):
-    name = models.CharField(unique=True, max_length=25)
-    created_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Article(Paper):
-    name = models.CharField(max_length=100, null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
-    cover_page = models.ImageField(
-        upload_to='workshop/', null=True, blank=True)
-    tags = models.ManyToManyField(Tag, related_name='articles')
-    is_draft = models.BooleanField(default=True)
-    publisher = models.ForeignKey('accounts.EducationalInstitute', related_name='articles', on_delete=models.SET_NULL,
-                                  null=True, blank=True)
-
-
-class EdgeManager(models.Manager):
-    @transaction.atomic
-    def create(self, **args):
-        lock = args.get('lock', None)
-        has_lock = False
-        if lock:
-            has_lock = True
-        return super(EdgeManager, self).create(**{'has_lock': has_lock, **args})
-
-    def update(self, instance, **args):
-        lock = args.get('lock', None)
-        has_lock = False
-        if lock or instance.lock:
-            has_lock = True
-        return super(EdgeManager, self).update(instance, **{'has_lock': has_lock, **args})
-
-
-# from tail to head
-class Edge(models.Model):
-    tail = models.ForeignKey(
-        State, on_delete=models.CASCADE, related_name='outward_edges')
-    head = models.ForeignKey(
-        State, on_delete=models.CASCADE, related_name='inward_edges')
-    is_back_enabled = models.BooleanField(default=True)
-    min_score = models.FloatField(default=0.0)
-    cost = models.FloatField(default=0.0)
-    priority = models.IntegerField(null=True, blank=True)
-    lock = models.CharField(max_length=10, null=True, blank=True)
-    has_lock = models.BooleanField(default=False)
-    is_visible = models.BooleanField(default=False)
-    text = models.TextField(null=True, blank=True)
-
-    objects = EdgeManager()
-
-    class Meta:
-        unique_together = ('tail', 'head')
-
-    def __str__(self):
-        return f'از {self.tail.name} به {self.head.name}'
-
-
-class PlayerHistory(models.Model):
-    player = models.ForeignKey(
-        'fsm.Player', on_delete=models.CASCADE, related_name='histories')
-    state = models.ForeignKey(
-        State, on_delete=models.CASCADE, related_name='player_histories')
-    start_time = models.DateTimeField(null=True, blank=True)
-    end_time = models.DateTimeField(null=True, blank=True)
-    entered_by_edge = models.ForeignKey(Edge, related_name='histories', default=None, null=True, blank=True,
-                                        on_delete=models.SET_NULL)
-    reverse_enter = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f'{self.player.id}-{self.state.name}'
-
 ############ Widget ############
+
 
 class Widget(PolymorphicModel):
     class WidgetTypes(models.TextChoices):
@@ -491,7 +563,8 @@ class Widget(PolymorphicModel):
 
 
 class WidgetHint(Paper):
-    reference = models.ForeignKey(Widget, on_delete=models.CASCADE, related_name='hints')
+    reference = models.ForeignKey(
+        Widget, on_delete=models.CASCADE, related_name='hints')
 
 
 class Description(Widget):
@@ -535,7 +608,9 @@ class Image(Widget):
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
+
 ############ PROBLEMS ############
+
 
 class Problem(Widget):
     text = models.TextField()
@@ -585,7 +660,9 @@ class Choice(models.Model):
     def __str__(self):
         return self.text
 
+
 ############ ANSWERS ############
+
 
 class Answer(PolymorphicModel):
     class AnswerTypes(models.TextChoices):
@@ -597,7 +674,8 @@ class Answer(PolymorphicModel):
     answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices)
     answer_sheet = models.ForeignKey(AnswerSheet, related_name='answers', null=True, blank=True,
                                      on_delete=models.SET_NULL)
-    submitted_by = models.ForeignKey('accounts.User', related_name='submitted_answers', null=True, blank=True, on_delete=models.SET_NULL)
+    submitted_by = models.ForeignKey(
+        'accounts.User', related_name='submitted_answers', null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     is_final_answer = models.BooleanField(default=False)
     is_correct = models.BooleanField(default=False)
@@ -615,7 +693,8 @@ class Answer(PolymorphicModel):
 
 
 class SmallAnswer(Answer):
-    problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True, blank=True, on_delete=models.CASCADE, related_name='answers')
+    problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True,
+                                blank=True, on_delete=models.CASCADE, related_name='answers')
     text = models.TextField()
 
     def correction_status(self):
@@ -689,7 +768,15 @@ class UploadFileAnswer(Answer):
         return self.answer_file
 
 
-########################
+PROBLEM_ANSWER_MAPPING = {
+    'SmallAnswerProblem': SmallAnswer,
+    'BigAnswerProblem': BigAnswer,
+    'MultiChoiceProblem': MultiChoiceAnswer,
+    'UploadFileProblem': UploadFileAnswer,
+}
+
+
+############# CERTIFICATE ###########
 
 
 class Font(models.Model):
@@ -717,77 +804,8 @@ class CertificateTemplate(models.Model):
     font_size = models.IntegerField(default=100)
 
 
-PROBLEM_ANSWER_MAPPING = {
-    'SmallAnswerProblem': SmallAnswer,
-    'BigAnswerProblem': BigAnswer,
-    'MultiChoiceProblem': MultiChoiceAnswer,
-    'UploadFileProblem': UploadFileAnswer,
-}
+########## MUST BE DELETED ###########
 
-
-############ FORM / RECEIPT ############
-
-from scoring.models import Deliverable
-
-# TODO: class RegistrationReceipt(Deliverable):
-class RegistrationReceipt(AnswerSheet):
-    class RegistrationStatus(models.TextChoices):
-        Accepted = "Accepted"
-        Rejected = "Rejected"
-        Waiting = "Waiting"
-
-    class CorrectionStatus(models.TextChoices):
-        Correct = "Correct"
-        Wrong = "Wrong"
-        ManualCorrectionRequired = "ManualCorrectionRequired"
-        NoCorrectionRequired = "NoCorrectionRequired"
-        NoSolutionAvailable = "NoSolutionAvailable"
-        Other = "Other"
-
-    # should be in every answer sheet child
-    answer_sheet_of = models.ForeignKey(RegistrationForm, related_name='registration_receipts', null=True, blank=True,
-                                        on_delete=models.SET_NULL)
-    user = models.ForeignKey('accounts.User', related_name='registration_receipts', on_delete=models.CASCADE,
-                             null=True, blank=True)
-    status = models.CharField(max_length=25, blank=False,
-                              default='Waiting', choices=RegistrationStatus.choices)
-    is_participating = models.BooleanField(default=False)
-    team = models.ForeignKey('fsm.Team', on_delete=models.SET_NULL,
-                             related_name='members', null=True, blank=True)
-    certificate = models.FileField(
-        upload_to='certificates/', null=True, blank=True, default=None)
-
-    @property
-    def purchases(self):
-        if self.answer_sheet_of.event_or_fsm.merchandise:
-            return self.answer_sheet_of.event_or_fsm.merchandise.purchases.filter(user=self.user)
-        return Purchase.objects.none()
-
-    @property
-    def is_paid(self):
-        return len(self.purchases.filter(
-            status=Purchase.Status.Success)) > 0 if self.answer_sheet_of.event_or_fsm.merchandise else True
-
-    class Meta:
-        unique_together = ('answer_sheet_of', 'user',)
-
-    def correction_status(self):
-        for a in self.answers.all():
-            if isinstance(a, (SmallAnswer, MultiChoiceAnswer)):
-                correction_status = a.correction_status()
-                if correction_status == self.CorrectionStatus.Wrong:
-                    return self.CorrectionStatus.Wrong
-                elif correction_status != self.CorrectionStatus.Correct:
-                    return self.CorrectionStatus.NoCorrectionRequired
-            else:
-                return self.CorrectionStatus.ManualCorrectionRequired
-        return self.CorrectionStatus.Correct
-
-    def __str__(self):
-        return f'{self.id}:{self.user.full_name}{"+" if self.is_participating else "x"}'
-
-
-# ---------
 
 class PlayerWorkshop(models.Model):
     player = models.ForeignKey(

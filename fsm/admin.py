@@ -7,7 +7,7 @@ from import_export.admin import ExportActionMixin
 from fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
-    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, timezone, Article, Tag, Aparat
+    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, Article, Tag, Aparat
 
 from fsm.utils import get_django_file
 

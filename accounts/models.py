@@ -2,30 +2,18 @@ import logging
 
 import pytz
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.contrib.auth.models import AbstractUser, Group, Permission
-from django.utils import timezone
+from django.contrib.auth.models import AbstractUser
 from datetime import timedelta, datetime
-from django.conf import settings
-from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags, strip_spaces_between_tags
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
 from polymorphic.managers import PolymorphicManager
 from polymorphic.models import PolymorphicModel
 
-from accounts.tokens import account_activation_token
 import uuid
 
 import logging
-import re
 
 from accounts.validators import percentage_validator
-from errors.error_codes import serialize_error
-from errors.exceptions import InternalServerError
 from kamva_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
     DISCOUNT_CODE_LENGTH, PURCHASE_UNIQ_CODE_LENGTH
 

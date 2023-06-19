@@ -51,6 +51,10 @@ INSTALLED_APPS = [
     'scoring.apps.ScoringConfig',
     'content_widget.apps.ContentWidgetConfig',
     'question_widget.apps.QuestionWidgetConfig',
+    'my_form.apps.MyFormConfig',
+    'finite_state_machine.apps.FiniteStateMachineConfig',
+    'article.apps.ArticleConfig',
+    'course.apps.CourseConfig',
     'base.apps.BaseConfig',
 ]
 
