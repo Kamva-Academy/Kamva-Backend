@@ -41,7 +41,7 @@ class Widget(PolymorphicModel, Creatable):
     widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices)
     name = models.CharField(max_length=100, null=True, blank=True)
     paper = models.ForeignKey(
-        Paper, on_delete=models.CASCADE, related_name='widgets')
+        Paper, on_delete=models.CASCADE, related_name='widgets', null=True, blank=True)
 
     class Meta:
         order_with_respect_to = 'paper'

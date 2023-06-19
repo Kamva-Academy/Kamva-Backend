@@ -1,13 +1,15 @@
-from django.urls import include, path
-from rest_framework import routers
-from question.views.invitee_username import check_username
-# from .views.team_view import *
+from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-router = routers.DefaultRouter()
+from question.views.answer_view import UploadAnswerViewSet, AnswerViewSet
+
+router = DefaultRouter()
 
 urlpatterns = [
-    path('check_username/', check_username),
-    path('/', include(router.urls)),
 ]
+
+router.register(r'upload_answer', UploadAnswerViewSet,
+                basename='upload_answer')
+router.register(r'answers', AnswerViewSet, basename='answers')
 
 urlpatterns += router.urls

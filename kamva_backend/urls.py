@@ -22,8 +22,9 @@ urlpatterns = [
     path('api/auth/', include(('accounts.urls', 'accounts'), namespace='accounts')),
     path('api/fsm/', include('fsm.urls')),
     path('api/scoring/', include('scoring.urls')),
+    path('api/base/', include('base.urls')),
+    path('api/content/', include('content.urls')),
     path('api/question/', include('question.urls')),
-    path('api/event_metadata/', include('event_metadata.urls')),
 ]
 
 
