@@ -1,3 +1,4 @@
+from django.utils.timezone import now
 from django.db import models
 from polymorphic.models import PolymorphicModel
 
@@ -5,8 +6,8 @@ from polymorphic.models import PolymorphicModel
 class PolymorphicCreatable(PolymorphicModel):
     creator = models.ForeignKey(
         'accounts.User', null=True, on_delete=models.SET_NULL)
-    creation_date = models.DateTimeField(auto_now_add=True)
-    update_date = models.DateTimeField()
+    creation_date = models.DateTimeField(default=now, editable=False)
+    update_date = models.DateTimeField(default=now)
 
     class Meta:
         abstract = True
