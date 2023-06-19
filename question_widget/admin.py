@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from question.models import *
+from question_widget.models import *
 
 ############ QUESTIONS ############
 

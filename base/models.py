@@ -1,24 +1,22 @@
 from django.db import models
 from polymorphic.models import PolymorphicModel
-from accounts.models import User
 
 
-class Paper(PolymorphicModel):
+class Creatable:
+    creator = models.ForeignKey(
+        'accounts.User', null=True, related_name='new_papers', on_delete=models.SET_NULL)
+    creation_date = models.DateTimeField(auto_now_add=True)
+    update_date = models.DateTimeField()
+
+
+class Paper(PolymorphicModel, Creatable):
     class PaperType(models.TextChoices):
-        RegistrationForm = 'RegistrationForm'
-        State = 'State'
+        Form = 'Form'
+        FSMState = 'FSMState'
         Hint = 'Hint'
-        WidgetHint = 'WidgetHint'
         Article = 'Article'
 
-    paper_type = models.CharField(
-        max_length=25, blank=False, choices=PaperType.choices)
-    creator = models.ForeignKey('accounts.User', related_name='new_papers', null=True, blank=True,
-                                on_delete=models.SET_NULL)
-    since = models.DateTimeField(null=True, blank=True)
-    till = models.DateTimeField(null=True, blank=True)
-    duration = models.DurationField(null=True, blank=True, default=None)
-    is_exam = models.BooleanField(default=False)
+    paper_type = models.CharField(max_length=25, choices=PaperType.choices)
     criteria = models.OneToOneField('scoring.Criteria', related_name='new_paper', null=True, blank=True,
                                     on_delete=models.CASCADE)
 
@@ -31,45 +29,19 @@ class Paper(PolymorphicModel):
                 w.save()
         return super(Paper, self).delete()
 
-    def is_user_permitted(self, user: User):
-        if self.criteria:
-            return self.criteria.evaluate(user)
-        return True
-
     def __str__(self):
         return f"{self.paper_type}"
 
 
-class Widget(PolymorphicModel):
+class Widget(PolymorphicModel, Creatable):
     class WidgetTypes(models.TextChoices):
-        Game = 'Game'
-        Video = 'Video'
-        Image = 'Image'
-        Aparat = 'Aparat'
-        Audio = 'Audio'
-        Description = 'Description'
-        SmallAnswerProblem = 'SmallAnswerProblem'
-        BigAnswerProblem = 'BigAnswerProblem'
-        MultiChoiceProblem = 'MultiChoiceProblem'
-        UploadFileProblem = 'UploadFileProblem'
-        Scorable = 'Scorable'
+        Question = 'Question'
+        Content = 'Content'
 
+    widget_type = models.CharField(max_length=30, choices=WidgetTypes.choices)
     name = models.CharField(max_length=100, null=True, blank=True)
-    file = models.FileField(null=True, blank=True, upload_to='events/')
     paper = models.ForeignKey(
-        Paper, null=True, blank=True, on_delete=models.CASCADE, related_name='new_widgets')
-    widget_type = models.CharField(
-        max_length=30, choices=WidgetTypes.choices, null=False, blank=False)
-    creator = models.ForeignKey('accounts.User', related_name='new_widgets', null=True, blank=True,
-                                on_delete=models.SET_NULL)
+        Paper, on_delete=models.CASCADE, related_name='widgets', null=True, blank=True)
 
     class Meta:
         order_with_respect_to = 'paper'
-
-    def make_file_empty(self):
-        try:
-            self.file.delete()
-        except:
-            self.file = None
-            self.file.save()
-            pass

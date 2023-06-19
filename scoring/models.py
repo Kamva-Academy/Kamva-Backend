@@ -1,36 +1,22 @@
 from django.db import models
-from accounts.models import *
-from django.db.models import IntegerField, Sum
-from fsm.models import Widget
+from accounts.models import EducationalInstitute, User
+from django.db.models import Sum
 from polymorphic.models import PolymorphicModel
-from django.core.exceptions import ValidationError
+from base.models import Creatable
 
 
-class Deliverable(PolymorphicModel):
+class Deliverable(PolymorphicModel, Creatable):
     class DeliverableTypes(models.TextChoices):
         Answer = 'Answer'
-        Response = 'Response'
+        Receipt = 'Receipt'
 
     deliverable_type = models.CharField(
         max_length=20, choices=DeliverableTypes.choices)
     deliverer = models.ForeignKey(
         'accounts.User', related_name='deliverer', on_delete=models.CASCADE)
-    creation_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'user: {self.deliverer.username}'
-
-
-class Scorable(Widget):
-    class ScorableTypes(models.TextChoices):
-        Problem = 'Question'
-        Question = 'Problem'
-
-    scorable_type = models.CharField(
-        max_length=30, choices=ScorableTypes.choices)
-
-    def __str__(self):
-        return f'<{self.id}-{self.widget_type}>'
 
 
 class ScoreType(models.Model):
@@ -41,34 +27,15 @@ class ScoreType(models.Model):
         return self.name
 
 
-class ScorePackage(models.Model):
-    type = models.ForeignKey(
-        ScoreType, on_delete=models.CASCADE, related_name='score_packages')
-    number = models.IntegerField(default=1)
-    scorable = models.ForeignKey(
-        Scorable, on_delete=models.CASCADE, related_name='score_packages')
-
-    def clean(self):
-        if not self.type in self.scorable.paper.score_types.all():
-            raise ValidationError(
-                'selected score-type is not in the scorable\'s paper\'s score-types')
-        return self
-
-    def __str__(self):
-        return f'{self.type}: {self.number}'
-
-
 class Score(models.Model):
-    value = IntegerField(default=0)
-    type = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
+    value = models.JSONField()
     deliverable = models.ForeignKey(
-        Deliverable, on_delete=models.CASCADE, related_name='scores')
-
-    class Meta:
-        unique_together = ('deliverable', 'type')
+        Deliverable, on_delete=models.CASCADE, related_name='scores', unique=True)
+    institute = models.ForeignKey(
+        EducationalInstitute, on_delete=models.CASCADE, related_name='scores')
 
     def __str__(self):
-        return f'{self.value} × {self.type}'
+        return f'{self.value}'
 
 
 class Comment(models.Model):
@@ -79,6 +46,9 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.content[:30]
+
+
+############ CONDITION ############
 
 
 class BaseCondition(PolymorphicModel):

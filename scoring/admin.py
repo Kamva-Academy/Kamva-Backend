@@ -3,22 +3,13 @@ import csv
 from django.contrib import admin
 from django.http import HttpResponse
 
-from scoring.models import ScoreType, Score, Comment, Condition, Criteria, ScorePackage, Scorable
-
-
-@admin.register(Scorable)
-class ScorableAdmin(admin.ModelAdmin):
-    pass 
-
-@admin.register(ScorePackage)
-class ScorePackageAdmin(admin.ModelAdmin):
-    pass 
+from scoring.models import ScoreType, Score, Comment, Condition, Criteria
 
 
 @admin.register(Score)
 class ScoreCustomAdmin(admin.ModelAdmin):
-    list_display = ['value', 'type', 'submitted_by']
-    list_filter = ['type', 'deliverable__deliverer']
+    list_display = ['value', 'submitted_by']
+    list_filter = ['deliverable__deliverer']
     raw_id_fields = ['deliverable']
 
     def submitted_by(self, obj):
@@ -35,7 +26,8 @@ class CriteriaCustomAdmin(admin.ModelAdmin):
         if len(queryset) > 1:
             return
         criteria = queryset[0]
-        registration_receipts = getattr(criteria, 'paper').state.fsm.event.registration_form.registration_receipts.all()
+        registration_receipts = getattr(
+            criteria, 'paper').state.fsm.event.registration_form.registration_receipts.all()
 
         for receipt in registration_receipts:
             if criteria.evaluate(receipt.user):
