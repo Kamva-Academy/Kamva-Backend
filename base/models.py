@@ -2,14 +2,17 @@ from django.db import models
 from polymorphic.models import PolymorphicModel
 
 
-class Creatable:
+class PolymorphicCreatable(PolymorphicModel):
     creator = models.ForeignKey(
-        'accounts.User', null=True, related_name='new_papers', on_delete=models.SET_NULL)
+        'accounts.User', null=True, on_delete=models.SET_NULL)
     creation_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField()
 
+    class Meta:
+        abstract = True
 
-class Paper(PolymorphicModel, Creatable):
+
+class Paper(PolymorphicCreatable):
     class PaperType(models.TextChoices):
         Form = 'Form'
         FSMState = 'FSMState'
@@ -33,7 +36,7 @@ class Paper(PolymorphicModel, Creatable):
         return f"{self.paper_type}"
 
 
-class Widget(PolymorphicModel, Creatable):
+class Widget(PolymorphicCreatable):
     class WidgetTypes(models.TextChoices):
         Question = 'Question'
         Content = 'Content'
@@ -45,3 +48,8 @@ class Widget(PolymorphicModel, Creatable):
 
     class Meta:
         order_with_respect_to = 'paper'
+
+
+class Hint(Paper):
+    reference = models.ForeignKey(
+        Widget, on_delete=models.CASCADE, related_name='hints')

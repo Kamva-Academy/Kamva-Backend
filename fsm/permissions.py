@@ -238,6 +238,7 @@ class CanAnswerWidget(permissions.BasePermission):
         else:
             return False
 
+
 class ParticipantPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):

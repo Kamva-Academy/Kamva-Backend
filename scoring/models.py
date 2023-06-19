@@ -2,10 +2,10 @@ from django.db import models
 from accounts.models import EducationalInstitute, User
 from django.db.models import Sum
 from polymorphic.models import PolymorphicModel
-from base.models import Creatable
+from base.models import PolymorphicCreatable
 
 
-class Deliverable(PolymorphicModel, Creatable):
+class Deliverable(PolymorphicCreatable):
     class DeliverableTypes(models.TextChoices):
         Answer = 'Answer'
         Receipt = 'Receipt'

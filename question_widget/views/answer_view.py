@@ -5,10 +5,11 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
-from fsm.filtersets import AnswerFilterSet
-from fsm.models import Answer, UploadFileAnswer
-from fsm.permissions import IsAnswerModifier, MentorCorrectionPermission
-from fsm.serializers.answer_serializers import UploadFileAnswerSerializer, AnswerPolymorphicSerializer
+from question_widget.filtersets import AnswerFilterSet
+from question_widget.models import Answer, UploadFileAnswer
+from question_widget.permissions import IsAnswerModifier, MentorCorrectionPermission
+from question_widget.serializers.answer_serializers import UploadFileAnswerSerializer
+from question_widget.serializers.answer_polymorphic import AnswerPolymorphicSerializer
 
 
 class UploadAnswerViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin):

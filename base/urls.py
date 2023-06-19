@@ -1,11 +1,14 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from base.views.widget_view import WidgetViewSet
+from base.views.widget_view import WidgetViewSet, upload_widget_file
 
 router = DefaultRouter()
 
-urlpatterns = []
+urlpatterns = [
+    path('widget/upload_widget_file/<int:widget_id>/', upload_widget_file),
+]
 
-router.register(r'widget', WidgetViewSet, basename='widgets')
+router.register('widget', WidgetViewSet, basename='widget')
 
 urlpatterns += router.urls

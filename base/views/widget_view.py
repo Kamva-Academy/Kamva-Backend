@@ -1,22 +1,22 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import views, viewsets, status
-from rest_framework import mixins
+from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes, parser_classes
-from rest_framework.mixins import RetrieveModelMixin
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.exceptions import ParseError
-from fsm.models import *
+from errors.error_codes import serialize_error
+from fsm.models import Team
+from base.models import Widget
 from rest_framework import permissions
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction
 
-from fsm.permissions import CanAnswerWidget, MentorPermission
-from fsm.serializers.answer_serializers import AnswerPolymorphicSerializer, MockAnswerSerializer
-from fsm.serializers.widget_serializers import MockWidgetSerializer
-from fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
+from base.permissions import CanSubmitAnswer
+from question_widget.models import PROBLEM_ANSWER_MAPPING
+from question_widget.serializers.answer_polymorphic import AnswerPolymorphicSerializer, MockAnswerSerializer
+from base.serializers.widget_serializers import MockWidgetSerializer
+from base.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 
 
 @api_view(['POST'])
@@ -36,19 +36,19 @@ class WidgetViewSet(viewsets.ModelViewSet):
     parser_classes([MultiPartParser])
     queryset = Widget.objects.all()
     serializer_class = WidgetPolymorphicSerializer
-    my_tags = ['widgets']
+    my_tags = ['widget']
 
     # todo - manage permissions
 
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        except (KeyError, AttributeError):
             return super().get_serializer_class()
 
     def get_permissions(self):
         if self.action in ['submit_answer', 'make_empty', 'answers']:
-            permission_classes = [CanAnswerWidget]
+            permission_classes = [CanSubmitAnswer]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -61,7 +61,7 @@ class WidgetViewSet(viewsets.ModelViewSet):
             {'domain': self.request.build_absolute_uri('/api/')[:-5]})
         return context
 
-    @swagger_auto_schema(tags=['widgets'])
+    @swagger_auto_schema(tags=['widget'])
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, ])
     def make_widget_file_empty(self, request, *args, **kwargs):
         self.get_object().make_file_empty()
@@ -80,7 +80,8 @@ class WidgetViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = WidgetPolymorphicSerializer(instance, data=request.data, partial=True, context=self.get_serializer_context())
+        serializer = WidgetPolymorphicSerializer(
+            instance, data=request.data, partial=True, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
             self.perform_update(serializer)
             return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -88,7 +89,7 @@ class WidgetViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(responses={200: MockAnswerSerializer}, tags=['answers'])
     @transaction.atomic
     @action(detail=True, methods=['post'], serializer_class=AnswerPolymorphicSerializer,
-            permission_classes=[CanAnswerWidget, ])
+            permission_classes=[CanSubmitAnswer, ])
     def submit_answer(self, request, *args, **kwargs):
         data = {'is_final_answer': True, **request.data}
         if 'problem' not in data.keys():
@@ -103,14 +104,14 @@ class WidgetViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(tags=['answers'])
     @transaction.atomic
-    @action(detail=True, methods=['get'], permission_classes=[CanAnswerWidget, ])
+    @action(detail=True, methods=['get'], permission_classes=[CanSubmitAnswer, ])
     def make_empty(self, request, *args, **kwargs):
         self.get_object().unfinalize_older_answers(request.user)
         return Response(status=status.HTTP_200_OK)
 
     @swagger_auto_schema(tags=['answers'])
     @transaction.atomic
-    @action(detail=True, methods=['get'], permission_classes=[CanAnswerWidget, ])
+    @action(detail=True, methods=['get'], permission_classes=[CanSubmitAnswer, ])
     def answers(self, request, *args, **kwargs):
         teammates = Team.objects.get_teammates_from_widget(
             user=request.user, widget=self.get_object())
