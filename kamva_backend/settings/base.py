@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountConfig',
     'fsm.apps.FsmConfig',
     'scoring.apps.ScoringConfig',
+    'event_metadata.apps.EventMetadataConfig',
     'content.apps.ContentConfig',
     'question.apps.QuestionConfig',
     'base.apps.BaseConfig',
