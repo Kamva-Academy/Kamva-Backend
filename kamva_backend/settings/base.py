@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'content_widget.apps.ContentWidgetConfig',
     'question_widget.apps.QuestionWidgetConfig',
     'my_form.apps.MyFormConfig',
-    'finite_state_machine.apps.FiniteStateMachineConfig',
+    'group.apps.GroupConfig',
     'article.apps.ArticleConfig',
     'course.apps.CourseConfig',
     'base.apps.BaseConfig',

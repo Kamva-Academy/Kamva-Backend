@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from django.db import models
-from fsm.models import RegistrationReceipt, State, Team
 from base.models import Widget
 from scoring.models import Deliverable
 from django.core.validators import MinValueValidator
@@ -19,7 +18,8 @@ class Question(Widget):
         return self.answers.filter(is_correct=True).first()
 
     def unfinalize_older_answers(self, user):
-        if isinstance(self.paper, State):
+        from fsm.models import NEWState, Team
+        if isinstance(self.paper, NEWState):
             teammates = Team.objects.get_teammates_from_widget(
                 user=user, widget=self)
             older_answers = PROBLEM_ANSWER_MAPPING[self.widget_type].objects.filter(problem=self, is_final_answer=True,
@@ -98,6 +98,7 @@ class ShortAnswer(Answer):
     text = models.TextField()
 
     def correction_status(self):
+        from my_form.models import RegistrationReceipt
         if self.problem.answer:
             if self.text.strip() == self.problem.answer.text.strip():
                 # TODO - check for semi-correct answers too
@@ -138,6 +139,7 @@ class MultiChoiceAnswer(Answer):
         pass
 
     def correction_status(self):
+        from my_form.models import RegistrationReceipt
         answer = self.problem.answer
         if answer:
             correct_choices = answer.choices.values_list(['choice'])
@@ -148,6 +150,7 @@ class MultiChoiceAnswer(Answer):
         return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
     def get_correct_choices(self):
+        from my_form.models import RegistrationReceipt
         if self.problem.answer:
             correct_choices = set()
             for c in self.choices.values_list(['choice']):
