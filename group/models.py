@@ -38,7 +38,7 @@ class Invitation(models.Model):
         Accepted = "Accepted"
 
     invitee = models.ForeignKey(
-        RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations')
+        RegistrationReceipt, on_delete=models.CASCADE, related_name='invitations', null=True)
     group = models.ForeignKey(
         Group, on_delete=models.CASCADE, related_name='group_members')
     status = models.CharField(

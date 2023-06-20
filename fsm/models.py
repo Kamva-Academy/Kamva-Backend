@@ -851,7 +851,7 @@ class PlayerWorkshop(models.Model):
 class NEWState(NEWPaper):
     name = models.TextField(null=True, blank=True)
     fsm = models.ForeignKey(
-        FSM, on_delete=models.CASCADE, related_name='nnew_states')
+        FSM, on_delete=models.CASCADE, related_name='nnew_states', null=True)
 
     @transaction.atomic
     def delete(self):
