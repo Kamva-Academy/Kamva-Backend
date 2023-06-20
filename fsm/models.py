@@ -1,3 +1,4 @@
+from base.models import PolymorphicCreatable
 from base.models import Paper as NEWPaper
 from accounts.models import *
 from abc import abstractmethod
@@ -176,35 +177,23 @@ class FSM(models.Model):
 
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
                               blank=True)
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
-                               blank=True)
-
     merchandise = models.OneToOneField('accounts.Merchandise', related_name='fsm', on_delete=models.SET_NULL, null=True,
                                        blank=True)
-
     registration_form = models.OneToOneField('fsm.RegistrationForm', related_name='fsm', on_delete=models.SET_NULL, null=True,
                                              blank=True)
-    new_registration_form = models.OneToOneField('my_form.RegistrationForm', related_name='fsm', on_delete=models.SET_NULL, null=True,
-                                                 blank=True)
-
     creator = models.ForeignKey('accounts.User', related_name='created_fsms', on_delete=models.SET_NULL, null=True,
                                 blank=True)
     holder = models.ForeignKey('accounts.EducationalInstitute', related_name='fsms', on_delete=models.SET_NULL,
                                null=True, blank=True)
     mentors = models.ManyToManyField(
         'accounts.User', related_name='fsms', blank=True)
-
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(
         upload_to='workshop/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
-
     first_state = models.OneToOneField('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                        related_name='my_fsm')
-    new_first_state = models.OneToOneField('fsm.NEWState', null=True, blank=True, on_delete=models.SET_NULL,
-                                           related_name='my_fsm')
-
     fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
                                          choices=FSMLearningType.choices)
     fsm_p_type = models.CharField(
@@ -233,7 +222,7 @@ class Player(models.Model):
         User, related_name='players', on_delete=models.CASCADE)
     fsm = models.ForeignKey(FSM, related_name='players',
                             on_delete=models.CASCADE)
-    
+
     receipt = models.ForeignKey(
         'fsm.RegistrationReceipt', related_name='players', on_delete=models.CASCADE)
     new_receipt = models.ForeignKey(
@@ -323,12 +312,10 @@ class Edge(models.Model):
 class PlayerHistory(models.Model):
     player = models.ForeignKey(
         'fsm.Player', on_delete=models.CASCADE, related_name='histories')
-    
     state = models.ForeignKey(
         State, on_delete=models.CASCADE, related_name='player_histories')
     new_state = models.ForeignKey(
         'fsm.NEWState', on_delete=models.CASCADE, related_name='player_histories', null=True)
-
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     entered_by_edge = models.ForeignKey(Edge, related_name='histories', default=None, null=True, blank=True,
@@ -848,6 +835,57 @@ class PlayerWorkshop(models.Model):
 
 ###################################################
 
+
+class NEWFSM(PolymorphicCreatable):
+    class FSMLearningType(models.TextChoices):
+        Supervised = 'Supervised'
+        Unsupervised = 'Unsupervised'
+
+    class FSMPType(models.TextChoices):
+        Team = 'Team'
+        Individual = 'Individual'
+        Hybrid = 'Hybrid'
+
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
+                               blank=True)
+    merchandise = models.OneToOneField('accounts.Merchandise', related_name='new_fsm', on_delete=models.SET_NULL, null=True,
+                                       blank=True)
+    registration_form = models.OneToOneField('my_form.RegistrationForm', related_name='fsm', on_delete=models.SET_NULL, null=True,
+                                             blank=True)
+    organizer = models.ForeignKey('accounts.EducationalInstitute', related_name='new_fsms', on_delete=models.SET_NULL,
+                                  null=True, blank=True)
+    mentors = models.ManyToManyField(
+        'accounts.User', related_name='new_fsms', blank=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    cover_image = models.ImageField(
+        upload_to='workshop/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    first_state = models.OneToOneField('fsm.NEWState', null=True, blank=True, on_delete=models.SET_NULL,
+                                       related_name='my_fsm')
+    fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
+                                         choices=FSMLearningType.choices)
+    fsm_p_type = models.CharField(
+        max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
+    lock = models.CharField(max_length=10, null=True, blank=True)
+    team_size = models.IntegerField(default=3)
+
+    objects = FSMManager()
+
+    # TODO - make locks as mixins
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def modifiers(self):
+        modifiers = {self.creator} if self.creator is not None else set()
+        modifiers |= set(self.holder.admins.all()
+                         ) if self.holder is not None else set()
+        modifiers |= set(self.mentors.all())
+        return modifiers
+
+
 class NEWState(NEWPaper):
     name = models.TextField(null=True, blank=True)
     fsm = models.ForeignKey(
@@ -866,4 +904,3 @@ class NEWState(NEWPaper):
 
     def __str__(self):
         return f'{self.name} in {str(self.fsm)}'
-

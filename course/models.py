@@ -1,29 +1,28 @@
 from django.db import models
 
 from my_form.models import RegistrationForm, RegistrationReceipt
+from base.models import PolymorphicCreatable
 
 
-class Course(models.Model):
+class Course(PolymorphicCreatable):
     class CourseType(models.TextChoices):
-        Team = "Team"
+        Group = "Group"
         Individual = "Individual"
 
     merchandise = models.OneToOneField('accounts.Merchandise', related_name='course', on_delete=models.SET_NULL,
                                        null=True, blank=True)
     registration_form = models.OneToOneField(RegistrationForm, related_name='course', on_delete=models.SET_NULL,
                                              null=True, blank=True)
-    creator = models.ForeignKey('accounts.User', related_name='courses', on_delete=models.SET_NULL, null=True,
-                                blank=True)
-    holder = models.ForeignKey('accounts.EducationalInstitute', related_name='courses', on_delete=models.SET_NULL,
-                               null=True, blank=True)
+    organizer = models.ForeignKey('accounts.EducationalInstitute', related_name='courses', on_delete=models.SET_NULL,
+                                  null=True, blank=True)
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    cover_page = models.ImageField(upload_to='courses/', null=True, blank=True)
+    cover_image = models.ImageField(
+        upload_to='courses/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField(default=False)
-    start_date = models.DateTimeField(null=True, blank=True)
-    end_date = models.DateTimeField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True)
     type = models.CharField(
         max_length=40, default=CourseType.Individual, choices=CourseType.choices)
     team_size = models.IntegerField(default=3)
