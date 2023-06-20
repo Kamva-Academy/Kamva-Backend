@@ -3,14 +3,11 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
-from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
-from errors.exceptions import InternalServerError
-from fsm.models import Player, Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
-    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
+from fsm.models import Player, Game, Video, Image, Description, Problem, SmallAnswerProblem, MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, State, Hint, \
     Paper, Widget, Team, Aparat, Audio
-from fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
+from fsm.serializers.answer_serializers import SmallAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
 
 from fsm.serializers.validators import multi_choice_answer_validator
@@ -191,7 +188,8 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
                 answer_object.text = answer['text']
                 answer_object.save()
             else:
-                serializer = SmallAnswerSerializer(data={'problem': instance, 'is_final_answer': True, 'is_correct': True, **answer})
+                serializer = SmallAnswerSerializer(
+                    data={'problem': instance, 'is_final_answer': True, 'is_correct': True, **answer})
                 if serializer.is_valid(raise_exception=True):
                     serializer.save()
         return instance
@@ -207,7 +205,8 @@ class BigAnswerProblemSerializer(WidgetSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        instance = super().create({'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
+        instance = super().create(
+            {'widget_type': Widget.WidgetTypes.BigAnswerProblem, **validated_data})
         return instance
 
 
@@ -299,7 +298,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
         return representation
 
 
-class UploadFileProblemSerializer(WidgetSerializer):    
+class UploadFileProblemSerializer(WidgetSerializer):
 
     class Meta:
         model = UploadFileProblem
@@ -323,8 +322,10 @@ class UploadFileProblemSerializer(WidgetSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        instance = super().create({'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
+        instance = super().create(
+            {'widget_type': Widget.WidgetTypes.UploadFileProblem, **validated_data})
         return instance
+
 
 class MockWidgetSerializer(serializers.Serializer):
     GameSerializer = GameSerializer(required=False)

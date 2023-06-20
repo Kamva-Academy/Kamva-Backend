@@ -1,26 +1,10 @@
-from base.serializers.widget_serializers import WidgetSerializer
-from scoring.serializers.score_serializers import DeliverableSerializer
-from question_widget.models import Answer
-from question_widget.models import InviteeUsernameQuestion, InviteeUsernameAnswer
+
+
+from question_widget.models import InviteeUsernameAnswer, InviteeUsernameQuestion
+from question_widget.serializers.answer_serializers import AnswerSerializer
+from question_widget.serializers.base_serializers import QuestionSerializer
 from scoring.models import Score
 from scoring.serializers.score_serializers import ScoreSerializer
-from question_widget.serializers.answer_serializers import AnswerSerializer
-
-############ BASE ############
-
-
-class QuestionSerializer(WidgetSerializer):
-    pass
-
-
-class AnswerSerializer(DeliverableSerializer):
-
-    class meta:
-        model = Answer
-        fields = ['id', 'name', 'paper', 'widget_type']
-
-
-############ INVITEE USERNAME WIDGET ############
 
 
 class InviteeUsernameQuestionSerializer(QuestionSerializer):

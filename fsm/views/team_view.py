@@ -15,9 +15,9 @@ from accounts.serializers import PhoneNumberSerializer
 from accounts.utils import find_user
 from errors.error_codes import serialize_error
 from fsm import permissions as customPermissions
-from fsm.models import Team, Invitation, RegistrationReceipt, RegistrationForm, AnswerSheet
+from fsm.models import Team, Invitation, RegistrationReceipt, AnswerSheet
 from fsm.permissions import IsInvitationInvitee
-from fsm.serializers.answer_sheet_serializers import ReceiptGetSerializer, RegistrationReceiptSerializer
+from fsm.serializers.answer_sheet_serializers import ReceiptGetSerializer
 from fsm.serializers.team_serializer import TeamSerializer, InvitationSerializer, InvitationResponseSerializer
 from fsm.filtersets import TeamFilterSet
 
@@ -40,7 +40,7 @@ class TeamViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        except (KeyError, AttributeError):
             return super().get_serializer_class()
 
     def get_serializer_context(self):
@@ -175,7 +175,7 @@ class InvitationViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixin
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        except (KeyError, AttributeError):
             return super().get_serializer_class()
 
     @transaction.atomic
