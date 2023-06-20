@@ -18,8 +18,7 @@ class Course(PolymorphicCreatable):
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    cover_image = models.ImageField(
-        upload_to='courses/', null=True, blank=True)
+    cover_image = models.ImageField(upload_to='courses/')
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField(default=False)
     duration = models.DurationField(null=True, blank=True)
