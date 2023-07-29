@@ -35,13 +35,13 @@ class WidgetSerializer(serializers.ModelSerializer):
         return WidgetHintSerializer(obj.hints, many=True).data
 
     def create(self, validated_data):
-        if validated_data['file']:
+        if validated_data.get('file'):
             validated_data['file'] = add_datetime_to_filename(
                 validated_data['file'])
         return super().create({'creator': self.context.get('user', None), **validated_data})
 
     def update(self, instance, validated_data):
-        if validated_data['file']:
+        if validated_data.get('file'):
             validated_data['file'] = add_datetime_to_filename(
                 validated_data['file'])
         return super().update(instance, validated_data)
