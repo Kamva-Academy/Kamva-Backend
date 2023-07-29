@@ -40,6 +40,12 @@ class WidgetSerializer(serializers.ModelSerializer):
                 validated_data['file'])
         return super().create({'creator': self.context.get('user', None), **validated_data})
 
+    def update(self, instance, validated_data):
+        if validated_data['file']:
+            validated_data['file'] = add_datetime_to_filename(
+                validated_data['file'])
+        return super().update(instance, validated_data)
+
     def validate(self, attrs):
         user = self.context.get('user', None)
         paper = attrs.get('paper', None)
