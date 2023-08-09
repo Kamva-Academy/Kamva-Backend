@@ -8,6 +8,8 @@ SECRET_KEY = get_environment_var(
 
 ALLOWED_HOSTS = get_environment_var('ALLOWED_HOSTS', '*').split(',')
 
+SERVICE_DOMAIN = 'https://kamva.academy/'
+
 DB_NAME = get_environment_var('DB_NAME', 'workshop')
 DB_USER = get_environment_var('DB_USER', 'user')
 DB_PASS = get_environment_var('DB_PASS', 'p4s$pAsS')
@@ -101,11 +103,11 @@ ZARINPAL_CONFIG = {
 }
 
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://kamva.academy/message/payment/success',
-    'FRONT_HOST_FAILURE': 'https://kamva.academy/message/payment/failure',
+    'FRONT_HOST_SUCCESS': f'{SERVICE_DOMAIN}message/payment/success',
+    'FRONT_HOST_FAILURE': f'{SERVICE_DOMAIN}message/payment/failure',
 }
 
-SWAGGER_URL = 'https://backend.rastaiha.ir/api/'
+SWAGGER_URL = f'{SERVICE_DOMAIN}api/'
 
 CSRF_TRUSTED_ORIGINS = get_environment_var('CSRF_TRUSTED_ORIGINS', '*').split(',')
 
