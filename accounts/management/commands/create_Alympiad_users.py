@@ -127,7 +127,7 @@ class Command(BaseCommand):
                     else:
                         receipts.append(RegistrationReceipt.objects.filter(
                             answer_sheet_of=registration_form, user=user).first())
-                    self.stdout.write(self.style.SUCCESS(f'Successfully created user {user.phone_number}'))
+                    self.stdout.write(self.style.SUCCESS(f'Successfully created user {user.username}'))
                 if len(Team.objects.filter(name=data['team_code'])) <= 0:
                     team = Team.objects.create(name=data['team_code'],
                                                team_head=receipts[0],

@@ -26,7 +26,7 @@ class User(AbstractUser):
         Female = 'Female'
 
     phone_number = models.CharField(
-        max_length=15, blank=False, null=False, unique=True)
+        max_length=15, blank=True, null=True, unique=True)
     profile_picture = models.ImageField(
         upload_to='profile_pictures/', blank=True, null=True)
     bio = models.CharField(max_length=300, blank=True, null=True)
