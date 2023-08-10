@@ -1,8 +1,6 @@
 import csv
-from io import BytesIO, StringIO
+from io import StringIO
 
-import rest_framework.parsers
-from django.contrib.auth.hashers import make_password
 from django.db.models import Count, F, Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -11,17 +9,16 @@ from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.parsers import MultiPartParser
 
-from accounts.models import User, SchoolStudentship, Studentship, AcademicStudentship
+from accounts.models import User
 from accounts.serializers import UserSerializer
-from accounts.utils import create_or_update_user, create_registration_receipt, create_team
+from accounts.utils import update_or_create_team, update_or_create_user_account, update_or_create_registration_receipt, create_team
 from errors.error_codes import serialize_error
 from fsm.serializers.answer_sheet_serializers import RegistrationReceiptSerializer, RegistrationInfoSerializer, \
     RegistrationPerCitySerializer
 from fsm.serializers.paper_serializers import RegistrationFormSerializer, ChangeWidgetOrderSerializer
 from fsm.serializers.certificate_serializer import CertificateTemplateSerializer
-from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation, AnswerSheet, Team
+from fsm.models import RegistrationForm, transaction, RegistrationReceipt, Invitation, Team
 from fsm.permissions import IsRegistrationFormModifier
 from fsm.serializers.serializers import BatchRegistrationSerializer
 from fsm.serializers.team_serializer import InvitationSerializer
@@ -36,7 +33,7 @@ class RegistrationViewSet(ModelViewSet):
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        except (KeyError, AttributeError):
             return super().get_serializer_class()
 
     def get_serializer_context(self):
@@ -128,7 +125,8 @@ class RegistrationViewSet(ModelViewSet):
     def register(self, request, pk=None):
         context = self.get_serializer_context()
         context['answer_sheet_of'] = self.get_object()
-        serializer = RegistrationReceiptSerializer(data={'answer_sheet_type': 'RegistrationReceipt', **request.data}, context=context)
+        serializer = RegistrationReceiptSerializer(
+            data={'answer_sheet_type': 'RegistrationReceipt', **request.data}, context=context)
         if serializer.is_valid(raise_exception=True):
             register_permission_status = self.get_object(
             ).user_permission_status(context.get('user', None))
@@ -147,7 +145,8 @@ class RegistrationViewSet(ModelViewSet):
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.NotRightGender:
                 raise ParseError(serialize_error('4109'))
             elif register_permission_status == RegistrationForm.RegisterPermissionStatus.Permitted:
-                serializer.validated_data['answer_sheet_of'] = self.get_object()
+                serializer.validated_data['answer_sheet_of'] = self.get_object(
+                )
                 registration_receipt = serializer.save()
 
                 form = registration_receipt.answer_sheet_of
@@ -174,84 +173,41 @@ class RegistrationViewSet(ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-GENDER_MAPPING = {
-    'دختر': User.Gender.Female,
-    'پسر': User.Gender.Male
-}
-
-GRADE_MAPPING = {
-    'نهم': 9,
-    'دهم': 10,
-    'یازدهم': 11,
-    'دوازدهم': 12
-}
-
-MAJOR_MAPPING = {
-    'ریاضی': SchoolStudentship.Major.Math,
-    'تجربی': SchoolStudentship.Major.Biology,
-    'ادبیات': SchoolStudentship.Major.Literature,
-    'عمومی': SchoolStudentship.Major.Others
-}
-
-
-def convert_with_punctuation_removal(string):
-    return string.replace('۰', '0').replace('۱', '1').replace('۲', '2').replace('۳', '3').replace('۴', '4').replace(
-        '۵', '5').replace('۶', '6').replace('۷', '7').replace('۸', '8').replace('۹', '9').replace(' ', '').replace(
-        '-', '').replace('_', '')
-
-
-class RegistrationAdminViewSet(GenericViewSet):
+class RegistrationFormAdminViewSet(GenericViewSet):
     queryset = RegistrationForm.objects.all()
     serializer_class = BatchRegistrationSerializer
-    # parser_classes = [MultiPartParser]
     permission_classes = [IsRegistrationFormModifier]
-    my_tags = ['registration']
+    my_tags = ['registration_form_admin']
 
     @action(detail=True, methods=['post'])
-    @transaction.atomic
-    def register_csv(self, request, pk=None):
+    def register_participants_via_list(self, request, pk):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            in_memory_file = request.data.get('file')
-            registration_form = self.get_object()
+        serializer.is_valid(raise_exception=True)
+        participants_list_file = request.data.get(
+            'file').read().decode('utf-8')
 
-            file = in_memory_file.read().decode('utf-8')
-            for data in csv.DictReader(StringIO(file)):
-                member = dict()
-                for k in data.keys():
-                    member[k] = data[k]
+        failed_registered_participants = 0
+        successful_registered_participants = 0
+        for participant in csv.DictReader(StringIO(participants_list_file)):
+            try:
+                registration_form = self.get_object()
+                participant_user_account = update_or_create_user_account(
+                    **participant)
+                receipt = update_or_create_registration_receipt(
+                    participant_user_account, registration_form)
+                update_or_create_team(
+                    participant['group_name'], participant['chat_room_link'], receipt, registration_form)
+                successful_registered_participants += 1
+            except:
+                failed_registered_participants += 1
 
-                team_name = member['team_name']
-                grade = member['grade']
-                chat_room = member['chat_room']
-
-                if team_name is not None:
-                    team = create_team(team_name=team_name,
-                                       registration_form=registration_form)
-
-                user = create_or_update_user(**data)
-                receipt = create_registration_receipt(user, registration_form)
-
-                if team_name is not None and team_name != "":
-                    team_with_same_head = Team.objects.filter(
-                        team_head=receipt).first()
-                    if team_with_same_head is not None:
-                        team_with_same_head.team_head = None
-                        team_with_same_head.save()
-                    if team.team_head is None:
-                        team.team_head = receipt
-                    if chat_room != "":
-                        team.chat_room = chat_room
-                    team.save()
-                    receipt.team = team
-                    receipt.save()
-
-            return Response("ok", status=status.HTTP_200_OK)
+        return Response(f"successfully registered: {successful_registered_participants} - failed registered: {failed_registered_participants}", status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     @transaction.atomic
-    def register_individual(self, request, pk=None):
-        user = create_or_update_user(**request.data)
+    def register_individual_participant(self, request, pk=None):
+        user = update_or_create_user_account(**request.data)
         registration_form = self.get_object()
-        receipt = create_registration_receipt(user, registration_form)
+        receipt = update_or_create_registration_receipt(
+            user, registration_form)
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)

@@ -7,7 +7,7 @@ from .views.event_view import EventViewSet
 from .views.fsm_view import *
 from .views.edge_view import *
 from .views.registration_receipt_view import RegistrationReceiptViewSet
-from .views.registration_view import RegistrationViewSet, RegistrationAdminViewSet
+from .views.registration_view import RegistrationViewSet, RegistrationFormAdminViewSet
 from .views.certificate_view import CertificateTemplateViewSet, FontViewSet
 from .views.state_view import StateViewSet, HintViewSet, WidgetHintViewSet
 from .views.widget_view import *
@@ -19,9 +19,9 @@ urlpatterns = [
     path('widget/upload_widget_file/<int:widget_id>/', upload_widget_file),
 ]
 
-router.register(r'registration', RegistrationViewSet, basename='registration')
-router.register(r'registration', RegistrationAdminViewSet,
-                basename='registration_admin')
+router.register(r'registration', RegistrationViewSet, basename='registration_form')
+router.register(r'registration_form_admin', RegistrationFormAdminViewSet,
+                basename='registration_admin_form')
 router.register(r'certificate_templates',
                 CertificateTemplateViewSet, basename='certificate_templates')
 router.register(r'fonts', FontViewSet, basename='fonts')
