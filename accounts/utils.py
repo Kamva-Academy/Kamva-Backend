@@ -28,25 +28,15 @@ def find_registration_receipt(user, registration_form):
 
 
 def update_or_create_user_account(**user_data):
-    # add 0 to phone number
-    if user_data['phone_number'] and not str(user_data['phone_number']).startswith('0'):
-        user_data['phone_number'] = str('0' + user_data['phone_number'])
-
     # hande name
     if not user_data['first_name'] and not user_data['last_name'] and user_data['full_name']:
         full_name_parts = user_data['full_name'].split(' ')
         user_data['first_name'] = full_name_parts[0]
         user_data['last_name'] = ' '.join(full_name_parts[1:])
 
-    # if password is emptu, set it as username, phone_number or national_code
-    if user_data['password']:
-        pass
-    elif user_data['username']:
-        user_data['password'] = user_data['username']
-    elif user_data['phone_number']:
-        user_data['password'] = user_data['phone_number']
-    elif user_data['national_code']:
-        user_data['password'] = user_data['national_code']
+    # as username cannot be blank, it should be removed befroe deserializing
+    if not user_data.get('username'):
+        user_data.pop('username')
 
     serializer = AccountSerializer(data=user_data)
     serializer.is_valid(raise_exception=True)
@@ -54,12 +44,13 @@ def update_or_create_user_account(**user_data):
     if validated_data.get('username'):
         user_account = User.objects.filter(
             username=validated_data.get('username')).first()
-    if validated_data.get('phone_number'):
+    elif validated_data.get('phone_number'):
         user_account = User.objects.filter(
             phone_number=validated_data.get('phone_number')).first()
-    if validated_data.get('national_code'):
+    elif validated_data.get('national_code'):
         user_account = User.objects.filter(
             national_code=validated_data.get('national_code')).first()
+
     if user_account:
         return serializer.update(user_account, validated_data)
     else:
