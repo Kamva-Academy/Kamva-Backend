@@ -80,10 +80,12 @@ class AccountSerializer(serializers.ModelSerializer):
         validated_data['password'] = make_password(
             validated_data.get('password'))
 
-        if validated_data['phone_number']:
-            validated_data['username'] = validated_data['phone_number']
+        if validated_data.get('username'):
+            pass
+        elif validated_data.get('phone_number'):
+            validated_data['username'] = validated_data.get('phone_number')
         elif validated_data['national_code']:
-            validated_data['username'] = validated_data['national_code']
+            validated_data['username'] = validated_data.get('national_code')
         else:
             raise Exception("insufficient data")
 
@@ -100,6 +102,7 @@ class AccountSerializer(serializers.ModelSerializer):
                 validated_data.get('password'))
             instance.password = validated_data.get('password')
             instance.save()
+        instance = super().update(instance, validated_data)
         return instance
 
     class Meta:
