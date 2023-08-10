@@ -38,6 +38,16 @@ def update_or_create_user_account(**user_data):
         user_data['first_name'] = full_name_parts[0]
         user_data['last_name'] = ' '.join(full_name_parts[1:])
 
+    # if password is emptu, set it as username, phone_number or national_code
+    if user_data['password']:
+        pass
+    elif user_data['username']:
+        user_data['password'] = user_data['username']
+    elif user_data['phone_number']:
+        user_data['password'] = user_data['phone_number']
+    elif user_data['national_code']:
+        user_data['password'] = user_data['national_code']
+
     serializer = AccountSerializer(data=user_data)
     serializer.is_valid(raise_exception=True)
     validated_data = serializer.validated_data
