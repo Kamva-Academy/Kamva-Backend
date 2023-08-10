@@ -1,4 +1,3 @@
-from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ParseError
@@ -6,7 +5,8 @@ from rest_framework.exceptions import ParseError
 from accounts.serializers import AccountSerializer
 from accounts.models import User
 from errors.error_codes import serialize_error
-from fsm.models import RegistrationReceipt, Team, AnswerSheet
+from fsm.models import RegistrationForm, RegistrationReceipt, Team, AnswerSheet
+from fsm.serializers.answer_sheet_serializers import MyRegistrationReceiptSerializer
 
 
 def find_user(data):
@@ -27,50 +27,81 @@ def find_registration_receipt(user, registration_form):
     return RegistrationReceipt.objects.filter(user=user, answer_sheet_of=registration_form).first()
 
 
-def create_or_update_user(**data):
-    # todo: fix TOF
-    data['phone_number'] = data.get('username')
-    serializer = AccountSerializer(data=data)
+def update_or_create_user_account(**user_data):
+    # add 0 to phone number
+    if user_data['phone_number'] and not str(user_data['phone_number']).startswith('0'):
+        user_data['phone_number'] = str('0' + user_data['phone_number'])
+
+    # hande name
+    if not user_data['first_name'] and not user_data['last_name'] and user_data['full_name']:
+        full_name_parts = user_data['full_name'].split(' ')
+        user_data['first_name'] = full_name_parts[0]
+        user_data['last_name'] = ' '.join(full_name_parts[1:])
+
+    serializer = AccountSerializer(data=user_data)
     serializer.is_valid(raise_exception=True)
     validated_data = serializer.validated_data
-    user1 = User.objects.filter(
-        Q(username=validated_data.get('username'))).first()
-    user2 = User.objects.filter(
-        Q(phone_number=validated_data.get('phone_number'))).first()
-    # if user1 != user2:
-    #     raise ParseError(serialize_error('4113'))
-    if user1:
-        serializer.update(user1, validated_data)
-        return user1
+    if validated_data.get('username'):
+        user_account = User.objects.filter(
+            username=validated_data.get('username')).first()
+    if validated_data.get('phone_number'):
+        user_account = User.objects.filter(
+            phone_number=validated_data.get('phone_number')).first()
+    if validated_data.get('national_code'):
+        user_account = User.objects.filter(
+            national_code=validated_data.get('national_code')).first()
+    if user_account:
+        return serializer.update(user_account, validated_data)
     else:
         return serializer.save()
 
 
-def create_registration_receipt(user, registration_form):
+def update_or_create_registration_receipt(user: User, registration_form: RegistrationForm):
+    serializer = MyRegistrationReceiptSerializer(data={
+        'answer_sheet_of': registration_form.id,
+        'answer_sheet_type': AnswerSheet.AnswerSheetType.RegistrationReceipt,
+        'user': user.id,
+        'status': RegistrationReceipt.RegistrationStatus.Accepted,
+        'is_participating': True,
+    })
+    serializer.is_valid(raise_exception=True)
+    validated_data = serializer.validated_data
     receipt = RegistrationReceipt.objects.filter(
-        answer_sheet_of=registration_form, user=user).first()
+        user=user, answer_sheet_of=registration_form).first()
+    if receipt:
+        return serializer.update(receipt, validated_data)
+    else:
+        return serializer.save()
 
-    if receipt is None:
-        receipt = RegistrationReceipt.objects.create(
-            answer_sheet_of=registration_form,
-            answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
-            user=user,
-            status=RegistrationReceipt.RegistrationStatus.Accepted,
-            is_participating=True,
-        )
 
-    return receipt
+def update_or_create_team(participant_group_name: str, chat_room_link: str, receipt: RegistrationReceipt, registration_form: RegistrationForm):
+    if not participant_group_name:
+        return
+    participant_group = create_team(team_name=participant_group_name,
+                                    registration_form=registration_form)
+    team_with_same_head = Team.objects.filter(
+        team_head=receipt).first()
+    if team_with_same_head:
+        team_with_same_head.team_head = None
+        team_with_same_head.save()
+    if not participant_group.team_head:
+        participant_group.team_head = receipt
+    if chat_room_link:
+        participant_group.chat_room = chat_room_link
+    participant_group.save()
+    receipt.team = participant_group
+    receipt.save()
 
 
 def create_team(**data):
     team_name = data.get('team_name', None)
     registration_form = data.get('registration_form', None)
 
-    if team_name is None or registration_form is None:
+    if not team_name or not registration_form:
         raise ParseError(serialize_error('4113'))
     team = Team.objects.filter(
         name=team_name, registration_form=registration_form).first()
-    if team is None:
+    if not team:
         team = Team.objects.create(
             registration_form=registration_form)
         team.name = team_name

@@ -9,6 +9,7 @@ from errors.error_codes import serialize_error
 from fsm.models import AnswerSheet, RegistrationReceipt, Problem
 from fsm.serializers.answer_serializers import AnswerPolymorphicSerializer
 from accounts.serializers import UserSerializer
+from fsm.serializers.paper_serializers import RegistrationFormSerializer
 
 
 class AnswerSheetSerializer(serializers.ModelSerializer):
@@ -18,7 +19,8 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
     #     read_only_fields = ['id']
 
     def create(self, validated_data):
-        answers = validated_data.pop('answers') if 'answers' in validated_data.keys() else []
+        answers = validated_data.pop(
+            'answers') if 'answers' in validated_data.keys() else []
         instance = super(AnswerSheetSerializer, self).create(validated_data)
         context = self.context
         context['answer_sheet'] = instance
@@ -38,7 +40,8 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
             for w in paper.widgets.all():
                 if isinstance(w, Problem):
                     if w.required and w not in problems:
-                        raise ParseError(serialize_error('4029', {'problem': w}))
+                        raise ParseError(serialize_error(
+                            '4029', {'problem': w}))
 
         return attrs
 
@@ -51,7 +54,8 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
         model = RegistrationReceipt
         fields = ['id', 'user', 'answer_sheet_type', 'answer_sheet_of', 'answers', 'status', 'is_participating', 'team',
                   'certificate']
-        read_only_fields = ['id', 'user', 'status', 'answer_sheet_of', 'is_participating', 'team', 'certificate']
+        read_only_fields = ['id', 'user', 'status', 'answer_sheet_of',
+                            'is_participating', 'team', 'certificate']
 
     def create(self, validated_data):
         return super(RegistrationReceiptSerializer, self).create({'user': self.context.get('user', None),
@@ -68,6 +72,15 @@ class RegistrationReceiptSerializer(AnswerSheetSerializer):
         return attrs
 
 
+# TODO: fix class name
+class MyRegistrationReceiptSerializer(AnswerSheetSerializer):
+    class Meta:
+        model = RegistrationReceipt
+        fields = ['id', 'user', 'answer_sheet_type',
+                  'answer_sheet_of', 'status', 'is_participating']
+        read_only_fields = ['id']
+
+
 class RegistrationInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistrationReceipt
@@ -77,7 +90,8 @@ class RegistrationInfoSerializer(serializers.ModelSerializer):
                             'certificate']
 
     def to_representation(self, instance):
-        representation = super(RegistrationInfoSerializer, self).to_representation(instance)
+        representation = super(RegistrationInfoSerializer,
+                               self).to_representation(instance)
         user = instance.user
         representation['first_name'] = user.first_name
         representation['last_name'] = user.last_name
@@ -86,9 +100,12 @@ class RegistrationInfoSerializer(serializers.ModelSerializer):
         if representation['profile_picture'] is not None and representation['profile_picture'].startswith('/api/'):
             domain = self.context.get('domain', None)
             if domain:
-                representation['profile_picture'] = domain + representation['profile_picture']
-        representation['school_studentship'] = StudentshipSerializer().to_representation(user.school_studentship) if getattr(user, 'school_studentship') else None
-        representation['academic_studentship'] = StudentshipSerializer().to_representation(user.academic_studentship) if getattr(user, 'academic_studentship') else None
+                representation['profile_picture'] = domain + \
+                    representation['profile_picture']
+        representation['school_studentship'] = StudentshipSerializer().to_representation(
+            user.school_studentship) if getattr(user, 'school_studentship') else None
+        representation['academic_studentship'] = StudentshipSerializer().to_representation(
+            user.academic_studentship) if getattr(user, 'academic_studentship') else None
         return representation
 
 
@@ -106,7 +123,8 @@ class RegistrationPerCitySerializer(serializers.Serializer):
 
 
 class RegistrationStatusSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=RegistrationReceipt.RegistrationStatus.choices)
+    status = serializers.ChoiceField(
+        choices=RegistrationReceipt.RegistrationStatus.choices)
 
 
 class ReceiptGetSerializer(serializers.Serializer):

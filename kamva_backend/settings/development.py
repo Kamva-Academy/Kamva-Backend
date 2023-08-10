@@ -9,6 +9,8 @@ SECRET_KEY = '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+SERVICE_DOMAIN = 'http://localhost:8000/'
+
 ALLOWED_HOSTS = ['*']
 
 # Database
@@ -82,9 +84,9 @@ ZARINPAL_CONFIG = {
     'DESCRIPTION': 'ثبت‌نام در رویداد «رستاخیز: مسافر صفر» به صورت آزمایشی'  # Required
 }
 PAYMENT = {
-    'FRONT_HOST_SUCCESS': 'https://kamva.academy/message/payment/success',
-    'FRONT_HOST_FAILURE': 'https://kamva.academy/message/payment/failure',
+    'FRONT_HOST_SUCCESS': f'{SERVICE_DOMAIN}message/payment/success',
+    'FRONT_HOST_FAILURE': f'{SERVICE_DOMAIN}message/payment/failure',
 }
-SWAGGER_URL = None
+SWAGGER_URL = f'{SERVICE_DOMAIN}api/'
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://kamva-backend.darkube.app']
+CSRF_TRUSTED_ORIGINS = [SERVICE_DOMAIN]

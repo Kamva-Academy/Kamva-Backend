@@ -72,14 +72,21 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
 
 class AccountSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(
-        max_length=15, required=False, validators=[phone_number_validator])
+        validators=[phone_number_validator], required=False, allow_null=True)
     password = serializers.CharField(write_only=True, required=False)
     username = serializers.CharField(required=False)
 
     def create(self, validated_data):
         validated_data['password'] = make_password(
             validated_data.get('password'))
-        validated_data['username'] = validated_data.get('phone_number')
+
+        if validated_data['phone_number']:
+            validated_data['username'] = validated_data['phone_number']
+        elif validated_data['national_code']:
+            validated_data['username'] = validated_data['national_code']
+        else:
+            raise Exception("insufficient data")
+
         instance = super().create(validated_data)
         SchoolStudentship.objects.create(
             user=instance, studentship_type=Studentship.StudentshipType.School)
@@ -88,10 +95,11 @@ class AccountSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        validated_data['password'] = make_password(
-            validated_data.get('password'))
-        instance.password = validated_data.get('password')
-        instance.save()
+        if validated_data.get('password'):
+            validated_data['password'] = make_password(
+                validated_data.get('password'))
+            instance.password = validated_data.get('password')
+            instance.save()
         return instance
 
     class Meta:

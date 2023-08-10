@@ -8,9 +8,9 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Rasta Workshop API",
+        title="Kamva Backend API",
         default_version='v3',
-        # description="Test description",
+        description="API list of Kamva backend service",
     ),
     url=settings.SWAGGER_URL,
     public=True,
@@ -26,7 +26,6 @@ urlpatterns = [
     path('api/content/', include('content_widget.urls')),
     path('api/question/', include('question_widget.urls')),
 ]
-
 
 urlpatterns += [path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
                 path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'), ]

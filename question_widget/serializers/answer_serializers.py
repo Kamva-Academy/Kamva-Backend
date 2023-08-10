@@ -14,7 +14,7 @@ class ShortAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = ShortAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
+        fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'text']
         read_only_fields = ['id', 'submitted_by', 'created_at']
 
@@ -25,7 +25,7 @@ class LongAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = LongAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
+        fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'text']
         read_only_fields = ['id', 'submitted_by', 'created_at', 'is_correct']
 
@@ -43,7 +43,7 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = MultiChoiceAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
+        fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'choices']
         read_only_fields = ['id', 'submitted_by', 'created_at', 'is_correct']
 
@@ -93,7 +93,7 @@ class FileAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = UploadFileAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
+        fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'answer_file', 'upload_file_answer']
         read_only_fields = ['id', 'submitted_by',
                             'created_at', 'is_correct', 'answer_file']
@@ -117,11 +117,8 @@ class FileAnswerSerializer(AnswerSerializer):
     def create(self, validated_data):
         problem = validated_data.get('problem', None)
         upload_file_answer = validated_data.pop('upload_file_answer', None)
-        answer_sheet = validated_data.get('answer_sheet', None)
         if problem and not upload_file_answer.problem:
             upload_file_answer.problem = problem
-        if answer_sheet and not upload_file_answer.answer_sheet:
-            upload_file_answer.answer_sheet = answer_sheet
         upload_file_answer.save()
         return upload_file_answer
 
@@ -135,7 +132,7 @@ class UploadFileAnswerSerializer(AnswerSerializer):
 
     class Meta:
         model = UploadFileAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
+        fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'answer_file', 'file_name']
         read_only_fields = ['id', 'answer_type',
                             'submitted_by', 'created_at', 'is_correct']
@@ -173,6 +170,6 @@ class UploadFileAnswerSerializer(AnswerSerializer):
 class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultiChoiceAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
+        fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'choices']
         read_only_fields = ['id', 'submitted_by']

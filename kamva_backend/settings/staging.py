@@ -8,7 +8,7 @@ SECRET_KEY = get_environment_var(
 
 ALLOWED_HOSTS = get_environment_var('ALLOWED_HOSTS', '*').split(',')
 
-SERVICE_DOMAIN = 'https://kamva.academy/'
+SERVICE_DOMAIN = 'https://stage.kamva.academy/'
 
 DB_NAME = get_environment_var('DB_NAME', 'workshop')
 DB_USER = get_environment_var('DB_USER', 'user')
@@ -77,7 +77,6 @@ LOGGING = {
 
 TESTING = False
 
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
@@ -109,17 +108,5 @@ PAYMENT = {
 
 SWAGGER_URL = f'{SERVICE_DOMAIN}api/'
 
-CSRF_TRUSTED_ORIGINS = get_environment_var('CSRF_TRUSTED_ORIGINS', '*').split(',')
-
-DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
-# STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
-MINIO_STORAGE_ENDPOINT = get_environment_var('MINIO_STORAGE_ENDPOINT', None)
-MINIO_STORAGE_ACCESS_KEY = get_environment_var(
-    'MINIO_STORAGE_ACCESS_KEY', None)
-MINIO_STORAGE_SECRET_KEY = get_environment_var(
-    'MINIO_STORAGE_SECRET_KEY', None)
-MINIO_STORAGE_USE_HTTPS = True
-MINIO_STORAGE_MEDIA_BUCKET_NAME = 'media'
-MINIO_STORAGE_STATIC_BUCKET_NAME = 'static'
-MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
-MINIO_STORAGE_AUTO_CREATE_STATIC_BUCKET = True
+CSRF_TRUSTED_ORIGINS = get_environment_var(
+    'CSRF_TRUSTED_ORIGINS', '*').split(',')
