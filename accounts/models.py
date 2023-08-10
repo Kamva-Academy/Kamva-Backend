@@ -25,16 +25,15 @@ class User(AbstractUser):
         Male = 'Male'
         Female = 'Female'
 
-    phone_number = models.CharField(
-        max_length=15, blank=True, null=True, unique=True)
+    id = models.UUIDField(primary_key=True, unique=True,
+                          default=uuid.uuid4, editable=False)
+    phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
+    national_code = models.CharField(max_length=10, null=True, blank=True, unique=True)
     profile_picture = models.ImageField(
         upload_to='profile_pictures/', blank=True, null=True)
     bio = models.CharField(max_length=300, blank=True, null=True)
     gender = models.CharField(max_length=10, null=True,
                               blank=True, choices=Gender.choices)
-    id = models.UUIDField(primary_key=True, unique=True,
-                          default=uuid.uuid4, editable=False)
-    national_code = models.CharField(max_length=10, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
     country = models.CharField(max_length=50, null=True, blank=True)
