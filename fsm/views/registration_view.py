@@ -1,4 +1,4 @@
-import csv
+import pandas as pd
 from io import StringIO
 
 from django.db.models import Count, F, Q
@@ -183,11 +183,11 @@ class RegistrationFormAdminViewSet(GenericViewSet):
     def register_participants_via_list(self, request, pk):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        participants_list_file = request.data.get(
-            'file').read().decode('utf-8')
+
+        participants_list_file = pd.read_excel(request.FILES['file'])
 
         successful_registered_participants = []
-        for participant in csv.DictReader(StringIO(participants_list_file)):
+        for index, participant in participants_list_file.iterrows():
             try:
                 registration_form = self.get_object()
                 participant_user_account = update_or_create_user_account(

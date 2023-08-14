@@ -9,6 +9,6 @@ class BatchRegistrationSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         file = attrs.get('file', None)
-        if not file.name.endswith('.csv'):
+        if not file.name.endswith('.xlsx'):
             raise ParseError(serialize_error('4107'))
         return attrs

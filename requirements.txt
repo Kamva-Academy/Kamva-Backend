@@ -40,6 +40,7 @@ minio==7.1.12
 odfpy==1.4.1
 openpyxl==3.0.10
 packaging==21.3
+pandas==2.0.3
 Pillow==9.3.0
 pip-upgrader==1.4.15
 platformdirs==2.5.2
