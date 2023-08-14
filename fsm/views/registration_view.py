@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from io import StringIO
 
 from django.db.models import Count, F, Q
@@ -184,7 +185,7 @@ class RegistrationFormAdminViewSet(GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        participants_list_file = pd.read_excel(request.FILES['file'])
+        participants_list_file = pd.read_excel(request.FILES['file']).replace(np.nan, None)
 
         successful_registered_participants = []
         for index, participant in participants_list_file.iterrows():
