@@ -84,7 +84,7 @@ class AccountSerializer(serializers.ModelSerializer):
             pass
         elif validated_data.get('phone_number'):
             validated_data['username'] = validated_data.get('phone_number')
-        elif validated_data['national_code']:
+        elif validated_data.get('national_code'):
             validated_data['username'] = validated_data.get('national_code')
         else:
             raise Exception("insufficient data")
@@ -108,7 +108,7 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'phone_number', 'first_name',
-                  'last_name', 'password', 'username', 'email']
+                  'last_name', 'password', 'username', 'email', 'national_code']
         read_only_fields = ['id']
 
 

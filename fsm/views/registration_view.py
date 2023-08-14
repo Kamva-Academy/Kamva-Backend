@@ -186,8 +186,7 @@ class RegistrationFormAdminViewSet(GenericViewSet):
         participants_list_file = request.data.get(
             'file').read().decode('utf-8')
 
-        failed_registered_participants = 0
-        successful_registered_participants = 0
+        successful_registered_participants = []
         for participant in csv.DictReader(StringIO(participants_list_file)):
             try:
                 registration_form = self.get_object()
@@ -197,11 +196,12 @@ class RegistrationFormAdminViewSet(GenericViewSet):
                     participant_user_account, registration_form)
                 update_or_create_team(
                     participant['group_name'], participant['chat_room_link'], receipt, registration_form)
-                successful_registered_participants += 1
+                successful_registered_participants.append(
+                    participant_user_account.username)
             except:
-                failed_registered_participants += 1
+                pass
 
-        return Response(f"successfully registered: {successful_registered_participants} - failed registered: {failed_registered_participants}", status=status.HTTP_200_OK)
+        return Response({'successfully_registered_participants': successful_registered_participants}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     @transaction.atomic
