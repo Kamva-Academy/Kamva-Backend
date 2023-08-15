@@ -73,13 +73,13 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
 class AccountSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(
         validators=[phone_number_validator], required=False, allow_null=True)
-    password = serializers.CharField(write_only=True, required=False)
-    username = serializers.CharField(required=False)
+    password = serializers.CharField(
+        write_only=True, required=False, allow_null=True)
+    username = serializers.CharField(required=False, allow_null=True)
 
     def create(self, validated_data):
-        validated_data['password'] = make_password(
-            validated_data.get('password'))
 
+        # set username
         if validated_data.get('username'):
             pass
         elif validated_data.get('phone_number'):
@@ -88,6 +88,13 @@ class AccountSerializer(serializers.ModelSerializer):
             validated_data['username'] = validated_data.get('national_code')
         else:
             raise Exception("insufficient data")
+
+        # set password
+        if validated_data.get('password'):
+            validated_data['password'] = make_password(
+                validated_data.get('password'))
+        else:
+            validated_data['password'] = make_password(validated_data['username'])
 
         instance = super().create(validated_data)
         SchoolStudentship.objects.create(

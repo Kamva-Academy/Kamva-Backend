@@ -185,7 +185,8 @@ class RegistrationFormAdminViewSet(GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        participants_list_file = pd.read_excel(request.FILES['file']).replace(np.nan, None)
+        participants_list_file = pd.read_excel(
+            request.FILES['file'], dtype=str).replace(np.nan, None)
 
         successful_registered_participants = []
         for index, participant in participants_list_file.iterrows():

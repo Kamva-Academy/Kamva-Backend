@@ -34,14 +34,6 @@ def update_or_create_user_account(**user_data):
         user_data['first_name'] = full_name_parts[0]
         user_data['last_name'] = ' '.join(full_name_parts[1:])
 
-    # if these fields are blank, remove them
-    if not user_data.get('username'):
-        user_data.pop('username')
-    if not user_data.get('phone_number'):
-        user_data.pop('phone_number')
-    if not user_data.get('national_code'):
-        user_data.pop('national_code')
-
     serializer = AccountSerializer(data=user_data)
     serializer.is_valid(raise_exception=True)
     validated_data = serializer.validated_data
