@@ -29,7 +29,7 @@ def find_registration_receipt(user, registration_form):
 
 def update_or_create_user_account(**user_data):
     # hande name
-    if not user_data['first_name'] and not user_data['last_name'] and user_data['full_name']:
+    if not user_data.get('first_name') and not user_data.get('last_name') and user_data.get('full_name'):
         full_name_parts = user_data['full_name'].split(' ')
         user_data['first_name'] = full_name_parts[0]
         user_data['last_name'] = ' '.join(full_name_parts[1:])

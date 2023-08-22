@@ -190,6 +190,9 @@ class RegistrationFormAdminViewSet(GenericViewSet):
 
         successful_registered_participants = []
         for index, participant in participants_list_file.iterrows():
+            # remove None fields
+            participant = {k: v for k, v in participant.items() if v}
+            
             try:
                 registration_form = self.get_object()
                 participant_user_account = update_or_create_user_account(
@@ -197,7 +200,7 @@ class RegistrationFormAdminViewSet(GenericViewSet):
                 receipt = update_or_create_registration_receipt(
                     participant_user_account, registration_form)
                 update_or_create_team(
-                    participant['group_name'], participant['chat_room_link'], receipt, registration_form)
+                    participant.get('group_name'), participant.get('chat_room_link'), receipt, registration_form)
                 successful_registered_participants.append(
                     participant_user_account.username)
             except:

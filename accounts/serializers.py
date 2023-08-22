@@ -71,11 +71,9 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(
-        validators=[phone_number_validator], required=False, allow_null=True)
-    password = serializers.CharField(
-        write_only=True, required=False, allow_null=True)
-    username = serializers.CharField(required=False, allow_null=True)
+    phone_number = serializers.CharField(validators=[phone_number_validator], required=False)
+    password = serializers.CharField(write_only=True, required=False)
+    username = serializers.CharField(required=False,)
 
     def create(self, validated_data):
 
