@@ -1,34 +1,20 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import views, viewsets, status
-from rest_framework import mixins
-from rest_framework.decorators import action, api_view, permission_classes, parser_classes
-from rest_framework.mixins import RetrieveModelMixin
+from rest_framework import viewsets, status
+from rest_framework.decorators import action, parser_classes
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.exceptions import ParseError
+from errors.error_codes import serialize_error
 from fsm.models import *
 from rest_framework import permissions
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from django.utils.decorators import method_decorator
 
-from fsm.permissions import CanAnswerWidget, MentorPermission
+from fsm.permissions import CanAnswerWidget
 from fsm.serializers.answer_serializers import AnswerPolymorphicSerializer, MockAnswerSerializer
 from fsm.serializers.widget_serializers import MockWidgetSerializer
 from fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser])
-@transaction.atomic
-def upload_widget_file(request, widget_id):
-    file = request.FILES.get('file', None)
-    widget = Widget.objects.get(id=widget_id)
-    widget.file = file
-    widget.save()
-    return Response(WidgetPolymorphicSerializer(widget).data, status.HTTP_200_OK)
 
 
 class WidgetViewSet(viewsets.ModelViewSet):
@@ -43,7 +29,7 @@ class WidgetViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        except (KeyError, AttributeError):
             return super().get_serializer_class()
 
     def get_permissions(self):
@@ -80,7 +66,8 @@ class WidgetViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = WidgetPolymorphicSerializer(instance, data=request.data, partial=True, context=self.get_serializer_context())
+        serializer = WidgetPolymorphicSerializer(
+            instance, data=request.data, partial=True, context=self.get_serializer_context())
         if serializer.is_valid(raise_exception=True):
             self.perform_update(serializer)
             return Response(data=serializer.data, status=status.HTTP_200_OK)

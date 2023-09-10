@@ -15,9 +15,7 @@ from .views.team_view import *
 
 router = DefaultRouter()
 
-urlpatterns = [
-    path('widget/upload_widget_file/<int:widget_id>/', upload_widget_file),
-]
+urlpatterns = []
 
 router.register(r'registration', RegistrationViewSet, basename='registration_form')
 router.register(r'registration_form_admin', RegistrationFormAdminViewSet,
