@@ -686,7 +686,7 @@ class Answer(PolymorphicModel):
 
     answer_type = models.CharField(max_length=20, choices=AnswerTypes.choices)
     answer_sheet = models.ForeignKey(AnswerSheet, related_name='answers', null=True, blank=True,
-                                     on_delete=models.SET_NULL)
+                                     on_delete=models.PROTECT)
     submitted_by = models.ForeignKey(
         'accounts.User', related_name='submitted_answers', null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -694,7 +694,8 @@ class Answer(PolymorphicModel):
     is_correct = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'user: {self.submitted_by.username if self.submitted_by else "-"} - problem {self.problem.id}'
+        return f'user: {self.submitted_by.username if self.submitted_by else "-"} - \
+            problem: {self.problem.id if self.problem else "-"}'
 
     @abstractmethod
     def get_string_answer(self):
@@ -707,7 +708,7 @@ class Answer(PolymorphicModel):
 
 class SmallAnswer(Answer):
     problem = models.ForeignKey('fsm.SmallAnswerProblem', null=True,
-                                blank=True, on_delete=models.CASCADE, related_name='answers')
+                                blank=True, on_delete=models.PROTECT, related_name='answers')
     text = models.TextField()
 
     def correction_status(self):
@@ -726,7 +727,7 @@ class SmallAnswer(Answer):
 
 
 class BigAnswer(Answer):
-    problem = models.ForeignKey('fsm.BigAnswerProblem', null=True, blank=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey('fsm.BigAnswerProblem', null=True, blank=True, on_delete=models.PROTECT,
                                 related_name='answers')
     text = models.TextField()
 
@@ -742,7 +743,7 @@ class ChoiceSelection(models.Model):
 
 
 class MultiChoiceAnswer(Answer):
-    problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, blank=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, blank=True, on_delete=models.PROTECT,
                                 related_name='answers')
     choices = models.ManyToManyField(Choice, through=ChoiceSelection)
 
@@ -772,7 +773,7 @@ class MultiChoiceAnswer(Answer):
 
 
 class UploadFileAnswer(Answer):
-    problem = models.ForeignKey('fsm.UploadFileProblem', null=True, blank=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey('fsm.UploadFileProblem', null=True, blank=True, on_delete=models.PROTECT,
                                 related_name='answers')
     answer_file = models.FileField(
         upload_to='answers', max_length=4000, blank=False)
