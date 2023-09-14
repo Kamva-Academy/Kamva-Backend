@@ -28,6 +28,7 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, unique=True,
                           default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
+    # national code should not be unique, due it's not validated
     national_code = models.CharField(max_length=10, null=True, blank=True)
     profile_picture = models.ImageField(
         upload_to='profile_pictures/', blank=True, null=True)
