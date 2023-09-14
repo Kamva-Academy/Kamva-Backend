@@ -49,7 +49,8 @@ def update_or_create_user_account(**user_data):
         user_account = User.objects.filter(
             national_code=validated_data.get('national_code')).first()
     if user_account:
-        return serializer.update(user_account, validated_data)
+        # if user exists, dont change his/her account
+        return user_account
     else:
         return serializer.save()
 
