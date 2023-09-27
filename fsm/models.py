@@ -127,6 +127,7 @@ class Event(models.Model):
     team_size = models.IntegerField(default=3)
     maximum_participant = models.IntegerField(null=True, blank=True)
     accessible_after_closure = models.BooleanField(default=False)
+    is_private = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
