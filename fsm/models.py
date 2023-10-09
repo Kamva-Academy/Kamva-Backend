@@ -695,8 +695,7 @@ class Answer(PolymorphicModel):
     is_correct = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'user: {self.submitted_by.username if self.submitted_by else "-"} - \
-            problem: {self.problem.id if self.problem else "-"}'
+        return f'user: {self.submitted_by.username if self.submitted_by else "-"}'
 
     @abstractmethod
     def get_string_answer(self):
