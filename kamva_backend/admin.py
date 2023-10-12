@@ -11,9 +11,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
-from accounts.models import User
+from apps.accounts.models import User
 from errors.error_codes import serialize_error
-from fsm.models import RegistrationForm, RegistrationReceipt
+from apps.fsm.models import RegistrationForm, RegistrationReceipt
 
 logger = logging.getLogger(__name__)
 

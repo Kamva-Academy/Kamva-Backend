@@ -19,12 +19,12 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('api/admin/', admin.site.urls),
-    path('api/auth/', include(('accounts.urls', 'accounts'), namespace='accounts')),
-    path('api/fsm/', include('fsm.urls')),
-    path('api/scoring/', include('scoring.urls')),
-    path('api/base/', include('base.urls')),
-    path('api/content/', include('content_widget.urls')),
-    path('api/question/', include('question_widget.urls')),
+    path('api/auth/', include(('apps.accounts.urls', 'accounts'), namespace='accounts')),
+    path('api/fsm/', include('apps.fsm.urls')),
+    path('api/scoring/', include('apps.scoring.urls')),
+    path('api/base/', include('apps.base.urls')),
+    path('api/content/', include('apps.content_widget.urls')),
+    path('api/question/', include('apps.question_widget.urls')),
     path('api/websiteappearance/', include('apps.websiteappearance.urls')),
 ]
 
