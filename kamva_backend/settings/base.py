@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'article.apps.ArticleConfig',
     'course.apps.CourseConfig',
     'base.apps.BaseConfig',
+    'apps.websiteappearance.apps.WebsiteappearanceConfig',
 ]
 
 # SITE_ID=1
