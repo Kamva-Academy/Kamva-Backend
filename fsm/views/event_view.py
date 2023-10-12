@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class EventViewSet(ModelViewSet):
     serializer_class = EventSerializer
-    queryset = Event.objects.all()
+    queryset = Event.objects.filter(is_private=False)
     my_tags = ['event']
 
     def get_serializer_context(self):
