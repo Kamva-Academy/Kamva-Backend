@@ -5,6 +5,6 @@ router = DefaultRouter()
 
 urlpatterns = []
 
-router.register(r'banners', BannerViewSet)
+router.register(r'banner', BannerViewSet)
 
 urlpatterns += router.urls
