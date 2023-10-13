@@ -26,7 +26,7 @@ urlpatterns = [
     # path('api/content/', include('apps.content_widget.urls')),
     # path('api/question/', include('apps.question_widget.urls')),
     path('api/websiteappearance/', include('apps.websiteappearance.urls')),
-    path('s/', include('shortener.urls')),
+    path('s/', include('shortener.urls')), # https://pypi.org/project/django-link-shortener/
 ]
 
 urlpatterns += [path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
