@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_filters',
     'minio_storage',
+    'shortener',
     'django_cleanup.apps.CleanupConfig',
     'kamva_backend.apps.MyAdminConfig',
     'apps.accounts.apps.AccountConfig',
