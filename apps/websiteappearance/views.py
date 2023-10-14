@@ -18,4 +18,4 @@ class BannerViewSet(viewsets.ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         banner_type = request.query_params.get('banner_type')
         banners = self.queryset.filter(banner_type=banner_type)
-        return Response(data=self.serializer_class(banners, many=True).data, status=status.HTTP_200_OK)
+        return Response(data=self.serializer_class(banners, context={'request': request}, many=True).data, status=status.HTTP_200_OK)

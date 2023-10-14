@@ -7,6 +7,7 @@ class Banner(models.Model):
 
     banner_type = models.CharField(
         max_length=30, default=BannerType.programs_page, choices=BannerType.choices)
-    image = models.ImageField(upload_to='websiteappearance/')
+    desktop_image = models.ImageField(upload_to='websiteappearance/')
+    mobile_image = models.ImageField(upload_to='websiteappearance/')
     is_active = models.BooleanField(default=False)
     redirect_to = models.URLField()
