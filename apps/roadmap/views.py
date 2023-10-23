@@ -20,7 +20,6 @@ def get_player_taken_path(request):
 
 @api_view(["POST"])
 def get_fsm_roadmap(request):
-    print(request.data)
     fsm_id = request.data.get('fsm_id', None)
     fsm_roadmap = _get_fsm_roadmap(fsm_id)
     return Response(data=LinkSerializer(fsm_roadmap, many=True).data, status=status.HTTP_200_OK)
@@ -28,7 +27,6 @@ def get_fsm_roadmap(request):
 
 def _get_fsm_roadmap(fsm_id: int):
     fsm = FSM.get_fsm(fsm_id)
-    print(fsm_id)
     edges = _get_fsm_edges(fsm)
     links = [Link.get_link_from_states(
         edge.tail, edge.head) for edge in edges]
