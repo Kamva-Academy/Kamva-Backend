@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.course.apps.CourseConfig',
     'apps.base.apps.BaseConfig',
     'apps.websiteappearance.apps.WebsiteappearanceConfig',
+    'apps.roadmap.apps.RoadmapConfig',
 ]
 
 MIDDLEWARE = [

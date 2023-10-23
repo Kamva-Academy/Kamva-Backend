@@ -168,11 +168,9 @@ class FSMViewSet(viewsets.ModelViewSet):
                                                    many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: EdgeSimpleSerializer}, tags=['mentor'])
-    @transaction.atomic
     @action(detail=True, methods=['get'])
     def get_edges(self, request, pk):
-        edges = Edge.objects.filter(
-            Q(tail__fsm=self.get_object()) | Q(head__fsm=self.get_object()))
+        edges = _get_fsm_edges(self.get_object())
         return Response(data=EdgeSerializer(edges, context=self.get_serializer_context(), many=True).data,
                         status=status.HTTP_200_OK)
 
@@ -273,3 +271,7 @@ class PlayerViewSet(viewsets.GenericViewSet, RetrieveModelMixin):
     @swagger_auto_schema(tags=['mentor'])
     def retrieve(self, request, *args, **kwargs):
         return super(PlayerViewSet, self).retrieve(request, *args, **kwargs)
+
+
+def _get_fsm_edges(fsm: FSM) -> list[Edge]:
+    return Edge.objects.filter(Q(tail__fsm=fsm) | Q(head__fsm=fsm))

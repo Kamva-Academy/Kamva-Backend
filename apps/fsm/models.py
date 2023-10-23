@@ -217,6 +217,9 @@ class FSM(models.Model):
         modifiers |= set(self.mentors.all())
         return modifiers
 
+    def get_fsm(fsm_id: int):
+        return FSM.objects.filter(id=fsm_id).first()
+
 
 class Player(models.Model):
     user = models.ForeignKey(
@@ -237,6 +240,10 @@ class Player(models.Model):
     @property
     def team(self):
         return self.receipt.team if self.receipt else None
+
+    @staticmethod
+    def get_player(player_id: int) -> Player:
+        return Player.objects.filter(id=player_id).first()
 
     class Meta:
         unique_together = ('user', 'fsm', 'receipt')

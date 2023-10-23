@@ -21,12 +21,13 @@ urlpatterns = [
     path('api/admin/', admin.site.urls),
     path('api/auth/', include(('apps.accounts.urls', 'accounts'), namespace='accounts')),
     path('api/fsm/', include('apps.fsm.urls')),
+    path('api/roadmap/', include('apps.roadmap.urls')),
+    path('api/websiteappearance/', include('apps.websiteappearance.urls')), # https://pypi.org/project/django-link-shortener/
+    path('s/', include('shortener.urls')),
     # path('api/scoring/', include('apps.scoring.urls')),
     # path('api/base/', include('apps.base.urls')),
     # path('api/content/', include('apps.content_widget.urls')),
     # path('api/question/', include('apps.question_widget.urls')),
-    path('api/websiteappearance/', include('apps.websiteappearance.urls')),
-    path('s/', include('shortener.urls')), # https://pypi.org/project/django-link-shortener/
 ]
 
 urlpatterns += [path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
