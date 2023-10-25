@@ -42,9 +42,6 @@ def _get_player_taken_path(player_id: int):
 
     # 100 is consumed as maximum length in a fsm graph
     for i in range(100):
-        # if current state is reached to the first state of fsm, it should break
-        if player_current_state == fsm.first_state:
-            break
         previous_state = _get_previous_taken_state(
             player_current_state, histories)
         # if the entered_by_edge is deleted, it isn't possible to reach to previous state
@@ -60,9 +57,11 @@ def _get_player_taken_path(player_id: int):
 
 def _get_previous_taken_state(player_current_state: State, histories: list[PlayerHistory]):
     for history in histories:
-        # the entered_by_edge is deleted
+        if history.reverse_enter:
+            continue
+        # if the entered_by_edge is deleted:
         if not history.entered_by_edge:
-            return None
+            continue
         if history.entered_by_edge.head == player_current_state:
             return history.entered_by_edge.tail
-    raise Exception("invalid state")
+    return None
