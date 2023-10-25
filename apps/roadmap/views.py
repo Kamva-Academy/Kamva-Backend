@@ -54,6 +54,7 @@ def _get_player_taken_path(player_id: int):
             previous_state, player_current_state))
         player_current_state = previous_state
 
+    taken_path.reverse()
     return taken_path
 
 
