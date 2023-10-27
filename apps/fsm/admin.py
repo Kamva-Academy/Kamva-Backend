@@ -359,10 +359,9 @@ class InvitationCustomAdmin(admin.ModelAdmin):
 
 @admin.register(CertificateTemplate)
 class CertificateTemplateCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'certificate_type', 'name_X',
-                    'name_Y', 'registration_form', 'font_size']
+    list_display = ['id', 'certificate_type', 'registration_form', 'font_size']
     list_display_links = ['id', 'certificate_type']
-    list_filter = ['certificate_type', 'name_X', 'name_Y']
+    list_filter = ['certificate_type']
     search_fields = ['certificate_type']
 
 

@@ -20,7 +20,8 @@ class FontSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'name']
 
     def to_representation(self, instance):
-        representation = super(FontSerializer, self).to_representation(instance)
+        representation = super(
+            FontSerializer, self).to_representation(instance)
         font_file = representation['font_file']
         if font_file.startswith('/api/'):
             domain = self.context.get('domain', None)
@@ -30,7 +31,8 @@ class FontSerializer(serializers.ModelSerializer):
 
 
 class CertificateTemplateSerializer(serializers.ModelSerializer):
-    font = serializers.PrimaryKeyRelatedField(queryset=Font.objects.all(), allow_null=False, required=True)
+    font = serializers.PrimaryKeyRelatedField(
+        queryset=Font.objects.all(), allow_null=False, required=True)
 
     class Meta:
         model = CertificateTemplate
@@ -50,9 +52,9 @@ class CertificateTemplateSerializer(serializers.ModelSerializer):
         #         raise ParseError(serialize_error('4092'))
         else:
             raise ValidationError(serialize_error('4093'))
-        name_X = attrs.get('name_X', None)
-        name_Y = attrs.get('name_Y', None)
-        if name_X > width or name_Y > height:
+        name_X_percentage = attrs.get('name_X_percentage', None)
+        name_Y_percentage = attrs.get('name_Y_percentage', None)
+        if name_X_percentage > width or name_Y_percentage > height:
             raise ParseError(serialize_error('4094'))
         user = self.context.get('user', None)
         if not is_form_modifier(registration_form, user):
@@ -69,7 +71,8 @@ class CertificateTemplateSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, instance):
-        representation = super(CertificateTemplateSerializer, self).to_representation(instance)
+        representation = super(CertificateTemplateSerializer,
+                               self).to_representation(instance)
         template_file = representation['template_file']
         if template_file.startswith('/api/'):
             domain = self.context.get('domain', None)
@@ -79,32 +82,55 @@ class CertificateTemplateSerializer(serializers.ModelSerializer):
         return representation
 
 
-def create_certificate(certificate_template, full_name):
-    extension = certificate_template.template_file.name.split('.')[1].lower()
-    if extension in ['png', 'jpg', 'jpeg', 'gif']:
+def create_certificate(certificate_template, name: str):
+    template_file_extension = _get_file_extension(
+        certificate_template.template_file.name)
+    if template_file_extension in ['png', 'jpg', 'jpeg', 'gif']:
         if certificate_template.font:
             font_file = certificate_template.font.font_file.file
         else:
             raise ParseError(serialize_error('4096'))
-        font = ImageFont.truetype(font_file, certificate_template.font_size)
-        image = Image.open(certificate_template.template_file.file)
 
-        reshaped_text = arabic_reshaper.reshape(full_name)  # correct its shape
-        bidi_text = get_display(reshaped_text)  # correct its direction
+        template_file = certificate_template.template_file
+        return _create_certificate(name, certificate_template.name_X_percentage, certificate_template.name_Y_percentage,
+                                   font_file, certificate_template.font_size, template_file.file, f'{template_file.name}-{name}.{template_file_extension}')
 
-        draw = ImageDraw.Draw(image)
-        x = certificate_template.name_X - font.getsize(full_name)[0]
-        draw.text((x, certificate_template.name_Y), bidi_text, (0, 0, 0), font=font)
-        draw = ImageDraw.Draw(image)
-
-        image_io = BytesIO()
-        image.save(image_io, format='png')
-        certificate_file_name = f'{certificate_template.template_file.name}-{full_name}.{extension}'
-        image_file = InMemoryUploadedFile(image_io, None, certificate_file_name, f'image/{extension}', image_io.tell(), None)
-
-        return image_file
-
-    elif extension == 'pdf':
+    elif template_file_extension == 'pdf':
         raise ParseError(serialize_error('4099'))
     else:
         raise ParseError(serialize_error('4093'))
+
+
+def _create_certificate(name, name_X_percentage, name_Y_percentage, font_file, font_size, template_file, certificate_file_name):
+    font = ImageFont.truetype(font_file, font_size)
+    image = Image.open(template_file)
+
+    name_X = _get_text_X_position_on_image(
+        name, name_X_percentage, image, font)
+    name_Y = _get_text_Y_position_on_image(
+        name, name_Y_percentage, image, font)
+
+    draw = ImageDraw.Draw(image)
+    draw.text((name_X, name_Y), name, '#000000', direction='rtl', font=font)
+
+    return _save_image_to_file(image, certificate_file_name)
+
+
+def _get_text_X_position_on_image(text: str, text_X_position_percentage: float, image, font):
+    image_width, _ = image.size
+    return text_X_position_percentage * image_width - font.getsize(text)[0]
+
+
+def _get_text_Y_position_on_image(text: str, text_Y_position_percentage: float, image, font):
+    _, image_height = image.size
+    return text_Y_position_percentage * image_height
+
+
+def _save_image_to_file(image, file_name: str):
+    image_io = BytesIO()
+    image.save(image_io, format='png')
+    return InMemoryUploadedFile(image_io, None, file_name, f'image/{_get_file_extension(file_name)}', image_io.tell(), None)
+
+
+def _get_file_extension(file_name: str):
+    return file_name.split('.')[1].lower()

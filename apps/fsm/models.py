@@ -816,8 +816,8 @@ class CertificateTemplate(models.Model):
     certificate_type = models.CharField(max_length=50, null=True, blank=True)
     template_file = models.FileField(
         upload_to='certificate_templates/', null=True, blank=True)
-    name_X = models.IntegerField(null=True, blank=True, default=None)
-    name_Y = models.IntegerField(null=True, blank=True, default=None)
+    name_X_percentage = models.FloatField(null=True, blank=True, default=None)
+    name_Y_percentage = models.FloatField(null=True, blank=True, default=None)
     registration_form = models.ForeignKey(RegistrationForm, on_delete=models.CASCADE,
                                           related_name='certificate_templates')
     font = models.ForeignKey(
