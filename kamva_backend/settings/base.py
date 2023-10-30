@@ -16,7 +16,7 @@ from kavenegar import *
 
 def get_environment_var(var_name, default, prefixed=True):
     if prefixed:
-        var_name = 'WORKSHOP_SERVER_%s' % var_name
+        var_name = 'KAMVA_BACKEND_%s' % var_name
     return os.getenv(var_name, default)
 
 
