@@ -91,7 +91,7 @@ def create_certificate(certificate_template, name: str):
 
         template_file = certificate_template.template_file
         return _create_certificate(name, certificate_template.name_X_percentage, certificate_template.name_Y_percentage,
-                                   font_file, certificate_template.font_size, template_file.file, f'{template_file.name}-{name}.{template_file_extension}')
+                                   font_file, certificate_template.font_size, template_file.file, f'{template_file.name}-{name}.jpeg')
 
     elif template_file_extension == 'pdf':
         raise ParseError(serialize_error('4099'))
@@ -124,10 +124,10 @@ def _get_text_Y_position_on_image(text: str, text_Y_position_percentage: float, 
     return text_Y_position_percentage * image_height
 
 
-def _save_image_to_file(image, file_name: str):
+def _save_image_to_file(image: Image, file_name: str):
     image_io = BytesIO()
-    image.save(image_io, format='png')
-    return InMemoryUploadedFile(image_io, None, file_name, f'image/{_get_file_extension(file_name)}', image_io.tell(), None)
+    image.save(image_io, format='jpeg', optimize=True, quality=90)
+    return InMemoryUploadedFile(image_io, None, file_name, 'image/jpeg', image_io.tell(), None)
 
 
 def _get_file_extension(file_name: str):
