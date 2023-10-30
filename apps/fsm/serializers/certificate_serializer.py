@@ -1,7 +1,6 @@
 from io import BytesIO
 
 from PIL import Image, ImageFont, ImageDraw
-from bidi.algorithm import get_display
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError, ValidationError, PermissionDenied
