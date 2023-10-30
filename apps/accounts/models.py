@@ -14,7 +14,7 @@ import uuid
 import logging
 
 from apps.accounts.validators import percentage_validator
-from kamva_backend.settings.base import KAVENEGAR_TOKEN, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
+from kamva_backend.settings.base import KAVENEGAR_API, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
     DISCOUNT_CODE_LENGTH, PURCHASE_UNIQ_CODE_LENGTH
 
 logger = logging.getLogger(__file__)
@@ -354,7 +354,7 @@ class VerificationCode(models.Model):
     objects = VerificationCodeManager()
 
     def send_sms(self, code_type='verify'):
-        api = KAVENEGAR_TOKEN
+        api = KAVENEGAR_API
         params = {
             'receptor': self.phone_number,
             'template': code_type,
