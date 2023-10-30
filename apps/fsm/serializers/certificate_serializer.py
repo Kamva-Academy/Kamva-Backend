@@ -1,6 +1,5 @@
 from io import BytesIO
 
-import arabic_reshaper
 from PIL import Image, ImageFont, ImageDraw
 from bidi.algorithm import get_display
 from django.core.files.uploadedfile import InMemoryUploadedFile
