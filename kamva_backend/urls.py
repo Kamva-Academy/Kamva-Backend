@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+import sentry_sdk
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -17,12 +18,22 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+sentry_sdk.init(
+    "https://aba490f186b29b1c35a729a64324fd06@sentry.hamravesh.com/5828",
+
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=1.0,
+)
+
 urlpatterns = [
     path('api/admin/', admin.site.urls),
     path('api/auth/', include(('apps.accounts.urls', 'accounts'), namespace='accounts')),
     path('api/fsm/', include('apps.fsm.urls')),
     path('api/roadmap/', include('apps.roadmap.urls')),
-    path('api/websiteappearance/', include('apps.websiteappearance.urls')), # https://pypi.org/project/django-link-shortener/
+    # https://pypi.org/project/django-link-shortener/
+    path('api/websiteappearance/', include('apps.websiteappearance.urls')),
     path('s/', include('shortener.urls')),
     # path('api/scoring/', include('apps.scoring.urls')),
     # path('api/base/', include('apps.base.urls')),
