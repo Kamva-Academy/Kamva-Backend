@@ -12,7 +12,7 @@ from apps.fsm.serializers.paper_serializers import ArticleSerializer, ChangeWidg
 
 class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer
-    queryset = Article.objects.all()
+    queryset = Article.objects.filter(is_private=False)
     my_tags = ['articles']
 
     def get_serializer_class(self):

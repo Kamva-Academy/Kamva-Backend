@@ -354,7 +354,7 @@ class Article(Paper):
     is_draft = models.BooleanField(default=True)
     publisher = models.ForeignKey('accounts.EducationalInstitute', related_name='articles', on_delete=models.SET_NULL,
                                   null=True, blank=True)
-
+    is_private = models.BooleanField(default=False)
 
 ############ FORM / RECEIPT ############
 
