@@ -50,7 +50,7 @@ class EventSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super(
             EventSerializer, self).to_representation(instance)
-        user = self.context.get('user', None)
+        user = self.context.get('request', None).user
         receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last(
         ) if not isinstance(user, AnonymousUser) else None
         representation['participants_size'] = len(instance.participants)
