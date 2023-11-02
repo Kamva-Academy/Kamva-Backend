@@ -12,13 +12,13 @@ from apps.fsm.serializers.paper_serializers import ArticleSerializer, ChangeWidg
 
 class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer
-    queryset = Article.objects.filter(is_private=False)
+    queryset = Article.objects.all()
     my_tags = ['articles']
 
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        except (KeyError, AttributeError):
             return super().get_serializer_class()
 
     def get_permissions(self):
@@ -32,8 +32,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({'user': self.request.user})
         context.update({'editable': True})
-        context.update({'domain': self.request.build_absolute_uri('/api/')[:-5]})
+        context.update(
+            {'domain': self.request.build_absolute_uri('/api/')[:-5]})
         return context
+
+    def list(self, request):
+        return Response(data=self.serializer_class(Article.objects.filter(is_private=False), context={'request': request}, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: ArticleSerializer})
     @transaction.atomic
