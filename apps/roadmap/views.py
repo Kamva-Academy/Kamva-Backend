@@ -21,11 +21,12 @@ def get_player_taken_path(request):
 @api_view(["POST"])
 def get_fsm_roadmap(request):
     fsm_id = request.data.get('fsm_id', None)
-    fsm_roadmap = _get_fsm_roadmap(fsm_id)
-    return Response(data=LinkSerializer(fsm_roadmap, many=True).data, status=status.HTTP_200_OK)
+    fsm = FSM.get_fsm(fsm_id)
+    fsm_links = _get_fsm_links(fsm_id)
+    return Response(data={'first_state_name': fsm.first_state.name, 'links': LinkSerializer(fsm_links, many=True).data}, status=status.HTTP_200_OK)
 
 
-def _get_fsm_roadmap(fsm_id: int):
+def _get_fsm_links(fsm_id: int):
     fsm = FSM.get_fsm(fsm_id)
     edges = _get_fsm_edges(fsm)
     links = [Link.get_link_from_states(
