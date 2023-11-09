@@ -250,28 +250,5 @@ class FSMViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_200_OK)
 
 
-class PlayerViewSet(viewsets.GenericViewSet, RetrieveModelMixin):
-    permission_classes = [IsAuthenticated]
-    queryset = Player.objects.all()
-    serializer_class = PlayerSerializer
-    my_tags = ['fsm']
-
-    def get_permissions(self):
-        if self.action in ['retrieve']:
-            permission_classes = [PlayerViewerPermission]
-        else:
-            permission_classes = self.permission_classes
-        return [permission() for permission in permission_classes]
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({'user': self.request.user})
-        return context
-
-    @swagger_auto_schema(tags=['mentor'])
-    def retrieve(self, request, *args, **kwargs):
-        return super(PlayerViewSet, self).retrieve(request, *args, **kwargs)
-
-
 def _get_fsm_edges(fsm: FSM) -> list[Edge]:
     return Edge.objects.filter(Q(tail__fsm=fsm) | Q(head__fsm=fsm))

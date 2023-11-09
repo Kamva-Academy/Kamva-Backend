@@ -51,5 +51,16 @@ def get_a_player_from_team(team, fsm):
         return player
 
 
+def get_player_latest_taken_edge(player: Player):
+    latest_history = player.histories.filter(
+        reverse_enter=False, state=player.current_state).last()
+    if latest_history:
+        last_taken_edge = latest_history.entered_by_edge
+    else:
+        # if the latest hostory is deleted, choose an inward_edges randomly
+        last_taken_edge = player.current_state.inward_edges.all().first()
+    return last_taken_edge
+
+
 def get_scores_sum(player_workshop):
     pass

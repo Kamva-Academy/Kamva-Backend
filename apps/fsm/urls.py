@@ -12,6 +12,7 @@ from .views.certificate_view import CertificateTemplateViewSet, FontViewSet
 from .views.state_view import StateViewSet, HintViewSet, WidgetHintViewSet
 from .views.widget_view import *
 from .views.team_view import *
+from .views.player_view import *
 
 router = DefaultRouter()
 
