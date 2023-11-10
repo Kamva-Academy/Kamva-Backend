@@ -14,11 +14,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from apps.accounts.models import VerificationCode, User
 from apps.accounts.permissions import IsHimself
 from apps.accounts.serializers import PhoneNumberSerializer, UserSerializer, VerificationCodeSerializer, AccountSerializer, \
-    MyTokenObtainPairSerializer, FileUploadSerializer
+    MyTokenObtainPairSerializer
 from apps.accounts.utils import find_user
 from errors.error_codes import serialize_error
 from errors.exceptions import ServiceUnavailable
-from apps.fsm.models import Team, RegistrationReceipt, AnswerSheet, RegistrationForm
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class UserViewSet(ModelViewSet):
     def get_serializer_class(self):
         try:
             return self.serializer_action_classes[self.action]
-        except(KeyError, AttributeError):
+        except (KeyError, AttributeError):
             return super().get_serializer_class()
 
     def get_permissions(self):
@@ -155,46 +154,3 @@ class ChangePassword(GenericAPIView):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-def create_user(file, request):
-    team = None
-    if file.team_id is None:
-        team = Team(
-            registration_form=request.data.get('registration_form')
-        ).objects.create()
-        team.save()
-    for t in Team.objects.all():
-        if t.id == file.team_id:
-            team = team
-    if team is None:
-        raise NotFound(serialize_error('4112'))
-    user = None
-    for u in User.objects.all():
-        if u.username == file.username:
-            user = u
-    if user is None:
-        user = User.objects.create(
-            username=file.username,
-            first_name=file.first_name,
-            last_name=file.last_name,
-            email=file.email,
-            phone_number=file.phone_number,
-        )
-        user.save()
-
-    if len(RegistrationReceipt.objects.filter(answer_sheet_of=team.registration_form, user=user)) == 0:
-        receipt = RegistrationReceipt.objects.create(
-            answer_sheet_of=team.registration_form,
-            user=user,
-            answer_sheet_type=AnswerSheet.AnswerSheetType.RegistrationReceipt,
-            status=RegistrationReceipt.RegistrationStatus.Accepted,
-            is_participating=True,
-            team=team)
-    else:
-        receipt = RegistrationReceipt.objects.filter(
-            answer_sheet_of=team.registration_form, user=user).first()
-    receipt.status = RegistrationReceipt.RegistrationStatus.Accepted
-    receipt.is_participating = True
-    receipt.team = team
-    receipt.save()
