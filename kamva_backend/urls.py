@@ -18,14 +18,14 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-# sentry_sdk.init(
-#     "https://aba490f186b29b1c35a729a64324fd06@sentry.hamravesh.com/5828",
+sentry_sdk.init(
+    "https://aba490f186b29b1c35a729a64324fd06@sentry.hamravesh.com/5828",
 
-#     # Set traces_sample_rate to 1.0 to capture 100%
-#     # of transactions for performance monitoring.
-#     # We recommend adjusting this value in production.
-#     traces_sample_rate=1.0,
-# )
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=1.0,
+)
 
 urlpatterns = [
     path('api/admin/', admin.site.urls),
