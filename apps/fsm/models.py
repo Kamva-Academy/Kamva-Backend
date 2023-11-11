@@ -488,7 +488,10 @@ class RegistrationForm(Paper):
             except:
                 return None
 
-    def user_permission_status(self, user):
+    def get_user_permission_status(self, user):
+        if user.is_authenticated == False:
+            return self.RegisterPermissionStatus.NotPermitted
+
         time_check_result = self.check_time()
         if time_check_result != 'ok':
             return time_check_result

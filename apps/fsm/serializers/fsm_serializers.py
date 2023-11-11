@@ -67,7 +67,7 @@ class EventSerializer(serializers.ModelSerializer):
             representation['is_user_participating'] = receipt.is_participating
             representation['registration_receipt'] = receipt.id
         else:
-            representation['user_registration_status'] = instance.registration_form.user_permission_status(
+            representation['user_registration_status'] = instance.registration_form.get_user_permission_status(
                 user) if instance.registration_form else None
             representation['is_paid'] = False
             representation['is_user_participating'] = False
@@ -188,7 +188,7 @@ class FSMSerializer(serializers.ModelSerializer):
                 representation['is_user_participating'] = receipt.is_participating
                 representation['registration_receipt'] = receipt.id
             else:
-                representation['user_registration_status'] = instance.registration_form.user_permission_status(
+                representation['user_registration_status'] = instance.registration_form.get_user_permission_status(
                     user)
                 representation['is_paid'] = False
                 representation['is_user_participating'] = False

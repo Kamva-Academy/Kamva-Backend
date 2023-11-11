@@ -51,7 +51,7 @@ class Form(Paper):
     audience_type = models.CharField(
         max_length=50, default='Student', choices=AudienceType.choices)
 
-    def user_permission_status(self, user):
+    def get_user_permission_status(self, user):
         time_check_result = self.check_time()
         if time_check_result != 'ok':
             return time_check_result
