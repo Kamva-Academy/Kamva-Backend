@@ -201,6 +201,7 @@ class FSM(models.Model):
         max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
     lock = models.CharField(max_length=10, null=True, blank=True)
     team_size = models.IntegerField(default=3)
+    order_in_program = models.IntegerField(default=0)
 
     objects = FSMManager()
 
