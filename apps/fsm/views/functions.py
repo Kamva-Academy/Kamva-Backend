@@ -55,7 +55,7 @@ def get_player_latest_taken_edge(player: Player):
     latest_history = player.histories.filter(
         reverse_enter=False, state=player.current_state).last()
 
-    if latest_history.entered_by_edge:
+    if latest_history and latest_history.entered_by_edge:
         last_taken_edge = latest_history.entered_by_edge
     else:
         # if the latest hostory is deleted, choose an inward_edges randomly
