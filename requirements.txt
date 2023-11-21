@@ -36,7 +36,7 @@ kavenegar==1.1.2
 lxml==4.9.1
 MarkupPy==1.14
 MarkupSafe==2.1.1
-minio==7.1.12
+minio==7.2.0
 numpy==1.25.2
 odfpy==1.4.1
 openpyxl==3.0.10
