@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from kamva_backend.settings.base import get_environment_var
 import sentry_sdk
 
 schema_view = get_schema_view(
@@ -18,14 +19,14 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-sentry_sdk.init(
-    "https://aba490f186b29b1c35a729a64324fd06@sentry.hamravesh.com/5828",
-
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production.
-    traces_sample_rate=1.0,
-)
+if not settings.DEBUG:
+    sentry_sdk.init(
+        get_environment_var('SENTRY_DNS'),
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=1.0,
+    )
 
 urlpatterns = [
     path('api/admin/', admin.site.urls),
