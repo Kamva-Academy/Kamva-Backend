@@ -643,7 +643,7 @@ class Problem(Widget):
     solution = models.TextField(null=True, blank=True)
 
     @property
-    def answer(self):
+    def correct_answer(self):
         return self.answers.filter(is_correct=True).first()
 
     def unfinalize_older_answers(self, user):
@@ -668,19 +668,20 @@ class BigAnswerProblem(Problem):
     pass
 
 
+class UploadFileProblem(Problem):
+    pass
+
+
 class MultiChoiceProblem(Problem):
     max_choices = models.IntegerField(
         validators=[MinValueValidator(0)], default=1)
 
 
-class UploadFileProblem(Problem):
-    pass
-
-
 class Choice(models.Model):
-    problem = models.ForeignKey(MultiChoiceProblem, null=True, blank=True, on_delete=models.CASCADE,
+    problem = models.ForeignKey(MultiChoiceProblem, on_delete=models.CASCADE,
                                 related_name='choices')
     text = models.TextField()
+    is_correct = models.BooleanField(default=False)
 
     def __str__(self):
         return self.text
@@ -723,8 +724,8 @@ class SmallAnswer(Answer):
     text = models.TextField()
 
     def correction_status(self):
-        if self.problem.answer:
-            if self.text.strip() == self.problem.answer.text.strip():
+        if self.problem.correct_answer:
+            if self.text.strip() == self.problem.correct_answer.text.strip():
                 # TODO - check for semi-correct answers too
                 return RegistrationReceipt.CorrectionStatus.Correct
             return RegistrationReceipt.CorrectionStatus.Wrong
@@ -746,26 +747,19 @@ class BigAnswer(Answer):
         return self.text
 
 
-class ChoiceSelection(models.Model):
-    multi_choice_answer = models.ForeignKey(
-        'MultiChoiceAnswer', on_delete=models.CASCADE)
-    choice = models.ForeignKey(
-        Choice, on_delete=models.CASCADE, related_name='selections')
-
-
 class MultiChoiceAnswer(Answer):
-    problem = models.ForeignKey('fsm.MultiChoiceProblem', null=True, blank=True, on_delete=models.PROTECT,
-                                related_name='answers')
-    choices = models.ManyToManyField(Choice, through=ChoiceSelection)
+    problem = models.ForeignKey(
+        MultiChoiceProblem, on_delete=models.PROTECT, related_name='answers')
+    choices = models.ManyToManyField(Choice)
 
     def get_string_answer(self):
         # todo
         pass
 
     def correction_status(self):
-        answer = self.problem.answer
-        if answer:
-            correct_choices = answer.choices.values_list(['choice'])
+        correct_answer = self.problem.correct_answer
+        if correct_answer:
+            correct_choices = correct_answer.choices.values_list(['choice'])
             for c in self.choices.values_list(['choice']):
                 if c not in correct_choices:
                     return RegistrationReceipt.CorrectionStatus.Wrong
@@ -773,10 +767,10 @@ class MultiChoiceAnswer(Answer):
         return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
     def get_correct_choices(self):
-        if self.problem.answer:
+        if self.problem.correct_answer:
             correct_choices = set()
             for c in self.choices.values_list(['choice']):
-                if c in ChoiceSelection.objects.filter(multi_choice_answer=self.problem.answer).values_list(
+                if c in _ChoiceSelection.objects.filter(multi_choice_answer=self.problem.correct_answer).values_list(
                         ['choice']):
                     correct_choices.add(c)
             return correct_choices

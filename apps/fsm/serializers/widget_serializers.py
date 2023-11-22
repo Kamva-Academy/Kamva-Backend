@@ -231,91 +231,38 @@ class BigAnswerProblemSerializer(WidgetSerializer):
 
 
 class MultiChoiceProblemSerializer(WidgetSerializer):
-    # todo - this is bullshit move it to representation
-    choices = ChoiceSerializer(many=True, required=False)
-    solution = serializers.ListField(child=serializers.IntegerField(min_value=0), allow_empty=True, allow_null=False,
-                                     required=True, write_only=True)
+    choices = ChoiceSerializer(many=True)
 
     class Meta:
         model = MultiChoiceProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'max_choices', 'choices', 'solution', 'hints']
+                  'required', 'max_choices', 'choices', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
-    def validate(self, attrs):
-        solution = attrs.get('solution', [])
-        max_choices = attrs.get('max_choices', 1)
-        choices = attrs.get('choices', [])
-
-        multi_choice_answer_validator(solution, max_choices)
-        for selection in solution:
-            if selection >= len(choices):
-                raise ParseError(serialize_error('4021', is_field_error=False))
-
-        return super(MultiChoiceProblemSerializer, self).validate(attrs)
-
-    @transaction.atomic
     def create(self, validated_data):
-        choices = validated_data.pop('choices')
-        has_solution = 'solution' in validated_data.keys()
-        if has_solution:
-            solution = validated_data.pop('solution')
-        instance = super().create(
+        multi_choice_problem_instance = super().create(
             {'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
-        # used direct creation instead of serializer.save() for fewer db transactions
-        choice_objects = [Choice.objects.create(
-            **{'problem': instance, **c}) for c in choices]
-        if has_solution:
-            multi_choice_solution = MultiChoiceAnswer.objects.create(**{'problem': instance,
-                                                                        'is_final_answer': True,
-                                                                        'is_correct': True,
-                                                                        'submitted_by': self.context.get('user', None),
-                                                                        'answer_type': 'MultiChoiceAnswer'})
-            choice_selections = [choice_objects[s] for s in solution]
-            multi_choice_solution.choices.add(*choice_selections)
-            multi_choice_solution.save()
+        choices_data = validated_data.pop('choices')
+        choices_instances = [Choice.objects.create(
+            **{'problem': multi_choice_problem_instance, **choice_data}) for choice_data in choices_data]
+        multi_choice_problem_instance.choices.add(choices_instances)
+        return multi_choice_problem_instance
+
+    def update(self, instance, validated_data):
+        choices_data = validated_data.pop('choices')
+
+        for choice_data in choices_data:
+            choice_instance = instance.choices.get(
+                id=choice_data.get('id'))
+            for attr, value in choice_data.items():
+                setattr(choice_instance, attr, value)
+            choice_instance.save()
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
         return instance
-
-    # @transaction.atomic
-    # def update(self, instance, validated_data):
-    #     validated_data['pk'] = instance.pk
-    #     choices = Choice.objects.filter(problem=instance)
-    #     index = 0
-    #     for choice in choices:
-    #         try:
-    #             validated_data['choices'][index]['pk'] = choice.pk
-    #         except:
-    #             pass
-    #         choice.delete()
-    #         index += 1
-    #     try:
-    #         answer = MultiChoiceAnswer.objects.filter(problem=instance)[0]
-    #         validated_data['answer']['pk'] = answer.pk
-    #         answer.delete()
-    #     except:
-    #         pass
-    #
-    #     instance.delete()
-    #     instance = self.create(validated_data)
-    #     return instance
-
-    def to_internal_value(self, data):
-        if 'editable' in self.context and self.context.get('editable') is True:
-            if 'choices' in data.keys():
-                choices_raw = data.pop('choices')
-                choices = [{"text": c} for c in choices_raw]
-                data['choices'] = choices
-            if 'paper' in data.keys() and not isinstance(data.get('paper'), Paper):
-                data['paper'] = get_object_or_404(Paper, id=data.get('paper'))
-            # data['paper'] = get_object_or_404(Paper, id=data['paper'])
-        return data
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        if instance.answer and not instance.paper.is_exam:
-            representation['answer'] = MultiChoiceSolutionSerializer(instance.answer).to_representation(
-                instance.answer)
-        return representation
 
 
 class UploadFileProblemSerializer(WidgetSerializer):

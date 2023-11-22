@@ -58,10 +58,16 @@ class BigAnswerSerializer(AnswerSerializer):
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
+    is_correct = serializers.BooleanField(required=False, write_only=True)
+
     class Meta:
         model = Choice
-        fields = ['id', 'text', 'problem']
-        read_only_fields = ['id', 'problem']
+        fields = ['id', 'text', 'is_correct']
+
+    def to_internal_value(self, data):
+        internal_value = super(ChoiceSerializer, self).to_internal_value(data)
+        internal_value.update({"id": data.get("id")})
+        return internal_value
 
 
 class MultiChoiceAnswerSerializer(AnswerSerializer):
@@ -112,6 +118,14 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
 
         representation['choices'] = choices
         return representation
+
+
+class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultiChoiceAnswer
+        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
+                  'problem', 'choices']
+        read_only_fields = ['id', 'submitted_by']
 
 
 class FileAnswerSerializer(AnswerSerializer):
@@ -195,14 +209,6 @@ class UploadFileAnswerSerializer(AnswerSerializer):
             if domain:
                 representation['answer_file'] = domain + answer_file
         return representation
-
-
-class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MultiChoiceAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
-                  'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by']
 
 
 class MockAnswerSerializer(serializers.Serializer):

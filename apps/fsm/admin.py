@@ -5,9 +5,9 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
-from apps.fsm.models import Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, ChoiceSelection, Team, \
+from apps.fsm.models import Choice, Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
-    SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Choice, Answer, Description, Event, \
+    SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Answer, Description, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, Article, Tag, Aparat
 
 from apps.fsm.utils import get_django_file
@@ -343,13 +343,6 @@ class MultiChoiceAnswerCustomAdmin(admin.ModelAdmin):
     list_filter = ['problem']
 
 
-@admin.register(ChoiceSelection)
-class ChoiceSelectionCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'multi_choice_answer', 'choice']
-    list_display_links = ['id', 'multi_choice_answer', 'choice']
-    list_filter = ['multi_choice_answer', 'choice']
-
-
 @admin.register(Invitation)
 class InvitationCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'invitee', 'team', 'status']
@@ -365,12 +358,17 @@ class CertificateTemplateCustomAdmin(admin.ModelAdmin):
     search_fields = ['certificate_type']
 
 
+class ChoiceInline(admin.TabularInline):
+    model = Choice
+
+
 @admin.register(MultiChoiceProblem)
 class MultiChoiceProblemCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'paper', 'widget_type', 'creator']
     list_display_links = ['id', 'name']
     list_filter = ['widget_type']
     search_fields = ['name']
+    inlines = [ChoiceInline]
 
 
 @admin.register(Answer)
@@ -482,11 +480,6 @@ class WidgetHintCustomAdmin(admin.ModelAdmin):
     list_filter = ['paper_type']
 
 
-@admin.register(Choice)
-class ChoiceCustomAdmin(admin.ModelAdmin):
-    list_display = ['id', 'problem', 'text']
-
-
 @admin.register(Event)
 class EventCustomAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'registration_form',
@@ -518,21 +511,3 @@ admin.site.register(PlayerHistory, PlayerHistoryAdmin)
 admin.site.register(Widget, WidgetAdmin)
 admin.site.register(UploadFileAnswer, UploadFileAnswerAdmin)
 admin.site.register(Tag)
-# admin.site.register(Invitation)
-# admin.site.register(CertificateTemplate)
-# admin.site.register(ChoiceSelection)
-# admin.site.register(Problem)
-# admin.site.register(AnswerSheet)
-# admin.site.register(MultiChoiceAnswer)
-# admin.site.register(MultiChoiceProblem)
-# admin.site.register(Answer)
-# admin.site.register(BigAnswer)
-# admin.site.register(SmallAnswer)
-# admin.site.register(Article)
-# admin.site.register(Game)
-# admin.site.register(Video)
-# admin.site.register(Image)
-# admin.site.register(Hint)
-# admin.site.register(Choice)
-# admin.site.register(Event)
-# admin.site.register(UploadFileProblem)
