@@ -13,7 +13,7 @@ from apps.fsm.models import Player, Game, Video, Image, Description, Problem, Sm
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
     Paper, Widget, Team, Aparat, Audio
 from apps.fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
-    UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
+    UploadFileAnswerSerializer
 
 from apps.fsm.serializers.validators import multi_choice_answer_validator
 from rest_framework import serializers
@@ -240,13 +240,13 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     def create(self, validated_data):
-        multi_choice_problem_instance = super().create(
-            {'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
         choices_data = validated_data.pop('choices')
-        choices_instances = [Choice.objects.create(
-            **{'problem': multi_choice_problem_instance, **choice_data}) for choice_data in choices_data]
-        multi_choice_problem_instance.choices.add(choices_instances)
-        return multi_choice_problem_instance
+        multi_choice_question_instance = super().create(
+            {'widget_type': Widget.WidgetTypes.MultiChoiceProblem, **validated_data})
+        choices_instances = [Choice.create_instance(multi_choice_question_instance, choice_data)
+                             for choice_data in choices_data]
+        multi_choice_question_instance.choices.add(*choices_instances)
+        return multi_choice_question_instance
 
     def update(self, instance, validated_data):
         choices_data = validated_data.pop('choices')

@@ -71,62 +71,32 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 
 class MultiChoiceAnswerSerializer(AnswerSerializer):
-    choices = serializers.ListField(child=serializers.PrimaryKeyRelatedField(queryset=Choice.objects.all()),
-                                    allow_empty=True, allow_null=False, required=True, write_only=True)
+    choices = ChoiceSerializer(many=True)
 
     class Meta:
         model = MultiChoiceAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by', 'created_at', 'is_correct']
+        read_only_fields = ['id', 'submitted_by',
+                            'created_at', 'is_correct', 'choices']
 
     def create(self, validated_data):
-        choices = validated_data.pop('choices')
-
+        choices_data = validated_data.pop('choices')
+        choices_ids = [choice_data['id'] for choice_data in choices_data]
+        choices_instances = Choice.objects.filter(id__in=choices_ids)
         instance = super(MultiChoiceAnswerSerializer, self).create(
             {'answer_type': 'MultiChoiceAnswer', **validated_data})
-        instance.choices.add(*choices)
+        instance.choices.add(*choices_instances)
         instance.save()
-        self.context['choices'] = choices
+        self.context['choices'] = choices_instances
         return instance
 
     def validate(self, attrs):
         attrs = super(MultiChoiceAnswerSerializer, self).validate(attrs)
-        choices = attrs.get('choices', [])
-        problem = attrs.get('problem', None)
-        if problem is not None:
-            multi_choice_answer_validator(choices, problem.max_choices)
-
-            for c in choices:
-                if c.problem != problem:
-                    raise ParseError(serialize_error(
-                        '4030', is_field_error=False))
-
+        choices = attrs.get('choices')
+        problem = attrs.get('problem')
+        multi_choice_answer_validator(choices, problem.max_choices)
         return attrs
-
-    def to_internal_value(self, data):
-        choices = data.get('choices', [])
-        choices = [c.pk if isinstance(c, Choice) else c for c in choices]
-        data['choices'] = choices
-        return super(MultiChoiceAnswerSerializer, self).to_internal_value(data)
-
-    def to_representation(self, instance):
-        representation = super(MultiChoiceAnswerSerializer,
-                               self).to_representation(instance)
-        choices = [ChoiceSerializer(c).to_representation(c)
-                   for c in self.context.get('choices', [])]
-
-        representation['choices'] = choices
-        return representation
-
-
-class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MultiChoiceAnswer
-        fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
-                  'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by']
-
 
 class FileAnswerSerializer(AnswerSerializer):
     upload_file_answer = serializers.PrimaryKeyRelatedField(

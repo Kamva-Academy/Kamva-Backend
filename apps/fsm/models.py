@@ -1,3 +1,4 @@
+from typing import Any
 from apps.base.models import PolymorphicCreatable
 from apps.base.models import Paper as NEWPaper
 from apps.accounts.models import *
@@ -685,6 +686,14 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.text
+
+    @classmethod
+    def create_instance(self, question: MultiChoiceProblem, choice_data) -> 'Choice':
+        return Choice.objects.create(**{
+            'problem': question,
+            'text': choice_data.get('text'),
+            'is_correct': True if choice_data.get('is_correct') else False
+        })
 
 
 ############ ANSWERS ############

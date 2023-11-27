@@ -181,11 +181,3 @@ class UploadFileAnswerSerializer(AnswerSerializer):
             if domain:
                 representation['answer_file'] = domain + answer_file
         return representation
-
-
-class MultiChoiceSolutionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MultiChoiceAnswer
-        fields = ['id', 'answer_type', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
-                  'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by']

@@ -73,20 +73,19 @@ class WidgetViewSet(viewsets.ModelViewSet):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: MockAnswerSerializer}, tags=['answers'])
-    @transaction.atomic
     @action(detail=True, methods=['post'], serializer_class=AnswerPolymorphicSerializer,
-            permission_classes=[CanAnswerWidget, ])
+            permission_classes=[CanAnswerWidget])
     def submit_answer(self, request, *args, **kwargs):
-        data = {'is_final_answer': True, **request.data}
-        if 'problem' not in data.keys():
-            data['problem'] = self.get_object().id
-        elif data.get('problem', None) != self.get_object().id:
-            raise ParseError(serialize_error('4101'))
+        answer_data = {
+            'is_final_answer': True,
+            'problem': self.get_object().id,
+            **request.data
+        }
         serializer = AnswerPolymorphicSerializer(
-            data=data, context=self.get_serializer_context())
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            data=answer_data, context=self.get_serializer_context())
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(tags=['answers'])
     @transaction.atomic
