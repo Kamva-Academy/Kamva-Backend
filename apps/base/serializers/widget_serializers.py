@@ -8,7 +8,7 @@ from errors.error_codes import serialize_error
 from apps.fsm.models import Player, Game, Video, Image, Description, Problem, SmallAnswerProblem, MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, State, Hint, \
     Paper, Widget, Team, Aparat, Audio
 from apps.fsm.serializers.answer_serializers import SmallAnswerSerializer, ChoiceSerializer, \
-    UploadFileAnswerSerializer, MultiChoiceSolutionSerializer
+    UploadFileAnswerSerializer
 
 from apps.fsm.serializers.validators import multi_choice_answer_validator
 from rest_framework import serializers
@@ -290,12 +290,6 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
             # data['paper'] = get_object_or_404(Paper, id=data['paper'])
         return data
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        if instance.answer and not instance.paper.is_exam:
-            representation['answer'] = MultiChoiceSolutionSerializer(instance.answer).to_representation(
-                instance.answer)
-        return representation
 
 
 class UploadFileProblemSerializer(WidgetSerializer):
