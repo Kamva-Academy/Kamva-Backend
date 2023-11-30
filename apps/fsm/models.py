@@ -775,16 +775,6 @@ class MultiChoiceAnswer(Answer):
             return RegistrationReceipt.CorrectionStatus.Correct
         return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
-    def get_correct_choices(self):
-        if self.problem.correct_answer:
-            correct_choices = set()
-            for c in self.choices.values_list(['choice']):
-                if c in _ChoiceSelection.objects.filter(multi_choice_answer=self.problem.correct_answer).values_list(
-                        ['choice']):
-                    correct_choices.add(c)
-            return correct_choices
-        return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
-
 
 class UploadFileAnswer(Answer):
     problem = models.ForeignKey('fsm.UploadFileProblem', null=True, blank=True, on_delete=models.PROTECT,

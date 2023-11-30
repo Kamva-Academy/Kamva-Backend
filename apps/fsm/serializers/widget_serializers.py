@@ -248,21 +248,41 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
         multi_choice_question_instance.choices.add(*choices_instances)
         return multi_choice_question_instance
 
-    def update(self, instance, validated_data):
+    def update(self, question_instance, validated_data):
         choices_data = validated_data.pop('choices')
 
+        # remove deleted choices
+        for choice in question_instance.choices.all():
+            is_there = False
+            for choice_data in choices_data:
+                if choice_data['id'] == choice.id:
+                    is_there = True
+            if not is_there:
+                choice.delete()
+
         for choice_data in choices_data:
-            choice_instance = instance.choices.get(
-                id=choice_data.get('id'))
-            for attr, value in choice_data.items():
-                setattr(choice_instance, attr, value)
-            choice_instance.save()
+            if question_instance.choices and question_instance.choices.filter(id=choice_data.get('id')):
+                # update changed choices
+                choice_instance = question_instance.choices.get(
+                    id=choice_data.get('id'))
+                for attr, value in choice_data.items():
+                    setattr(choice_instance, attr, value)
+                choice_instance.save()
+            else:
+                # create new choices
+                print(choice_data)
+                choice_instance = Choice.create_instance(
+                    question_instance, choice_data)
+                print(choice_instance)
+                question_instance.choices.add(choice_instance)
+                print(question_instance.choices.all())
 
+        # update question self
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+            setattr(question_instance, attr, value)
 
-        return instance
+        question_instance.save()
+        return question_instance
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
