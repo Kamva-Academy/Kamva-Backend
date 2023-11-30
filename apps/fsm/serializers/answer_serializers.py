@@ -58,7 +58,7 @@ class BigAnswerSerializer(AnswerSerializer):
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
-    is_correct = serializers.BooleanField(required=False, write_only=True)
+    is_correct = serializers.BooleanField(required=False)
 
     class Meta:
         model = Choice

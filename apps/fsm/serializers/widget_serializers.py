@@ -264,6 +264,14 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
         return instance
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        user = self.context['user']
+        if not user in instance.paper.fsm.mentors.all():
+            for choice in representation['choices']:
+                del choice['is_correct']
+        return representation
+
 
 class UploadFileProblemSerializer(WidgetSerializer):
 
