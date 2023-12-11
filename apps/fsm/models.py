@@ -558,7 +558,7 @@ class Widget(PolymorphicModel):
         Image = 'Image'
         Aparat = 'Aparat'
         Audio = 'Audio'
-        Description = 'Description'
+        TextWidget = 'TextWidget'
         SmallAnswerProblem = 'SmallAnswerProblem'
         BigAnswerProblem = 'BigAnswerProblem'
         MultiChoiceProblem = 'MultiChoiceProblem'
@@ -593,7 +593,7 @@ class WidgetHint(Paper):
         Widget, on_delete=models.CASCADE, related_name='hints')
 
 
-class Description(Widget):
+class TextWidget(Widget):
     text = models.TextField()
 
     def __str__(self):

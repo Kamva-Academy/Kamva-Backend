@@ -7,7 +7,7 @@ from import_export.admin import ExportActionMixin
 
 from apps.fsm.models import Choice, Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
-    SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Answer, Description, Event, \
+    SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Answer, TextWidget, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, Article, Tag, Aparat
 
 from apps.fsm.utils import get_django_file
@@ -49,8 +49,8 @@ class PlayerHistoryAdmin(ExportActionMixin, admin.ModelAdmin):
         return "-"
 
 
-class DescriptionAdmin(admin.ModelAdmin):
-    model = Description
+class TextWidgetAdmin(admin.ModelAdmin):
+    model = TextWidget
     list_display = ['paper', 'text']
 
     def paper(self, obj):
@@ -505,7 +505,7 @@ admin.site.register(Edge, EdgeAdmin)
 admin.site.register(State, StateAdmin)
 admin.site.register(BigAnswerProblem, BigAnswerProblemAdmin)
 admin.site.register(SmallAnswerProblem, SmallAnswerProblemAdmin)
-admin.site.register(Description, DescriptionAdmin)
+admin.site.register(TextWidget, TextWidgetAdmin)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(PlayerHistory, PlayerHistoryAdmin)
 admin.site.register(Widget, WidgetAdmin)

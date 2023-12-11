@@ -9,7 +9,7 @@ from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
 from errors.exceptions import InternalServerError
-from apps.fsm.models import Player, Game, Video, Image, Description, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
+from apps.fsm.models import Player, Game, Video, Image, TextWidget, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
     MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
     Paper, Widget, Team, Aparat, Audio
 from apps.fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
@@ -151,13 +151,13 @@ class ImageSerializer(WidgetSerializer):
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
-class DescriptionSerializer(WidgetSerializer):
+class TextWidgetSerializer(WidgetSerializer):
     def create(self, validated_data):
-        return super(DescriptionSerializer, self).create(
-            {'widget_type': Widget.WidgetTypes.Description, **validated_data})
+        return super(TextWidgetSerializer, self).create(
+            {'widget_type': Widget.WidgetTypes.TextWidget, **validated_data})
 
     class Meta:
-        model = Description
+        model = TextWidget
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
                   'creator', 'duplication_of', 'text', 'hints']
         read_only_fields = ['id', 'creator', 'duplication_of']
@@ -327,7 +327,7 @@ class MockWidgetSerializer(serializers.Serializer):
     VideoSerializer = VideoSerializer(required=False)
     AparatSerializer = AparatSerializer(required=False)
     ImageSerializer = ImageSerializer(required=False)
-    DescriptionSerializer = DescriptionSerializer(required=False)
+    TextSerializer = TextWidgetSerializer(required=False)
     # ProblemSerializer = ProblemSerializer(required=False)
     SmallAnswerProblemSerializer = SmallAnswerProblemSerializer(required=False)
     BigAnswerProblemSerializer = BigAnswerProblemSerializer(required=False)

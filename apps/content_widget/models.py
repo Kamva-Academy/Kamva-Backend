@@ -8,7 +8,7 @@ class Content(Widget):
     pass
 
 
-class Description(Content):
+class TextWidget(Content):
     text = models.TextField()
 
     def __str__(self):

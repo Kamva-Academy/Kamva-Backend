@@ -39,7 +39,7 @@ registration_form_creation_test_case = {
         {
             "name": "name2",
             "text": "text2",
-            "widget_type": "Description"
+            "widget_type": "TextWidget"
         },
         {
             "name": "p1",
