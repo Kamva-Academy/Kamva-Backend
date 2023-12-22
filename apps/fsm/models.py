@@ -16,6 +16,7 @@ class Paper(PolymorphicModel):
         Hint = 'Hint'
         WidgetHint = 'WidgetHint'
         Article = 'Article'
+        General = 'General'
 
     paper_type = models.CharField(
         max_length=25, blank=False, choices=PaperType.choices)
@@ -559,6 +560,7 @@ class Widget(PolymorphicModel):
         Aparat = 'Aparat'
         Audio = 'Audio'
         TextWidget = 'TextWidget'
+        DetailBoxWidget = 'DetailBoxWidget'
         SmallAnswerProblem = 'SmallAnswerProblem'
         BigAnswerProblem = 'BigAnswerProblem'
         MultiChoiceProblem = 'MultiChoiceProblem'
@@ -595,6 +597,14 @@ class WidgetHint(Paper):
 
 class TextWidget(Widget):
     text = models.TextField()
+
+    def __str__(self):
+        return f'<{self.id}-{self.widget_type}>:{self.name}'
+
+
+class DetailBoxWidget(Widget):
+    title = models.TextField()
+    details = models.ForeignKey(Paper, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'

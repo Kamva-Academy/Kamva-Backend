@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
-from apps.fsm.models import Choice, Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
+from apps.fsm.models import Choice, DetailBoxWidget, Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Answer, TextWidget, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, Article, Tag, Aparat
@@ -59,6 +59,11 @@ class TextWidgetAdmin(admin.ModelAdmin):
     def text(self, obj):
         name = str(obj.text)[0:100]
         return name
+
+
+class DetailBoxWidgetAdmin(admin.ModelAdmin):
+    model = DetailBoxWidget
+    list_display = ['id', 'title', 'details']
 
 
 class WidgetAdmin(admin.ModelAdmin):
@@ -506,6 +511,7 @@ admin.site.register(State, StateAdmin)
 admin.site.register(BigAnswerProblem, BigAnswerProblemAdmin)
 admin.site.register(SmallAnswerProblem, SmallAnswerProblemAdmin)
 admin.site.register(TextWidget, TextWidgetAdmin)
+admin.site.register(DetailBoxWidget, DetailBoxWidgetAdmin)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(PlayerHistory, PlayerHistoryAdmin)
 admin.site.register(Widget, WidgetAdmin)

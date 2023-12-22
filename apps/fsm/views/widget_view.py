@@ -1,16 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, parser_classes
-from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.exceptions import ParseError
-from errors.error_codes import serialize_error
-from apps.fsm.models import *
 from rest_framework import permissions
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
-from django.utils.decorators import method_decorator
 
+from apps.fsm.models import *
 from apps.fsm.permissions import CanAnswerWidget
 from apps.fsm.serializers.answer_serializers import AnswerPolymorphicSerializer, MockAnswerSerializer
 from apps.fsm.serializers.widget_serializers import MockWidgetSerializer

@@ -9,7 +9,6 @@ from errors.error_codes import serialize_error
 from apps.fsm.models import AnswerSheet, RegistrationReceipt, Problem
 from apps.fsm.serializers.answer_serializers import AnswerPolymorphicSerializer
 from apps.accounts.serializers import UserSerializer
-from apps.fsm.serializers.paper_serializers import RegistrationFormSerializer
 
 
 class AnswerSheetSerializer(serializers.ModelSerializer):

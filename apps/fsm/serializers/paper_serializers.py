@@ -5,23 +5,27 @@ from rest_framework.exceptions import ParseError, PermissionDenied, ValidationEr
 from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
-from apps.fsm.models import Event, WidgetHint, FSM, RegistrationForm, Article, Hint, Edge, State, Tag
+from apps.fsm.models import Event, Paper, WidgetHint, FSM, RegistrationForm, Article, Hint, Edge, State, Tag
 from apps.fsm.serializers.certificate_serializer import CertificateTemplateSerializer
 from apps.fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 
 
 class PaperSerializer(serializers.ModelSerializer):
-    # class Meta:
-    #     model = Paper
-    #     fields = ['id', 'paper_type', 'widgets']
+    widgets = WidgetPolymorphicSerializer(many=True)
+
+    class Meta:
+        model = Paper
+        fields = ['id', 'paper_type', 'widgets']
 
     @transaction.atomic
     def create(self, validated_data):
         widgets = validated_data.pop('widgets', [])
-        instance = super().create({'creator': self.context.get('user', None), **validated_data})
-        self.context['editable'] = False
-        for w in widgets:
-            serializer = WidgetPolymorphicSerializer(data=w, context=self.context)
+        user = self.context.get('user', None)
+        instance = super().create({'creator': user, **validated_data})
+        for widget in widgets:
+            widget['creator'] = user
+            serializer = WidgetPolymorphicSerializer(
+                data=widget, context=self.context)
             if serializer.is_valid(raise_exception=True):
                 serializer.validated_data['paper'] = instance
                 serializer.save()
@@ -29,18 +33,25 @@ class PaperSerializer(serializers.ModelSerializer):
 
 
 class RegistrationFormSerializer(PaperSerializer):
-    min_grade = serializers.IntegerField(required=False, validators=[MaxValueValidator(12), MinValueValidator(0)])
-    max_grade = serializers.IntegerField(required=False, validators=[MaxValueValidator(12), MinValueValidator(0)])
-    event = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all(), required=False, allow_null=True)
-    fsm = serializers.PrimaryKeyRelatedField(queryset=FSM.objects.all(), required=False, allow_null=True)
-    certificate_templates = CertificateTemplateSerializer(many=True, read_only=True)
-    widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
+    min_grade = serializers.IntegerField(required=False, validators=[
+                                         MaxValueValidator(12), MinValueValidator(0)])
+    max_grade = serializers.IntegerField(required=False, validators=[
+                                         MaxValueValidator(12), MinValueValidator(0)])
+    event = serializers.PrimaryKeyRelatedField(
+        queryset=Event.objects.all(), required=False, allow_null=True)
+    fsm = serializers.PrimaryKeyRelatedField(
+        queryset=FSM.objects.all(), required=False, allow_null=True)
+    certificate_templates = CertificateTemplateSerializer(
+        many=True, read_only=True)
+    widgets = WidgetPolymorphicSerializer(
+        many=True, required=False)  # in order of appearance
 
     @transaction.atomic
     def create(self, validated_data):
         event = validated_data.get('event', None)
         fsm = validated_data.get('fsm', None)
-        instance = super(RegistrationFormSerializer, self).create(validated_data)
+        instance = super(RegistrationFormSerializer,
+                         self).create(validated_data)
         if event is not None:
             event.registration_form = instance
             event.save()
@@ -98,20 +109,24 @@ class ArticleSerializer(PaperSerializer):
     class Meta:
         model = Article
         ref_name = 'article'
-        fields = ['id', 'name', 'description', 'widgets', 'tags', 'is_draft', 'publisher', 'cover_page']
+        fields = ['id', 'name', 'description', 'widgets',
+                  'tags', 'is_draft', 'publisher', 'cover_page']
         read_only_fields = ['id', 'creator']
 
     @transaction.atomic
     def create(self, validated_data):
         user = self.context.get('user', None)
-        tags = validated_data.pop('tags') if 'tags' in validated_data.keys() else []
-        article = super(ArticleSerializer, self).create({'paper_type': 'Article', 'creator': user, **validated_data})
+        tags = validated_data.pop(
+            'tags') if 'tags' in validated_data.keys() else []
+        article = super(ArticleSerializer, self).create(
+            {'paper_type': 'Article', 'creator': user, **validated_data})
         for t in tags:
             tag = Tag.objects.filter(name=t).first()
             if tag:
                 article.tags.add(tag)
             else:
-                tag_serializer = TagSerializer(data={'name': t}, context=self.context)
+                tag_serializer = TagSerializer(
+                    data={'name': t}, context=self.context)
                 if tag_serializer.is_valid(raise_exception=True):
                     article.tags.add(tag_serializer.save())
         article.save()
@@ -131,13 +146,16 @@ class ArticleSerializer(PaperSerializer):
         return super(ArticleSerializer, self).validate(attrs)
 
     def to_representation(self, instance):
-        representation = super(ArticleSerializer, self).to_representation(instance)
-        representation['tags'] = TagSerializer(instance.tags.all(), context=self.context, many=True).data
+        representation = super(
+            ArticleSerializer, self).to_representation(instance)
+        representation['tags'] = TagSerializer(
+            instance.tags.all(), context=self.context, many=True).data
         return representation
 
 
 class HintSerializer(PaperSerializer):
-    widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
+    widgets = WidgetPolymorphicSerializer(
+        many=True, required=False)  # in order of appearance
 
     @transaction.atomic
     def create(self, validated_data):
@@ -172,13 +190,14 @@ class WidgetHintSerializer(PaperSerializer):
         ref_name = 'hint'
         fields = ['id', 'widgets', 'creator', 'reference']
         read_only_fields = ['id', 'creator']
- 
+
 
 class StateSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = State
         fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
-        read_only_fields = ['id', 'name', 'fsm', 'since', 'till', 'duration', 'is_exam']
+        read_only_fields = ['id', 'name', 'fsm',
+                            'since', 'till', 'duration', 'is_exam']
 
 
 class EdgeSimpleSerializer(serializers.ModelSerializer):
@@ -193,7 +212,8 @@ class EdgeSimpleSerializer(serializers.ModelSerializer):
 
 
 class StateSerializer(PaperSerializer):
-    widgets = WidgetPolymorphicSerializer(many=True, required=False)  # in order of appearance
+    widgets = WidgetPolymorphicSerializer(
+        many=True, required=False)  # in order of appearance
     hints = HintSerializer(many=True, read_only=True)
     outward_edges = EdgeSimpleSerializer(many=True, read_only=True)
     inward_edges = EdgeSimpleSerializer(many=True, read_only=True)
@@ -201,7 +221,8 @@ class StateSerializer(PaperSerializer):
     @transaction.atomic
     def create(self, validated_data):
         fsm = validated_data.get('fsm', None)
-        instance = super(StateSerializer, self).create({'paper_type': 'State', **validated_data})
+        instance = super(StateSerializer, self).create(
+            {'paper_type': 'State', **validated_data})
         if fsm.first_state is None:
             fsm.first_state = instance
             fsm.save()
@@ -221,7 +242,8 @@ class StateSerializer(PaperSerializer):
         ref_name = 'state'
         fields = ['id', 'widgets', 'name', 'creator', 'fsm', 'hints', 'inward_edges', 'outward_edges', 'since', 'till',
                   'duration', 'is_exam']
-        read_only_fields = ['id', 'creator', 'hints', 'inward_edges', 'outward_edges']
+        read_only_fields = ['id', 'creator',
+                            'hints', 'inward_edges', 'outward_edges']
 
 
 class PaperPolymorphicSerializer(PolymorphicSerializer):
@@ -231,11 +253,12 @@ class PaperPolymorphicSerializer(PolymorphicSerializer):
         'Article': ArticleSerializer,
         'State': StateSerializer,
         'Hint': HintSerializer,
-        'WidgetHint': WidgetHintSerializer
+        'WidgetHint': WidgetHintSerializer,
     }
 
     resource_type_field_name = 'paper_type'
 
 
 class ChangeWidgetOrderSerializer(serializers.Serializer):
-    order = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=True)
+    order = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), allow_empty=True)

@@ -2,21 +2,14 @@ import os
 import re
 import datetime
 from django.db import transaction
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
-from rest_polymorphic.serializers import PolymorphicSerializer
 
 from errors.error_codes import serialize_error
-from errors.exceptions import InternalServerError
-from apps.fsm.models import Player, Game, Video, Image, TextWidget, Problem, SmallAnswerProblem, SmallAnswer, BigAnswer, \
-    MultiChoiceProblem, Choice, MultiChoiceAnswer, UploadFileProblem, BigAnswerProblem, UploadFileAnswer, State, Hint, \
-    Paper, Widget, Team, Aparat, Audio
-from apps.fsm.serializers.answer_serializers import SmallAnswerSerializer, BigAnswerSerializer, ChoiceSerializer, \
+from apps.fsm.models import DetailBoxWidget, Player, Game, Video, Image, TextWidget, Problem, SmallAnswerProblem, MultiChoiceProblem, Choice, UploadFileProblem, BigAnswerProblem, State, Hint, \
+    Widget, Team, Aparat, Audio
+from apps.fsm.serializers.answer_serializers import SmallAnswerSerializer, ChoiceSerializer, \
     UploadFileAnswerSerializer
-
-from apps.fsm.serializers.validators import multi_choice_answer_validator
-from rest_framework import serializers
 
 
 def add_datetime_to_filename(file):
@@ -32,7 +25,7 @@ class WidgetSerializer(serializers.ModelSerializer):
 
     def get_hints(self, obj):
         from apps.fsm.serializers.paper_serializers import WidgetHintSerializer
-        return WidgetHintSerializer(obj.hints, many=True).data
+        return WidgetHintSerializer(obj.hints if hasattr(obj, 'hints') else [], many=True).data
 
     def create(self, validated_data):
         if validated_data.get('file'):
@@ -163,6 +156,33 @@ class TextWidgetSerializer(WidgetSerializer):
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
+class DetailBoxWidgetSerializer(WidgetSerializer):
+    details = serializers.SerializerMethodField()
+
+    def get_details(self, obj):
+        from apps.fsm.serializers.paper_serializers import PaperSerializer
+        return PaperSerializer(obj.details).data
+
+    def to_internal_value(self, data):
+        from apps.fsm.serializers.paper_serializers import PaperSerializer
+        details_serializer = PaperSerializer(data=data.get('details'))
+        details_serializer.is_valid(raise_exception=True)
+        details_object = details_serializer.save()
+        data = super().to_internal_value(data)
+        data['details'] = details_object
+        return data
+
+    def create(self, validated_data):
+        return super(DetailBoxWidgetSerializer, self).create(
+            {'widget_type': Widget.WidgetTypes.DetailBoxWidget, **validated_data})
+
+    class Meta:
+        model = DetailBoxWidget
+        fields = ['id', 'name', 'file', 'paper', 'widget_type',
+                  'creator', 'duplication_of', 'title', 'details', 'hints']
+        read_only_fields = ['id', 'creator', 'duplication_of', 'details']
+
+
 class ProblemSerializer(WidgetSerializer):
     class Meta:
         model = Problem
@@ -270,12 +290,9 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
                 choice_instance.save()
             else:
                 # create new choices
-                print(choice_data)
                 choice_instance = Choice.create_instance(
                     question_instance, choice_data)
-                print(choice_instance)
                 question_instance.choices.add(choice_instance)
-                print(question_instance.choices.all())
 
         # update question self
         for attr, value in validated_data.items():
@@ -286,8 +303,8 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        user = self.context['user']
-        if not user in instance.paper.fsm.mentors.all():
+        user = self.context.get('user')
+        if hasattr(instance.paper, 'fsm') and user and not user in instance.paper.fsm.mentors.all():
             for choice in representation['choices']:
                 del choice['is_correct']
         return representation
@@ -310,7 +327,7 @@ class UploadFileProblemSerializer(WidgetSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        if instance.answer and not instance.paper.is_exam:
+        if instance.correct_answer and not instance.paper.is_exam:
             representation['answer'] = UploadFileAnswerSerializer(
             ).to_representation(instance.answer)
         return representation
