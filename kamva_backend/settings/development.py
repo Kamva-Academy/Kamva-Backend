@@ -8,20 +8,38 @@ SECRET_KEY = '*z!3aidedw32xh&1ew(^&5dgd17(ynnmk=s*mo=v2l_(4t_ff('
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-SERVICE_DOMAIN = 'http://localhost:8000/'
+#
+SERVICE_DOMAIN = 'http://localhost:9000/'
 
 ALLOWED_HOSTS = ['*']
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+DB_NAME = get_environment_var('DB_NAME', 'workshop')
+DB_USER = get_environment_var('DB_USER', 'user')
+DB_PASS = get_environment_var('DB_PASS', 'p4s$pAsS')
+DB_HOST = get_environment_var('DB_HOST', 'localhost')
+DB_PORT = get_environment_var('DB_PORT', '5432')
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASS,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
     }
 }
+
+#
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 LOGGING = {
     'version': 1,
