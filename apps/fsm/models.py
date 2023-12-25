@@ -130,6 +130,8 @@ class Event(models.Model):
     maximum_participant = models.IntegerField(null=True, blank=True)
     accessible_after_closure = models.BooleanField(default=False)
     is_private = models.BooleanField(default=False)
+    site_help_paper_id = models.IntegerField(blank=True, null=True)
+    FAQs_paper_id = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.name
