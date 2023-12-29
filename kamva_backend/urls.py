@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/auth/', include(('apps.accounts.urls', 'accounts'), namespace='accounts')),
     path('api/fsm/', include('apps.fsm.urls')),
     path('api/roadmap/', include('apps.roadmap.urls')),
+    path('api/contactus/' , include('apps.contact.urls')),
     # https://pypi.org/project/django-link-shortener/
     path('api/websiteappearance/', include('apps.websiteappearance.urls')),
     path('s/', include('shortener.urls')),
