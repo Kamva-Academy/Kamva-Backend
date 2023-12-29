@@ -45,8 +45,6 @@ INSTALLED_APPS = [
     'django_filters',
     'minio_storage',
     'shortener',
-    'apps.report',
-    'apps.contact',
     'django_cleanup.apps.CleanupConfig',
     'kamva_backend.apps.MyAdminConfig',
     'apps.accounts.apps.AccountConfig',
@@ -61,6 +59,8 @@ INSTALLED_APPS = [
     'apps.base.apps.BaseConfig',
     'apps.websiteappearance.apps.WebsiteappearanceConfig',
     'apps.roadmap.apps.RoadmapConfig',
+    'apps.contact.apps.ContactConfig',
+    'apps.report.apps.ReportConfig',
 ]
 
 MIDDLEWARE = [

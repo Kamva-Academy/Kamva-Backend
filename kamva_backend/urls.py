@@ -33,10 +33,11 @@ urlpatterns = [
     path('api/auth/', include(('apps.accounts.urls', 'accounts'), namespace='accounts')),
     path('api/fsm/', include('apps.fsm.urls')),
     path('api/roadmap/', include('apps.roadmap.urls')),
-    path('api/contactus/' , include('apps.contact.urls')),
-    # https://pypi.org/project/django-link-shortener/
     path('api/websiteappearance/', include('apps.websiteappearance.urls')),
+    # https://pypi.org/project/django-link-shortener/
     path('s/', include('shortener.urls')),
+    path('api/contact-us/', include('apps.contact.urls')),
+    path('api/report/', include('apps.report.urls')),
     # path('api/scoring/', include('apps.scoring.urls')),
     # path('api/base/', include('apps.base.urls')),
     # path('api/content/', include('apps.content_widget.urls')),
@@ -44,8 +45,7 @@ urlpatterns = [
 ]
 
 urlpatterns += [path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-                path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-                path('report/', include('apps.report.urls')), ]
+                path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
