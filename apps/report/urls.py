@@ -1,5 +1,4 @@
 from django.urls import path
-from report.views import *
 
 urlpatterns = [
     path('export_json/' , export,  name='export_json'),
