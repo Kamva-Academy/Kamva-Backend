@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'minio_storage',
     'shortener',
     'apps.report',
+    'apps.contact',
     'django_cleanup.apps.CleanupConfig',
     'kamva_backend.apps.MyAdminConfig',
     'apps.accounts.apps.AccountConfig',
