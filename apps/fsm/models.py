@@ -1,10 +1,7 @@
 from typing import Any
-from apps.base.models import PolymorphicCreatable
-from apps.base.models import Paper as NEWPaper
 from apps.accounts.models import *
 from abc import abstractmethod
 
-from apps.course.models import Course
 
 ################ BASE #################
 
@@ -234,8 +231,7 @@ class Player(models.Model):
 
     receipt = models.ForeignKey(
         'fsm.RegistrationReceipt', related_name='players', on_delete=models.CASCADE)
-    new_receipt = models.ForeignKey(
-        'my_form.RegistrationReceipt', related_name='players', on_delete=models.CASCADE, null=True)
+
 
     current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='players')
@@ -300,10 +296,6 @@ class Edge(models.Model):
         State, on_delete=models.CASCADE, related_name='outward_edges')
     head = models.ForeignKey(
         State, on_delete=models.CASCADE, related_name='inward_edges')
-    new_tail = models.ForeignKey(
-        'fsm.NEWState', on_delete=models.CASCADE, related_name='outward_edges', null=True)
-    new_head = models.ForeignKey(
-        'fsm.NEWState', on_delete=models.CASCADE, related_name='inward_edges', null=True)
     is_back_enabled = models.BooleanField(default=True)
     min_score = models.FloatField(default=0.0)
     cost = models.FloatField(default=0.0)
@@ -327,8 +319,6 @@ class PlayerHistory(models.Model):
         'fsm.Player', on_delete=models.CASCADE, related_name='histories')
     state = models.ForeignKey(
         State, on_delete=models.CASCADE, related_name='player_histories')
-    new_state = models.ForeignKey(
-        'fsm.NEWState', on_delete=models.CASCADE, related_name='player_histories', null=True)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     entered_by_edge = models.ForeignKey(Edge, related_name='histories', default=None, null=True, blank=True,
@@ -849,75 +839,3 @@ class PlayerWorkshop(models.Model):
     def __str__(self):
         return f'{self.id}:{str(self.player)}-{self.workshop.name}'
 
-
-###################################################
-
-
-class NEWFSM(PolymorphicCreatable):
-    class FSMLearningType(models.TextChoices):
-        Supervised = 'Supervised'
-        Unsupervised = 'Unsupervised'
-
-    class FSMPType(models.TextChoices):
-        Team = 'Team'
-        Individual = 'Individual'
-        Hybrid = 'Hybrid'
-
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
-                               blank=True)
-    merchandise = models.OneToOneField('accounts.Merchandise', related_name='new_fsm', on_delete=models.SET_NULL, null=True,
-                                       blank=True)
-    registration_form = models.OneToOneField('my_form.RegistrationForm', related_name='fsm', on_delete=models.SET_NULL, null=True,
-                                             blank=True)
-    organizer = models.ForeignKey('accounts.EducationalInstitute', related_name='new_fsms', on_delete=models.SET_NULL,
-                                  null=True, blank=True)
-    mentors = models.ManyToManyField(
-        'accounts.User', related_name='new_fsms', blank=True)
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-    cover_image = models.ImageField(
-        upload_to='workshop/', null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    first_state = models.OneToOneField('fsm.NEWState', null=True, blank=True, on_delete=models.SET_NULL,
-                                       related_name='my_fsm')
-    fsm_learning_type = models.CharField(max_length=40, default=FSMLearningType.Unsupervised,
-                                         choices=FSMLearningType.choices)
-    fsm_p_type = models.CharField(
-        max_length=40, default=FSMPType.Individual, choices=FSMPType.choices)
-    lock = models.CharField(max_length=10, null=True, blank=True)
-    team_size = models.IntegerField(default=3)
-
-    objects = FSMManager()
-
-    # TODO - make locks as mixins
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def modifiers(self):
-        modifiers = {self.creator} if self.creator is not None else set()
-        modifiers |= set(self.holder.admins.all()
-                         ) if self.holder is not None else set()
-        modifiers |= set(self.mentors.all())
-        return modifiers
-
-
-class NEWState(NEWPaper):
-    name = models.TextField(null=True, blank=True)
-    fsm = models.ForeignKey(
-        FSM, on_delete=models.CASCADE, related_name='nnew_states', null=True)
-
-    @transaction.atomic
-    def delete(self):
-        try:
-            if self.my_fsm:
-                fsm = self.fsm
-                fsm.first_state = fsm.states.exclude(id=self.id).first()
-                fsm.save()
-        except:
-            pass
-        return super(State, self).delete()
-
-    def __str__(self):
-        return f'{self.name} in {str(self.fsm)}'
