@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'apps.question_widget.apps.QuestionWidgetConfig',
     'apps.my_form.apps.MyFormConfig',
     'apps.group.apps.GroupConfig',
-    'apps.article.apps.ArticleConfig',
     'apps.course.apps.CourseConfig',
     'apps.base.apps.BaseConfig',
     'apps.websiteappearance.apps.WebsiteappearanceConfig',
