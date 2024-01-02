@@ -51,7 +51,6 @@ INSTALLED_APPS = [
     'apps.fsm.apps.FsmConfig',
     'apps.scoring.apps.ScoringConfig',
     'apps.group.apps.GroupConfig',
-    'apps.base.apps.BaseConfig',
     'apps.websiteappearance.apps.WebsiteappearanceConfig',
     'apps.roadmap.apps.RoadmapConfig',
 ]
