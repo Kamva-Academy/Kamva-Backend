@@ -28,10 +28,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RemoveField(
             model_name='widget',
-            name='paper',
-        ),
-        migrations.RemoveField(
-            model_name='widget',
             name='polymorphic_ctype',
         ),
         migrations.DeleteModel(
