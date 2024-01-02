@@ -2,21 +2,6 @@ from django.db import models
 from apps.accounts.models import EducationalInstitute, User
 from django.db.models import Sum
 from polymorphic.models import PolymorphicModel
-from apps.base.models import PolymorphicCreatable
-
-
-class Deliverable(PolymorphicCreatable):
-    class DeliverableTypes(models.TextChoices):
-        Answer = 'Answer'
-        Receipt = 'Receipt'
-
-    deliverable_type = models.CharField(
-        max_length=20, choices=DeliverableTypes.choices)
-    deliverer = models.ForeignKey(
-        'accounts.User', related_name='deliverer', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'user: {self.deliverer.username}'
 
 
 class ScoreType(models.Model):
@@ -29,8 +14,6 @@ class ScoreType(models.Model):
 
 class Score(models.Model):
     value = models.JSONField(null=True)
-    deliverable = models.ForeignKey(
-        Deliverable, on_delete=models.CASCADE, related_name='scores', unique=True)
     institute = models.ForeignKey(
         EducationalInstitute, on_delete=models.CASCADE, related_name='scores', null=True)
 
@@ -42,7 +25,6 @@ class Comment(models.Model):
     content = models.TextField(null=False, blank=False)
     writer = models.ForeignKey('accounts.User', related_name='comments',
                                null=True, blank=True, on_delete=models.SET_NULL)
-    deliverable = models.ForeignKey(Deliverable, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.content[:30]

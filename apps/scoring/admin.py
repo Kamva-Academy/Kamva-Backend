@@ -9,8 +9,8 @@ from apps.scoring.models import ScoreType, Score, Comment, Condition, Criteria
 @admin.register(Score)
 class ScoreCustomAdmin(admin.ModelAdmin):
     list_display = ['value', 'submitted_by']
-    list_filter = ['deliverable__deliverer']
-    raw_id_fields = ['deliverable']
+    list_filter = []
+    raw_id_fields = []
 
     def submitted_by(self, obj):
         return obj.deliverable.deliverer
