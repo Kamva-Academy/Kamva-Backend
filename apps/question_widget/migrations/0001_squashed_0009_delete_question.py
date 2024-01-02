@@ -8,8 +8,6 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('question_widget', '0001_initial'), ('question_widget', '0002_remove_choiceselection_choice_and_more'), ('question_widget', '0003_delete_choice'), ('question_widget', '0004_delete_multichoicequestion'), ('question_widget', '0005_delete_inviteeusernamequestion'), ('question_widget', '0006_delete_uploadfilequestion'), ('question_widget', '0007_delete_longanswerquestion'), ('question_widget', '0008_delete_shortanswerquestion'), ('question_widget', '0009_delete_question')]
-
     initial = True
 
     dependencies = [
