@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'apps.accounts.apps.AccountConfig',
     'apps.fsm.apps.FsmConfig',
     'apps.scoring.apps.ScoringConfig',
-    'apps.content_widget.apps.ContentWidgetConfig',
+    # 'apps.content_widget.apps.ContentWidgetConfig',
     'apps.question_widget.apps.QuestionWidgetConfig',
     'apps.my_form.apps.MyFormConfig',
     'apps.group.apps.GroupConfig',
