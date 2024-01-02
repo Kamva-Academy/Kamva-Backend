@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     'apps.scoring.apps.ScoringConfig',
     'apps.my_form.apps.MyFormConfig',
     'apps.group.apps.GroupConfig',
-    'apps.course.apps.CourseConfig',
     'apps.base.apps.BaseConfig',
     'apps.websiteappearance.apps.WebsiteappearanceConfig',
     'apps.roadmap.apps.RoadmapConfig',

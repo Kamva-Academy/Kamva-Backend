@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0003_remove_group_head_remove_group_registration_form_and_more'),
-        ('course', '0007_delete_course'),
+        # ('course', '0007_delete_course'),
         ('fsm', '0087_remove_newstate_fsm_remove_newstate_paper_ptr_and_more'),
         ('my_form', '0001_initial'),
     ]

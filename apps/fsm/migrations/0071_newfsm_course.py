@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('course', '0005_initial'),
+        # ('course', '0005_initial'),
         ('fsm', '0070_remove_fsm_course_remove_fsm_new_first_state_and_more'),
     ]
 

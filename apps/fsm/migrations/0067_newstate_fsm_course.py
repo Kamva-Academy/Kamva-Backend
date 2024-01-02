@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('course', '0001_initial'),
+        # ('course', '0001_initial'),
         ('base', '0003_alter_paper_creation_date_alter_paper_update_date_and_more'),
         ('fsm', '0066_delete_submittedanswer'),
     ]
