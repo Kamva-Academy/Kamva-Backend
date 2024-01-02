@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('fsm', '0068_edge_new_head_edge_new_tail_fsm_new_first_state'),
-        ('my_form', '0001_initial'),
+        # ('my_form', '0001_initial'),
     ]
 
     operations = [

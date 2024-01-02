@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('contenttypes', '0002_remove_content_type_name'),
-        ('my_form', '0001_initial'),
+        # ('my_form', '0001_initial'),
         ('accounts', '0014_alter_educationalinstitute_polymorphic_ctype_and_more'),
         ('fsm', '0069_fsm_new_registration_form_newstate_fsm_and_more'),
     ]
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('merchandise', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='new_fsm', to='accounts.merchandise')),
                 ('organizer', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='new_fsms', to='accounts.educationalinstitute')),
                 ('polymorphic_ctype', models.ForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='polymorphic_%(app_label)s.%(class)s_set+', to='contenttypes.contenttype')),
-                ('registration_form', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='fsm', to='my_form.registrationform')),
+                # ('registration_form', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='fsm', to='my_form.registrationform')),
             ],
             options={
                 'abstract': False,
