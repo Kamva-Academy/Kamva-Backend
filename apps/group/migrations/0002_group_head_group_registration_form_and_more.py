@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('my_form', '0001_initial'),
+        # ('my_form', '0001_initial'),
         ('group', '0001_initial'),
     ]
 

@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0003_remove_group_head_remove_group_registration_form_and_more'),
-        ('my_form', '0002_alter_receipt_unique_together_and_more'),
+        # ('my_form', '0002_alter_receipt_unique_together_and_more'),
     ]
 
     operations = [
