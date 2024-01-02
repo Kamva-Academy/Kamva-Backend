@@ -2,11 +2,15 @@ from django.db import models
 from apps.accounts.models import EducationalInstitute, User
 from django.db.models import Sum
 from polymorphic.models import PolymorphicModel
-
+from apps.fsm.models import Event
 
 class ScoreType(models.Model):
-    name = models.CharField(max_length=50, null=False, blank=False)
-    papers = models.ManyToManyField('fsm.Paper', related_name='score_types')
+    name = models.CharField(max_length=50)
+    institute = models.ForeignKey(
+        EducationalInstitute, on_delete=models.CASCADE, related_name='score_types', null=True)
+    programs = models.ManyToManyField(
+        to=Event, related_name='score_types', null=True, blank=True)
+    is_public = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -19,6 +23,11 @@ class Score(models.Model):
 
     def __str__(self):
         return f'{self.value}'
+
+
+class Transaction(models.Model):
+    value = models.JSONField(null=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
 
 
 class Comment(models.Model):
