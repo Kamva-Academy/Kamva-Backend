@@ -34,8 +34,8 @@ class Paper(PolymorphicModel):
         return super(Paper, self).delete()
 
     def is_user_permitted(self, user: User):
-        if self.criteria:
-            return self.criteria.evaluate(user)
+        # if self.criteria:
+        #     return self.criteria.evaluate(user)
         return True
 
     def __str__(self):
