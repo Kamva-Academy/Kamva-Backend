@@ -1,4 +1,4 @@
-from rest_framework import permissions, viewsets, status
+from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from apps.scoring.models import ScoreType, Transaction
 from apps.scoring.serializers.transaction_serializer import TransactionSerializer
@@ -44,5 +44,3 @@ def _sum_scores(transactions: list[Transaction]):
             scores_dict[score_type] += scores[score_type]
 
     return scores_dict
-
-
