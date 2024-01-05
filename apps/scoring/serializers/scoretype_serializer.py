@@ -6,4 +6,4 @@ class ScoreTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScoreType
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'icon']
