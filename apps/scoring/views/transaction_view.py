@@ -23,7 +23,6 @@ class TransactionViewSet(viewsets.ModelViewSet):
         scores = _sum_scores(transactions)
         # reomving scores that doenot belong to this program:
         filtered_scores = {}
-        print(scores)
         for score_type_name in scores:
             score_type_object = ScoreType.objects.filter(
                 name=score_type_name).first()
