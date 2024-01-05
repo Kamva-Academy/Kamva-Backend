@@ -20,7 +20,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         user = request.user
         program_id = request.data.get('program_id')
         transactions = self.queryset.filter(to=user)
-        scores = _add_scores(transactions)
+        scores = _sum_scores(transactions)
         # reomving scores that doenot belong to this program:
         filtered_scores = {}
         print(scores)
@@ -34,7 +34,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return Response(data=scores)
 
 
-def _add_scores(transactions: list[Transaction]):
+def _sum_scores(transactions: list[Transaction]):
     scores_dict = {}
     for transaction in transactions:
         scores = transaction.value
