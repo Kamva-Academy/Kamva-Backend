@@ -2,6 +2,8 @@ from typing import Any
 from apps.accounts.models import *
 from abc import abstractmethod
 
+from apps.scoring.models import Cost, Reward
+
 
 ################ BASE #################
 
@@ -229,7 +231,6 @@ class Player(models.Model):
 
     receipt = models.ForeignKey(
         'fsm.RegistrationReceipt', related_name='players', on_delete=models.CASCADE)
-
 
     current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='players')
@@ -567,6 +568,10 @@ class Widget(PolymorphicModel):
                                 on_delete=models.SET_NULL)
     duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name='duplications')
+    cost = models.ForeignKey(
+        Cost, on_delete=models.CASCADE, null=True, blank=True)
+    reward = models.ForeignKey(
+        Reward, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         order_with_respect_to = 'paper'
@@ -836,4 +841,3 @@ class PlayerWorkshop(models.Model):
 
     def __str__(self):
         return f'{self.id}:{str(self.player)}-{self.workshop.name}'
-

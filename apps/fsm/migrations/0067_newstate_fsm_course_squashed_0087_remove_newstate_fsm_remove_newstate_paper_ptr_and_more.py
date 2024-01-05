@@ -8,8 +8,6 @@ import django.utils.timezone
 
 class Migration(migrations.Migration):
 
-    replaces = [('fsm', '0067_newstate_fsm_course'), ('fsm', '0068_edge_new_head_edge_new_tail_fsm_new_first_state'), ('fsm', '0069_fsm_new_registration_form_newstate_fsm_and_more'), ('fsm', '0070_remove_fsm_course_remove_fsm_new_first_state_and_more'), ('fsm', '0071_newfsm_course'), ('fsm', '0072_alter_answer_answer_sheet_alter_biganswer_problem_and_more'), ('fsm', '0073_event_is_private'), ('fsm', '0074_rename_name_x_certificatetemplate_name_x_percentage_and_more'), ('fsm', '0075_alter_certificatetemplate_name_x_percentage_and_more'), ('fsm', '0076_article_is_private'), ('fsm', '0077_fsm_order_in_program'), ('fsm', '0078_choice_is_correct_alter_choice_problem_and_more'), ('fsm', '0079_remove_multichoiceanswer_choices'), ('fsm', '0080_delete_choiceselection'), ('fsm', '0081_multichoiceanswer_choices'), ('fsm', '0082_rename_description_textwidget_and_more'), ('fsm', '0083_alter_widget_widget_type_detailboxwidget'), ('fsm', '0084_rename_detail_detailboxwidget_details'), ('fsm', '0085_alter_detailboxwidget_details_alter_paper_paper_type'), ('fsm', '0086_event_faqs_paper_id_event_site_help_paper_id'), ('fsm', '0087_remove_newstate_fsm_remove_newstate_paper_ptr_and_more')]
-
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
         ('fsm', '0066_delete_submittedanswer'),

@@ -1,14 +1,21 @@
 from django.db import models
 from apps.accounts.models import EducationalInstitute, User
-from apps.fsm.models import Event
+
+
+# def hashem(json) -> list[tuple(int, int)]:
+#     pass
+
+
+# def de_hashem():
+#     pass
 
 
 class ScoreType(models.Model):
     name = models.CharField(max_length=50)
     institute = models.ForeignKey(
-        EducationalInstitute, on_delete=models.CASCADE, related_name='score_types', null=True)
+        EducationalInstitute, on_delete=models.CASCADE, related_name='score_types', null=True, blank=True)
     programs = models.ManyToManyField(
-        to=Event, related_name='score_types', null=True, blank=True)
+        to='fsm.Event', related_name='score_types', null=True, blank=True)
     is_public = models.BooleanField(default=False)
 
     def __str__(self):

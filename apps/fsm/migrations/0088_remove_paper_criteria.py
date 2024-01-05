@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('fsm', '0087_remove_newstate_fsm_remove_newstate_paper_ptr_and_more'),
+        ('fsm', '0067_newstate_fsm_course_squashed_0087_remove_newstate_fsm_remove_newstate_paper_ptr_and_more'),
     ]
 
     operations = [
