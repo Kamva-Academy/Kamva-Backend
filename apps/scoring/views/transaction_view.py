@@ -16,24 +16,32 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return context
 
     @action(detail=False, methods=['post'])
-    def get_current_scores(self, request, *args, **kwargs):
+    def get_user_current_scores(self, request, *args, **kwargs):
         user = request.user
-        program_id = request.data.get('program_id')
-        transactions = self.queryset.filter(to=user)
-        scores = _sum_scores(transactions)
-        # reomving scores that doenot belong to this program:
-        filtered_scores = {}
-        for score_type_name in scores:
-            score_type_object = ScoreType.objects.filter(
-                name=score_type_name).first()
-            if score_type_object and (score_type_object.programs == program_id or score_type_object.is_public):
-                filtered_scores[score_type_name] = scores[score_type_name]
-        scores = filtered_scores
-
+        program_id = int(request.data.get('program_id'))
+        scores = get_user_current_scores(user, program_id)
         return Response(data=scores)
 
 
-def _sum_scores(transactions: list[Transaction]):
+def get_user_current_scores(user, program_id: int):
+    transactions = Transaction.objects.filter(to=user)
+    scores = sum_transactions(transactions)
+
+    # if no program is specified, return all the scores:
+    if program_id == -1:
+        return scores
+
+    # reomving scores that doenot belong to this program:
+    filtered_scores = {}
+    for score_type_name in scores:
+        score_type_object = ScoreType.objects.filter(
+            name=score_type_name).first()
+        if score_type_object and (program_id in [program.id for program in score_type_object.programs.all()] or score_type_object.is_public):
+            filtered_scores[score_type_name] = scores[score_type_name]
+    return filtered_scores
+
+
+def sum_transactions(transactions: list[Transaction]):
     scores_dict = {}
     for transaction in transactions:
         scores = transaction.value

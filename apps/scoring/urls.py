@@ -1,5 +1,5 @@
 from rest_framework import routers
-from apps.scoring.views.add_scores_to_user import apply_scores_object_on_user
+from apps.scoring.views.apply_scores_on_user import apply_scores_on_user_view
 from apps.scoring.views.cost_view import CostViewSet
 from apps.scoring.views.reward_view import RewardViewSet
 from apps.scoring.views.transaction_view import TransactionViewSet
@@ -16,7 +16,7 @@ router.register(r'transaction', TransactionViewSet)
 router.register(r'score_type', ScoreTypeViewSet)
 
 urlpatterns = [
-    path('apply_scores_object_on_user/', apply_scores_object_on_user),
+    path('apply_scores_on_user/', apply_scores_on_user_view),
 ]
 
 urlpatterns += router.urls

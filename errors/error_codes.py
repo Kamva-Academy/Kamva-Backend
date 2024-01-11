@@ -127,7 +127,10 @@ errors_dict = {'4000': 'phone number must be digit',
                '5002': 'given registration form is illegal, a form must either associate with an event or a fsm',
                '5003': 'given merchandise is illegal, a merch must be either for an event or a fsm',
                '5004': 'each event/fsm must have a registration form, given one doesn\'t',
-               '5005': 'user was not mentor'
+               '5005': 'user was not mentor',
+
+               '6000': 'user has already answered this question correctly',
+               '6001': 'user does not have enough scores',
                }
 
 
