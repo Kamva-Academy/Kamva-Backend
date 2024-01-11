@@ -67,7 +67,8 @@ class WidgetSerializer(serializers.ModelSerializer):
             user = self.context.get('user', None)
 
             # TODO: potentially with BUGS!
-            url = self.context.get('request').get_full_path()
+            url = self.context.get('request').get_full_path(
+            ) if self.context.get('request') else ""
             if "/fsm/player/" in url:
                 matcher = re.search(r'\d+', url)
                 player_id = matcher.group()
@@ -194,19 +195,19 @@ class DetailBoxWidgetSerializer(WidgetSerializer):
 
 
 class SmallAnswerProblemSerializer(WidgetSerializer):
-    answer = SmallAnswerSerializer(required=False)
+    correct_answer = SmallAnswerSerializer(required=False)
 
     class Meta:
         model = SmallAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'answer', 'solution', 'hints', 'cost', 'reward']
+                  'required', 'correct_answer', 'solution', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     @transaction.atomic
     def create(self, validated_data):
-        has_answer = 'answer' in validated_data.keys()
+        has_answer = 'correct_answer' in validated_data.keys()
         if has_answer:
-            answer = validated_data.pop('answer')
+            answer = validated_data.pop('correct_answer')
         instance = super().create(
             {'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
         if has_answer:
@@ -220,12 +221,12 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        has_answer = 'answer' in validated_data.keys()
+        has_answer = 'correct_answer' in validated_data.keys()
         if has_answer:
-            answer = validated_data.pop('answer')
+            answer = validated_data.pop('correct_answer')
         instance = super().update(instance, {**validated_data})
         if has_answer:
-            answer_object = instance.answer
+            answer_object = instance.correct_answer
             if answer_object:
                 answer_object.text = answer['text']
                 answer_object.save()
@@ -236,13 +237,20 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
                     serializer.save()
         return instance
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        user = self.context.get('user')
+        if hasattr(instance.paper, 'fsm') and user and not user in instance.paper.fsm.mentors.all():
+            del representation['correct_answer']
+        return representation
+
 
 class BigAnswerProblemSerializer(WidgetSerializer):
 
     class Meta:
         model = BigAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'solution', 'hints', 'cost', 'reward']
+                  'required', 'solution', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     @transaction.atomic
@@ -258,7 +266,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
     class Meta:
         model = MultiChoiceProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'max_choices', 'choices', 'hints', 'cost', 'reward']
+                  'required', 'max_choices', 'choices', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     def create(self, validated_data):
@@ -317,7 +325,7 @@ class UploadFileProblemSerializer(WidgetSerializer):
     class Meta:
         model = UploadFileProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'solution', 'hints', 'cost', 'reward']
+                  'required', 'solution', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     def validate_answer(self, answer):
@@ -330,8 +338,8 @@ class UploadFileProblemSerializer(WidgetSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if instance.correct_answer and not instance.paper.is_exam:
-            representation['answer'] = UploadFileAnswerSerializer(
-            ).to_representation(instance.answer)
+            representation['correct_answer'] = UploadFileAnswerSerializer(
+            ).to_representation(instance.correct_answer)
         return representation
 
     @transaction.atomic

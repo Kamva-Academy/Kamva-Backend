@@ -573,6 +573,7 @@ class Widget(PolymorphicModel):
         Cost, on_delete=models.CASCADE, null=True, blank=True)
     reward = models.ForeignKey(
         Reward, on_delete=models.CASCADE, null=True, blank=True)
+    be_corrected = models.BooleanField(default=False)
 
     class Meta:
         order_with_respect_to = 'paper'
@@ -680,6 +681,26 @@ class UploadFileProblem(Problem):
 
 
 class MultiChoiceProblem(Problem):
+
+    @property
+    def correct_answer(self):
+        from apps.fsm.serializers.answer_serializers import MultiChoiceAnswerSerializer
+        correct_answer_object = self.answers.filter(is_correct=True).first()
+        correct_choices = self.choices.all().filter(is_correct=True)
+
+        if not correct_answer_object:
+            correct_answer_serializer = MultiChoiceAnswerSerializer(data={
+                'answer_type': 'MultiChoiceAnswer',
+                'problem': self,
+                'is_correct': True,
+            })
+            correct_answer_serializer.is_valid(raise_exception=True)
+            correct_answer_object = correct_answer_serializer.save()
+    
+        correct_answer_object.choices.set(correct_choices)
+        correct_answer_object.save()
+        return correct_answer_object
+
     max_choices = models.IntegerField(
         validators=[MinValueValidator(0)], default=1)
 
@@ -724,8 +745,8 @@ class Answer(PolymorphicModel):
     def __str__(self):
         return f'user: {self.submitted_by.username if self.submitted_by else "-"}'
 
-    @abstractmethod
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         pass
 
     @property
@@ -746,7 +767,8 @@ class SmallAnswer(Answer):
             return RegistrationReceipt.CorrectionStatus.Wrong
         return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         return self.text
 
     def __str__(self):
@@ -758,7 +780,8 @@ class BigAnswer(Answer):
                                 related_name='answers')
     text = models.TextField()
 
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         return self.text
 
 
@@ -767,9 +790,9 @@ class MultiChoiceAnswer(Answer):
         MultiChoiceProblem, on_delete=models.PROTECT, related_name='answers')
     choices = models.ManyToManyField(Choice)
 
-    def get_string_answer(self):
-        # todo
-        pass
+    @property
+    def string_answer(self):
+        return [choice.__str__() for choice in self.choices.all()]
 
     def correction_status(self):
         correct_answer = self.problem.correct_answer
@@ -788,7 +811,8 @@ class UploadFileAnswer(Answer):
     answer_file = models.FileField(
         upload_to='answers', max_length=4000, blank=False)
 
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         return self.answer_file
 
 

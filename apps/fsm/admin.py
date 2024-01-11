@@ -120,7 +120,7 @@ def download_csv(modeladmin, request, queryset):
         for problem_id in problems:
             for answer in answers:
                 if answer.problem.id == problem_id:
-                    row.append(answer.get_string_answer())
+                    row.append(answer.string_answer)
                     break
         writer.writerow(row)
     f.close()

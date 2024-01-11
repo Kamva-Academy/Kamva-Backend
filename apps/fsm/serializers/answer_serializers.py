@@ -71,17 +71,16 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 
 class MultiChoiceAnswerSerializer(AnswerSerializer):
-    choices = ChoiceSerializer(many=True)
+    choices = ChoiceSerializer(many=True, required=False)
 
     class Meta:
         model = MultiChoiceAnswer
         fields = ['id', 'answer_type', 'answer_sheet', 'submitted_by', 'created_at', 'is_final_answer', 'is_correct',
                   'problem', 'choices']
-        read_only_fields = ['id', 'submitted_by',
-                            'created_at', 'is_correct', 'choices']
+        read_only_fields = ['id', 'submitted_by', 'created_at']
 
     def create(self, validated_data):
-        choices_data = validated_data.pop('choices')
+        choices_data = validated_data.pop('choices', [])
         choices_ids = [choice_data['id'] for choice_data in choices_data]
         choices_instances = Choice.objects.filter(id__in=choices_ids)
         instance = super(MultiChoiceAnswerSerializer, self).create(
@@ -93,10 +92,11 @@ class MultiChoiceAnswerSerializer(AnswerSerializer):
 
     def validate(self, attrs):
         attrs = super(MultiChoiceAnswerSerializer, self).validate(attrs)
-        choices = attrs.get('choices')
+        choices = attrs.get('choices', [])
         problem = attrs.get('problem')
         multi_choice_answer_validator(choices, problem.max_choices)
         return attrs
+
 
 class FileAnswerSerializer(AnswerSerializer):
     upload_file_answer = serializers.PrimaryKeyRelatedField(

@@ -8,9 +8,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.fsm.models import *
 from apps.fsm.permissions import CanAnswerWidget
-from apps.fsm.serializers.answer_serializers import AnswerPolymorphicSerializer, MockAnswerSerializer
-from apps.fsm.serializers.widget_serializers import MockWidgetSerializer
+from apps.fsm.serializers.answer_serializers import AnswerPolymorphicSerializer, MockAnswerSerializer, SmallAnswerSerializer
+from apps.fsm.serializers.widget_serializers import MockWidgetSerializer, SmallAnswerProblemSerializer
 from apps.fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
+from correct_answer.main import correct_answer
 
 
 class WidgetViewSet(viewsets.ModelViewSet):
@@ -80,8 +81,14 @@ class WidgetViewSet(viewsets.ModelViewSet):
         serializer = AnswerPolymorphicSerializer(
             data=answer_data, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        given_answer_object = serializer.save()
+        correctness_percentage = -1
+        comment = ''
+        if given_answer_object.problem.be_corrected:
+            correctness_percentage, comment = correct_answer(
+                self.get_object(), given_answer_object)
+            
+        return Response(data={'answer': serializer.data, 'correctness_percentage': correctness_percentage, 'comment': comment})
 
     @swagger_auto_schema(tags=['answers'])
     @transaction.atomic
