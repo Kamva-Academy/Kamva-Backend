@@ -5,12 +5,18 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
-from apps.fsm.models import Choice, DetailBoxWidget, Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
+from apps.fsm.models import Choice, DetailBoxWidget, Edge, Paper, ProgramContactInfo, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Answer, TextWidget, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, Article, Tag, Aparat
 
 from apps.fsm.utils import get_django_file
+
+
+@admin.register(ProgramContactInfo)
+class ProgramContactInfoCustomAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+    list_filter = []
 
 
 class EdgeAdmin(admin.ModelAdmin):

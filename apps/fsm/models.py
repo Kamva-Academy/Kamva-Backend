@@ -130,6 +130,8 @@ class Event(models.Model):
     show_scores = models.BooleanField(default=False)
     site_help_paper_id = models.IntegerField(blank=True, null=True)
     FAQs_paper_id = models.IntegerField(blank=True, null=True)
+    program_contact_info = models.OneToOneField(
+        'ProgramContactInfo', on_delete=models.SET_NULL, related_name='event', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -151,6 +153,21 @@ class Event(models.Model):
         self.registration_form.delete() if self.registration_form is not None else None
         self.merchandise.delete() if self.merchandise is not None else None
         return super(Event, self).delete(using, keep_parents)
+
+
+class ProgramContactInfo(models.Model):
+    name = models.CharField(max_length=100)
+
+    telegram_id = models.CharField(
+        max_length=100, null=True, blank=True)
+    shad_id = models.CharField(max_length=100, null=True, blank=True)
+    eitaa_id = models.CharField(max_length=100, null=True, blank=True)
+    bale_id = models.CharField(max_length=100, null=True, blank=True)
+    instagram_id = models.CharField(max_length=100, null=True, blank=True)
+    phone_number = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f'اطلاعات تماس: {self.name}'
 
 
 ################ FSM #################
@@ -696,7 +713,7 @@ class MultiChoiceProblem(Problem):
             })
             correct_answer_serializer.is_valid(raise_exception=True)
             correct_answer_object = correct_answer_serializer.save()
-    
+
         correct_answer_object.choices.set(correct_choices)
         correct_answer_object.save()
         return correct_answer_object

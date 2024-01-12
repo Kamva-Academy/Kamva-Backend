@@ -5,6 +5,7 @@ from rest_framework import serializers
 from apps.fsm.models import Player
 
 from apps.accounts.serializers import MerchandiseSerializer, AccountSerializer, MentorSerializer
+from apps.fsm.serializers.program_contact_info_serializer import ProgramContactInfoSerializer
 from errors.error_codes import serialize_error
 from apps.fsm.models import Event, RegistrationReceipt, FSM, Edge, Team, RegistrationForm
 from apps.fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
@@ -12,6 +13,7 @@ from apps.fsm.serializers.paper_serializers import StateSerializer, StateSimpleS
 
 class EventSerializer(serializers.ModelSerializer):
     merchandise = MerchandiseSerializer(required=False)
+    program_contact_info = ProgramContactInfoSerializer(required=False)
     is_manager = serializers.SerializerMethodField()
 
     def get_is_manager(self, obj):
@@ -90,7 +92,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = '__all__'
         read_only_fields = ['id', 'creator', 'is_approved', 'user_registration_status',
-                            'is_paid', 'registration_form', 'is_manager']
+                            'is_paid', 'registration_form', 'is_manager', 'program_contact_info']
 
 
 class FSMMinimalSerializer(serializers.ModelSerializer):
