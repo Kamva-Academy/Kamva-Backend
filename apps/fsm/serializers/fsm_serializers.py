@@ -2,6 +2,7 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import serializers
+from apps.fsm.models import Player
 
 from apps.accounts.serializers import MerchandiseSerializer, AccountSerializer, MentorSerializer
 from errors.error_codes import serialize_error
@@ -93,18 +94,20 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class FSMMinimalSerializer(serializers.ModelSerializer):
-    is_mentor = serializers.SerializerMethodField()
-
-    def get_is_mentor(self, obj):
-        user = self.context.get('user', None)
-        if user in obj.mentors.all():
-            return True
-        return False
 
     class Meta:
         model = FSM
         fields = ['id', 'name', 'description', 'cover_page', 'is_active',
-                  'fsm_learning_type', 'fsm_p_type', 'order_in_program', 'is_mentor']
+                  'fsm_learning_type', 'fsm_p_type', 'order_in_program']
+
+    def to_representation(self, instance):
+        representation = super(FSMMinimalSerializer,
+                               self).to_representation(instance)
+        user = self.context.get('user', None)
+        representation['players_count'] = len(
+            Player.objects.filter(fsm=instance))
+        representation['is_mentor'] = user in instance.mentors.all()
+        return representation
 
 
 class FSMSerializer(serializers.ModelSerializer):
