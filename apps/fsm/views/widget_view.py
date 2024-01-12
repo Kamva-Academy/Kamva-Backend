@@ -81,9 +81,12 @@ class WidgetViewSet(viewsets.ModelViewSet):
         # check if user has already answered this question correctly
         question = self.get_object()
         user = request.user
-        for answer in Answer.objects.all():
-            if answer.submitted_by == user and answer.problem == question and answer.is_correct == True and question.be_corrected:
-                raise ParseError(serialize_error('6000'))
+        if question.be_corrected:
+            user_correctly_answered_problems = Answer.objects.filter(
+                submitted_by=user, is_correct=True)
+            for answer in user_correctly_answered_problems:
+                if answer.problem == question:
+                    raise ParseError(serialize_error('6000'))
 
         given_answer_data = {
             'is_final_answer': True,
