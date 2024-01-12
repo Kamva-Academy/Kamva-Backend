@@ -54,7 +54,7 @@ class EventSerializer(serializers.ModelSerializer):
         user = self.context.get('request', None).user
         receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last(
         ) if not isinstance(user, AnonymousUser) else None
-        representation['participants_size'] = len(instance.participants)
+        representation['participants_count'] = len(instance.participants)
         if instance.registration_form:
             representation['has_certificate'] = instance.registration_form.has_certificate
             representation['certificates_ready'] = instance.registration_form.certificates_ready
@@ -89,7 +89,7 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
-        read_only_fields = ['id', 'creator', 'is_approved', 'participants_size', 'user_registration_status',
+        read_only_fields = ['id', 'creator', 'is_approved', 'user_registration_status',
                             'is_paid', 'registration_form', 'is_manager']
 
 
