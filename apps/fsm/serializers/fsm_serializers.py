@@ -92,11 +92,7 @@ class EventSerializer(serializers.ModelSerializer):
                             'is_paid', 'registration_form', 'is_manager']
 
 
-class FSMSerializer(serializers.ModelSerializer):
-    lock = serializers.CharField(required=False, write_only=True)
-    merchandise = MerchandiseSerializer(required=False)
-    mentors = MentorSerializer(many=True, read_only=True)
-    first_state = StateSerializer(read_only=True)
+class FSMMinimalSerializer(serializers.ModelSerializer):
     is_mentor = serializers.SerializerMethodField()
 
     def get_is_mentor(self, obj):
@@ -104,6 +100,18 @@ class FSMSerializer(serializers.ModelSerializer):
         if user in obj.mentors.all():
             return True
         return False
+
+    class Meta:
+        model = FSM
+        fields = ['id', 'name', 'description', 'cover_page', 'is_active',
+                  'fsm_learning_type', 'fsm_p_type', 'order_in_program', 'is_mentor']
+
+
+class FSMSerializer(serializers.ModelSerializer):
+    lock = serializers.CharField(required=False, write_only=True)
+    merchandise = MerchandiseSerializer(required=False)
+    mentors = MentorSerializer(many=True, read_only=True)
+    first_state = StateSerializer(read_only=True)
 
     def validate(self, attrs):
         event = attrs.get('event', None)
@@ -160,6 +168,7 @@ class FSMSerializer(serializers.ModelSerializer):
         representation = super(FSMSerializer, self).to_representation(instance)
         user = self.context.get('user', None)
         player = user.players.filter(is_active=True, fsm=instance).first()
+        representation['is_mentor'] = user in instance.mentors.all()
         representation['player'] = player.id if player else 'NotStarted'
         representation['state'] = player.current_state.name if player and player.current_state else 'NotStarted'
         representation['last_visit'] = player.last_visit if player else 'NotStarted'

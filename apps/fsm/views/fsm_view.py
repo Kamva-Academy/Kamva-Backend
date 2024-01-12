@@ -1,4 +1,3 @@
-from datetime import datetime
 
 from django.db import transaction
 from django.db.models import Q
@@ -7,29 +6,24 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ParseError, NotFound
-from rest_framework.mixins import RetrieveModelMixin, ListModelMixin
+from rest_framework.exceptions import PermissionDenied, ParseError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import viewsets
-from rest_framework import mixins
-from rest_framework import permissions
 
 from apps.accounts.serializers import AccountSerializer
 from apps.accounts.utils import find_user
 from errors.error_codes import serialize_error
 from apps.fsm.filtersets import FSMFilterSet
-from apps.fsm.models import AnswerSheet, RegistrationReceipt, FSM, State, PlayerHistory, Player, Edge, logging, RegistrationReceipt, Problem
-from apps.fsm.permissions import MentorPermission, HasActiveRegistration, PlayerViewerPermission
-from apps.fsm.serializers.fsm_serializers import FSMSerializer, KeySerializer, EdgeSerializer, \
+from apps.fsm.models import AnswerSheet, RegistrationReceipt, FSM, PlayerHistory, Player, Edge, RegistrationReceipt, Problem
+from apps.fsm.permissions import MentorPermission, HasActiveRegistration
+from apps.fsm.serializers.fsm_serializers import FSMMinimalSerializer, FSMSerializer, KeySerializer, EdgeSerializer, \
     TeamGetSerializer
-from apps.fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer, EdgeSimpleSerializer
+from apps.fsm.serializers.paper_serializers import StateSimpleSerializer, EdgeSimpleSerializer
 from apps.fsm.serializers.player_serializer import PlayerSerializer, PlayerHistorySerializer
 from apps.fsm.serializers.widget_serializers import MockWidgetSerializer
 from apps.fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 from apps.fsm.views.functions import get_player, get_receipt, get_a_player_from_team
-
-logger = logging.getLogger(__name__)
 
 
 class FSMViewSet(viewsets.ModelViewSet):
@@ -53,6 +47,8 @@ class FSMViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ['players']:
             return PlayerSerializer
+        if self.action in ['list']:
+            return FSMMinimalSerializer
         else:
             return super().get_serializer_class()
 
@@ -68,12 +64,12 @@ class FSMViewSet(viewsets.ModelViewSet):
         key = self.request.data.get('key', None)
         fsm = self.get_object()
         user = self.request.user
-        logger.info(f'user {user.full_name} trying to enter fsm {fsm.name}')
         receipt = get_receipt(user, fsm)
         player = get_player(user, fsm, receipt)
 
         if receipt is None:
             raise ParseError(serialize_error('4079'))
+
         # TODO - add for hybrid and individual
         if fsm.fsm_p_type in [FSM.FSMPType.Team, FSM.FSMPType.Hybrid]:
             if receipt.team is None:
