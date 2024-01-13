@@ -158,12 +158,12 @@ class Event(models.Model):
 class ProgramContactInfo(models.Model):
     name = models.CharField(max_length=100)
 
-    telegram_id = models.CharField(
+    telegram_link = models.CharField(
         max_length=100, null=True, blank=True)
-    shad_id = models.CharField(max_length=100, null=True, blank=True)
-    eitaa_id = models.CharField(max_length=100, null=True, blank=True)
-    bale_id = models.CharField(max_length=100, null=True, blank=True)
-    instagram_id = models.CharField(max_length=100, null=True, blank=True)
+    shad_link = models.CharField(max_length=100, null=True, blank=True)
+    eitaa_link = models.CharField(max_length=100, null=True, blank=True)
+    bale_link = models.CharField(max_length=100, null=True, blank=True)
+    instagram_link = models.CharField(max_length=100, null=True, blank=True)
     phone_number = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self) -> str:
