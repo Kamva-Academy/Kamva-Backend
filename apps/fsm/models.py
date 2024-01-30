@@ -7,6 +7,20 @@ from apps.scoring.models import Cost, Reward
 
 ################ BASE #################
 
+def clone_paper(paper, *args, **kwargs):
+    paper_type = paper.__class__
+    model_fields = [
+        field.name for field in paper_type._meta.get_fields() if field.name != 'id']
+    dicted_model = {name: value for name, value
+                    in paper.__dict__.items() if name in model_fields}
+    cloned_paper = paper_type(
+        **{**dicted_model,
+           **kwargs,
+           },
+    )
+    cloned_paper.save()
+    return cloned_paper
+
 
 class Paper(PolymorphicModel):
     class PaperType(models.TextChoices):
@@ -47,6 +61,9 @@ class Paper(PolymorphicModel):
 class Hint(Paper):
     reference = models.ForeignKey(
         'fsm.State', on_delete=models.CASCADE, related_name='hints')
+
+    def clone(self, paper):
+        return clone_hint(self, paper)
 
 
 ################ GROUP #################
@@ -316,15 +333,10 @@ class State(Paper):
         return super(State, self).delete()
 
     def clone(self, fsm):
-        cloned_state = State(
-            paper_type=self.paper_type,
-            creator=self.creator,
-            name=self.name,
-            fsm=fsm,
-        )
-        cloned_state.save()
+        cloned_state = clone_paper(self, fsm=fsm)
         cloned_widgets = [widget.clone(cloned_state)
                           for widget in self.widgets.all()]
+        cloned_hints = [hint.clone(cloned_state) for hint in self.hints.all()]
         return cloned_state
 
     def __str__(self):
@@ -661,22 +673,37 @@ class Widget(PolymorphicModel):
 
 def clone_widget(widget, paper, *args, **kwargs):
     widget_type = widget.__class__
-    model_fields = [field.name for field in widget_type._meta.get_fields() if field.name != 'id']
+    model_fields = [
+        field.name for field in widget_type._meta.get_fields() if field.name != 'id']
     dicted_model = {name: value for name,
-                     value in widget.__dict__.items() if name in model_fields}
-    clone_widget = widget_type(
+                    value in widget.__dict__.items() if name in model_fields}
+    cloned_widget = widget_type(
         **{**dicted_model,
            'paper': paper,
            **kwargs,
            },
     )
-    clone_widget.save()
-    return clone_widget
+    cloned_widget.save()
+
+    cloned_widget_hints = [widget_hint.clone(
+        cloned_widget) for widget_hint in widget.hints.all()]
+
+    return cloned_widget
+
+
+def clone_hint(hint, reference_paper):
+    cloned_hint = clone_paper(hint, reference=reference_paper)
+    cloned_widgets = [widget.clone(cloned_hint)
+                      for widget in hint.widgets.all()]
+    return cloned_hint
 
 
 class WidgetHint(Paper):
     reference = models.ForeignKey(
         Widget, on_delete=models.CASCADE, related_name='hints')
+
+    def clone(self, paper):
+        return clone_hint(self, paper)
 
 
 class TextWidget(Widget):
@@ -795,7 +822,8 @@ class UploadFileProblem(Problem):
 class MultiChoiceProblem(Problem):
     def clone(self, paper):
         cloned_widget = clone_widget(self, paper)
-        cloned_choices = [choice.clone(cloned_widget)for choice in self.choices.all()]
+        cloned_choices = [choice.clone(cloned_widget)
+                          for choice in self.choices.all()]
         cloned_widget.save()
 
     @property

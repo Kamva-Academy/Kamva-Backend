@@ -11,6 +11,8 @@ url = get_environment_var(
 
 def correct_answer(question, given_answer):
     correct_answer = question.correct_answer
+    if not question.correct_answer:
+        raise Exception("no correct answer provided")
     body = {
         'correct_answer': {
             'answer_type': question.correct_answer.answer_type,
