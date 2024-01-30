@@ -153,12 +153,18 @@ class PlayerAdmin(admin.ModelAdmin):
     search_fields = ['user__username']
 
 
+def clone_fsm(modeladmin, request, queryset):
+    for fsm in queryset:
+        fsm.clone()
+
+
 class FSMAdmin(admin.ModelAdmin):
     model = FSM
     list_display = ['name', 'first_state', 'is_active',
                     'mentors_num', 'mentors_list', 'online_teams_in_last_hour']
     list_filter = ['name']
     search_fields = ['name']
+    actions = [clone_fsm]
 
     def mentors_list(self, obj):
         return ','.join(m.full_name for m in obj.mentors.all())

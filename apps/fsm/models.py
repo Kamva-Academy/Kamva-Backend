@@ -229,6 +229,35 @@ class FSM(models.Model):
     def __str__(self):
         return self.name
 
+    @transaction.atomic
+    def clone(self):
+        cloned_fsm = FSM(
+            name=self.name,
+            description=self.description,
+            cover_page=self.cover_page,
+            is_active=self.is_active,
+            fsm_learning_type=self.fsm_learning_type,
+            fsm_p_type=self.fsm_p_type,
+            team_size=self.team_size,
+        )
+
+        cloned_states = {}
+        cloned_fsm.save()
+        for tail_state in self.states.all():
+            for outward_edge in tail_state.outward_edges.all():
+                if tail_state.id not in cloned_states:
+                    cloned_states[tail_state.id] = tail_state.clone(cloned_fsm)
+
+                head_state = outward_edge.head
+                if head_state.id not in cloned_states:
+                    cloned_states[head_state.id] = head_state.clone(cloned_fsm)
+
+                cloned_outward_edge = outward_edge.clone(cloned_states[tail_state.id],
+                                                         cloned_states[head_state.id])
+
+        cloned_fsm.first_state = cloned_states[self.first_state.id]
+        cloned_fsm.save()
+
     @property
     def modifiers(self):
         modifiers = {self.creator} if self.creator is not None else set()
@@ -286,6 +315,18 @@ class State(Paper):
             pass
         return super(State, self).delete()
 
+    def clone(self, fsm):
+        cloned_state = State(
+            paper_type=self.paper_type,
+            creator=self.creator,
+            name=self.name,
+            fsm=fsm,
+        )
+        cloned_state.save()
+        cloned_widgets = [widget.clone(cloned_state)
+                          for widget in self.widgets.all()]
+        return cloned_state
+
     def __str__(self):
         return f'{self.name} in {str(self.fsm)}'
 
@@ -326,6 +367,16 @@ class Edge(models.Model):
 
     class Meta:
         unique_together = ('tail', 'head')
+
+    def clone(self, tail, head):
+        cloned_edge = Edge(
+            tail=tail,
+            head=head,
+            is_back_enabled=self.is_back_enabled,
+            is_visible=self.is_visible,
+        )
+        cloned_edge.save()
+        return cloned_edge
 
     def __str__(self):
         return f'از {self.tail.name} به {self.head.name}'
@@ -595,6 +646,10 @@ class Widget(PolymorphicModel):
     class Meta:
         order_with_respect_to = 'paper'
 
+    @abstractmethod
+    def clone(self, paper):
+        pass
+
     def make_file_empty(self):
         try:
             self.file.delete()
@@ -602,6 +657,21 @@ class Widget(PolymorphicModel):
             self.file = None
             self.file.save()
             pass
+
+
+def clone_widget(widget, paper, *args, **kwargs):
+    widget_type = widget.__class__
+    model_fields = [field.name for field in widget_type._meta.get_fields() if field.name != 'id']
+    dicted_model = {name: value for name,
+                     value in widget.__dict__.items() if name in model_fields}
+    clone_widget = widget_type(
+        **{**dicted_model,
+           'paper': paper,
+           **kwargs,
+           },
+    )
+    clone_widget.save()
+    return clone_widget
 
 
 class WidgetHint(Paper):
@@ -612,6 +682,9 @@ class WidgetHint(Paper):
 class TextWidget(Widget):
     text = models.TextField()
 
+    def clone(self, paper):
+        return clone_widget(self, paper)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
@@ -620,12 +693,19 @@ class DetailBoxWidget(Widget):
     title = models.TextField()
     details = models.ForeignKey(Paper, on_delete=models.CASCADE)
 
+    def clone(self, paper):
+        cloned_details = self.details  # todo
+        return clone_widget(self, paper, details=cloned_details)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Game(Widget):
     link = models.URLField()
+
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -634,12 +714,18 @@ class Game(Widget):
 class Video(Widget):
     link = models.URLField(null=True, blank=True)
 
+    def clone(self, paper):
+        return clone_widget(self, paper)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Audio(Widget):
     link = models.URLField(null=True, blank=True)
+
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -648,12 +734,18 @@ class Audio(Widget):
 class Aparat(Widget):
     video_id = models.TextField()
 
+    def clone(self, paper):
+        return clone_widget(self, paper)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Image(Widget):
     link = models.URLField(null=True, blank=True)
+
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -686,18 +778,25 @@ class Problem(Widget):
 
 
 class SmallAnswerProblem(Problem):
-    pass
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
 
 class BigAnswerProblem(Problem):
-    pass
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
 
 class UploadFileProblem(Problem):
-    pass
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
 
 class MultiChoiceProblem(Problem):
+    def clone(self, paper):
+        cloned_widget = clone_widget(self, paper)
+        cloned_choices = [choice.clone(cloned_widget)for choice in self.choices.all()]
+        cloned_widget.save()
 
     @property
     def correct_answer(self):
@@ -730,6 +829,15 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.text
+
+    def clone(self, problem):
+        cloned_choice = Choice(
+            problem=problem,
+            text=self.text,
+            is_correct=self.is_correct
+        )
+        cloned_choice.save()
+        return cloned_choice
 
     @classmethod
     def create_instance(self, question: MultiChoiceProblem, choice_data) -> 'Choice':
