@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'apps.scoring.apps.ScoringConfig',
     'apps.websiteappearance.apps.WebsiteappearanceConfig',
     'apps.roadmap.apps.RoadmapConfig',
+    'apps.party.apps.PartyConfig',
 ]
 
 MIDDLEWARE = [
