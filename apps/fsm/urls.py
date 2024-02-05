@@ -20,7 +20,7 @@ urlpatterns = []
 
 router.register(r'event', EventViewSet, basename='events')
 router.register(r'fsm', FSMViewSet, basename='fsms')
-router.register(r'articles', ArticleViewSet, basename='articles')
+router.register(r'article', ArticleViewSet, basename='articles')
 
 router.register(r'registration', RegistrationViewSet, basename='registration_form')
 router.register(r'registration_form_admin', RegistrationFormAdminViewSet,
