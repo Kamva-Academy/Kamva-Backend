@@ -1,12 +1,16 @@
 from django.shortcuts import render
 from .models import *
 from .seriallizers import ContactMessageSerializers
-from rest_framework.views import APIView
+from rest_framework import  viewsets
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 
 
-class ContactMessageView(APIView):
+class ContactMessageView(viewsets.ModelViewSet):
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializers
+    permission_classes = [AllowAny]
     def get(self , request):
         data = ContactMessage.object.all()
         serializer = ContactMessageSerializers(data , many=True)
