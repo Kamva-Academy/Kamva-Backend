@@ -2,8 +2,24 @@ from typing import Any
 from apps.accounts.models import *
 from abc import abstractmethod
 
+from apps.scoring.models import Cost, Reward
+
 
 ################ BASE #################
+
+def clone_paper(paper, *args, **kwargs):
+    paper_type = paper.__class__
+    model_fields = [
+        field.name for field in paper_type._meta.get_fields() if field.name != 'id']
+    dicted_model = {name: value for name, value
+                    in paper.__dict__.items() if name in model_fields}
+    cloned_paper = paper_type(
+        **{**dicted_model,
+           **kwargs,
+           },
+    )
+    cloned_paper.save()
+    return cloned_paper
 
 
 class Paper(PolymorphicModel):
@@ -23,8 +39,6 @@ class Paper(PolymorphicModel):
     till = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True, default=None)
     is_exam = models.BooleanField(default=False)
-    criteria = models.OneToOneField('scoring.Criteria', related_name='paper', null=True, blank=True,
-                                    on_delete=models.CASCADE)
 
     def delete(self):
         for w in Widget.objects.filter(paper=self):
@@ -36,8 +50,8 @@ class Paper(PolymorphicModel):
         return super(Paper, self).delete()
 
     def is_user_permitted(self, user: User):
-        if self.criteria:
-            return self.criteria.evaluate(user)
+        # if self.criteria:
+        #     return self.criteria.evaluate(user)
         return True
 
     def __str__(self):
@@ -47,6 +61,9 @@ class Paper(PolymorphicModel):
 class Hint(Paper):
     reference = models.ForeignKey(
         'fsm.State', on_delete=models.CASCADE, related_name='hints')
+
+    def clone(self, paper):
+        return clone_hint(self, paper)
 
 
 ################ GROUP #################
@@ -127,8 +144,11 @@ class Event(models.Model):
     maximum_participant = models.IntegerField(null=True, blank=True)
     accessible_after_closure = models.BooleanField(default=False)
     is_private = models.BooleanField(default=False)
+    show_scores = models.BooleanField(default=False)
     site_help_paper_id = models.IntegerField(blank=True, null=True)
     FAQs_paper_id = models.IntegerField(blank=True, null=True)
+    program_contact_info = models.OneToOneField(
+        'ProgramContactInfo', on_delete=models.SET_NULL, related_name='event', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -150,6 +170,21 @@ class Event(models.Model):
         self.registration_form.delete() if self.registration_form is not None else None
         self.merchandise.delete() if self.merchandise is not None else None
         return super(Event, self).delete(using, keep_parents)
+
+
+class ProgramContactInfo(models.Model):
+    name = models.CharField(max_length=100)
+
+    telegram_link = models.CharField(
+        max_length=100, null=True, blank=True)
+    shad_link = models.CharField(max_length=100, null=True, blank=True)
+    eitaa_link = models.CharField(max_length=100, null=True, blank=True)
+    bale_link = models.CharField(max_length=100, null=True, blank=True)
+    instagram_link = models.CharField(max_length=100, null=True, blank=True)
+    phone_number = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f'اطلاعات تماس: {self.name}'
 
 
 ################ FSM #################
@@ -211,6 +246,35 @@ class FSM(models.Model):
     def __str__(self):
         return self.name
 
+    @transaction.atomic
+    def clone(self):
+        cloned_fsm = FSM(
+            name=self.name,
+            description=self.description,
+            cover_page=self.cover_page,
+            is_active=self.is_active,
+            fsm_learning_type=self.fsm_learning_type,
+            fsm_p_type=self.fsm_p_type,
+            team_size=self.team_size,
+        )
+
+        cloned_states = {}
+        cloned_fsm.save()
+        for tail_state in self.states.all():
+            for outward_edge in tail_state.outward_edges.all():
+                if tail_state.id not in cloned_states:
+                    cloned_states[tail_state.id] = tail_state.clone(cloned_fsm)
+
+                head_state = outward_edge.head
+                if head_state.id not in cloned_states:
+                    cloned_states[head_state.id] = head_state.clone(cloned_fsm)
+
+                cloned_outward_edge = outward_edge.clone(cloned_states[tail_state.id],
+                                                         cloned_states[head_state.id])
+
+        cloned_fsm.first_state = cloned_states[self.first_state.id]
+        cloned_fsm.save()
+
     @property
     def modifiers(self):
         modifiers = {self.creator} if self.creator is not None else set()
@@ -231,7 +295,6 @@ class Player(models.Model):
 
     receipt = models.ForeignKey(
         'fsm.RegistrationReceipt', related_name='players', on_delete=models.CASCADE)
-
 
     current_state = models.ForeignKey('fsm.State', null=True, blank=True, on_delete=models.SET_NULL,
                                       related_name='players')
@@ -268,6 +331,13 @@ class State(Paper):
         except:
             pass
         return super(State, self).delete()
+
+    def clone(self, fsm):
+        cloned_state = clone_paper(self, fsm=fsm)
+        cloned_widgets = [widget.clone(cloned_state)
+                          for widget in self.widgets.all()]
+        cloned_hints = [hint.clone(cloned_state) for hint in self.hints.all()]
+        return cloned_state
 
     def __str__(self):
         return f'{self.name} in {str(self.fsm)}'
@@ -309,6 +379,16 @@ class Edge(models.Model):
 
     class Meta:
         unique_together = ('tail', 'head')
+
+    def clone(self, tail, head):
+        cloned_edge = Edge(
+            tail=tail,
+            head=head,
+            is_back_enabled=self.is_back_enabled,
+            is_visible=self.is_visible,
+        )
+        cloned_edge.save()
+        return cloned_edge
 
     def __str__(self):
         return f'از {self.tail.name} به {self.head.name}'
@@ -569,9 +649,18 @@ class Widget(PolymorphicModel):
                                 on_delete=models.SET_NULL)
     duplication_of = models.ForeignKey('Widget', default=None, null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name='duplications')
+    cost = models.ForeignKey(
+        Cost, on_delete=models.CASCADE, null=True, blank=True)
+    reward = models.ForeignKey(
+        Reward, on_delete=models.CASCADE, null=True, blank=True)
+    be_corrected = models.BooleanField(default=False)
 
     class Meta:
         order_with_respect_to = 'paper'
+
+    @abstractmethod
+    def clone(self, paper):
+        pass
 
     def make_file_empty(self):
         try:
@@ -582,13 +671,46 @@ class Widget(PolymorphicModel):
             pass
 
 
+def clone_widget(widget, paper, *args, **kwargs):
+    widget_type = widget.__class__
+    model_fields = [
+        field.name for field in widget_type._meta.get_fields() if field.name != 'id']
+    dicted_model = {name: value for name,
+                    value in widget.__dict__.items() if name in model_fields}
+    cloned_widget = widget_type(
+        **{**dicted_model,
+           'paper': paper,
+           **kwargs,
+           },
+    )
+    cloned_widget.save()
+
+    cloned_widget_hints = [widget_hint.clone(
+        cloned_widget) for widget_hint in widget.hints.all()]
+
+    return cloned_widget
+
+
+def clone_hint(hint, reference_paper):
+    cloned_hint = clone_paper(hint, reference=reference_paper)
+    cloned_widgets = [widget.clone(cloned_hint)
+                      for widget in hint.widgets.all()]
+    return cloned_hint
+
+
 class WidgetHint(Paper):
     reference = models.ForeignKey(
         Widget, on_delete=models.CASCADE, related_name='hints')
 
+    def clone(self, paper):
+        return clone_hint(self, paper)
+
 
 class TextWidget(Widget):
     text = models.TextField()
+
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -598,12 +720,19 @@ class DetailBoxWidget(Widget):
     title = models.TextField()
     details = models.ForeignKey(Paper, on_delete=models.CASCADE)
 
+    def clone(self, paper):
+        cloned_details = self.details  # todo
+        return clone_widget(self, paper, details=cloned_details)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Game(Widget):
     link = models.URLField()
+
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -612,12 +741,18 @@ class Game(Widget):
 class Video(Widget):
     link = models.URLField(null=True, blank=True)
 
+    def clone(self, paper):
+        return clone_widget(self, paper)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Audio(Widget):
     link = models.URLField(null=True, blank=True)
+
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -626,12 +761,18 @@ class Audio(Widget):
 class Aparat(Widget):
     video_id = models.TextField()
 
+    def clone(self, paper):
+        return clone_widget(self, paper)
+
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
 
 
 class Image(Widget):
     link = models.URLField(null=True, blank=True)
+
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
     def __str__(self):
         return f'<{self.id}-{self.widget_type}>:{self.name}'
@@ -664,18 +805,46 @@ class Problem(Widget):
 
 
 class SmallAnswerProblem(Problem):
-    pass
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
 
 class BigAnswerProblem(Problem):
-    pass
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
 
 class UploadFileProblem(Problem):
-    pass
+    def clone(self, paper):
+        return clone_widget(self, paper)
 
 
 class MultiChoiceProblem(Problem):
+    def clone(self, paper):
+        cloned_widget = clone_widget(self, paper)
+        cloned_choices = [choice.clone(cloned_widget)
+                          for choice in self.choices.all()]
+        cloned_widget.save()
+
+    @property
+    def correct_answer(self):
+        from apps.fsm.serializers.answer_serializers import MultiChoiceAnswerSerializer
+        correct_answer_object = self.answers.filter(is_correct=True).first()
+        correct_choices = self.choices.all().filter(is_correct=True)
+
+        if not correct_answer_object:
+            correct_answer_serializer = MultiChoiceAnswerSerializer(data={
+                'answer_type': 'MultiChoiceAnswer',
+                'problem': self,
+                'is_correct': True,
+            })
+            correct_answer_serializer.is_valid(raise_exception=True)
+            correct_answer_object = correct_answer_serializer.save()
+
+        correct_answer_object.choices.set(correct_choices)
+        correct_answer_object.save()
+        return correct_answer_object
+
     max_choices = models.IntegerField(
         validators=[MinValueValidator(0)], default=1)
 
@@ -688,6 +857,15 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.text
+
+    def clone(self, problem):
+        cloned_choice = Choice(
+            problem=problem,
+            text=self.text,
+            is_correct=self.is_correct
+        )
+        cloned_choice.save()
+        return cloned_choice
 
     @classmethod
     def create_instance(self, question: MultiChoiceProblem, choice_data) -> 'Choice':
@@ -720,8 +898,8 @@ class Answer(PolymorphicModel):
     def __str__(self):
         return f'user: {self.submitted_by.username if self.submitted_by else "-"}'
 
-    @abstractmethod
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         pass
 
     @property
@@ -742,7 +920,8 @@ class SmallAnswer(Answer):
             return RegistrationReceipt.CorrectionStatus.Wrong
         return RegistrationReceipt.CorrectionStatus.NoSolutionAvailable
 
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         return self.text
 
     def __str__(self):
@@ -754,7 +933,8 @@ class BigAnswer(Answer):
                                 related_name='answers')
     text = models.TextField()
 
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         return self.text
 
 
@@ -763,9 +943,9 @@ class MultiChoiceAnswer(Answer):
         MultiChoiceProblem, on_delete=models.PROTECT, related_name='answers')
     choices = models.ManyToManyField(Choice)
 
-    def get_string_answer(self):
-        # todo
-        pass
+    @property
+    def string_answer(self):
+        return [choice.__str__() for choice in self.choices.all()]
 
     def correction_status(self):
         correct_answer = self.problem.correct_answer
@@ -784,7 +964,8 @@ class UploadFileAnswer(Answer):
     answer_file = models.FileField(
         upload_to='answers', max_length=4000, blank=False)
 
-    def get_string_answer(self):
+    @property
+    def string_answer(self):
         return self.answer_file
 
 
@@ -838,4 +1019,3 @@ class PlayerWorkshop(models.Model):
 
     def __str__(self):
         return f'{self.id}:{str(self.player)}-{self.workshop.name}'
-

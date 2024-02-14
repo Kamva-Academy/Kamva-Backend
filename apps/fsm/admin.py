@@ -5,12 +5,18 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from import_export.admin import ExportActionMixin
 
-from apps.fsm.models import Choice, DetailBoxWidget, Edge, Paper, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
+from apps.fsm.models import Choice, DetailBoxWidget, Edge, Paper, ProgramContactInfo, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Answer, TextWidget, Event, \
     UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, Article, Tag, Aparat
 
 from apps.fsm.utils import get_django_file
+
+
+@admin.register(ProgramContactInfo)
+class ProgramContactInfoCustomAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+    list_filter = []
 
 
 class EdgeAdmin(admin.ModelAdmin):
@@ -75,7 +81,7 @@ class WidgetAdmin(admin.ModelAdmin):
 
 class PaperAdmin(admin.ModelAdmin):
     model = Paper
-    list_display = ['id', 'since', 'till', 'criteria', 'is_exam']
+    list_display = ['id', 'since', 'till', 'is_exam']
     list_filter = ['is_exam']
 
 
@@ -120,7 +126,7 @@ def download_csv(modeladmin, request, queryset):
         for problem_id in problems:
             for answer in answers:
                 if answer.problem.id == problem_id:
-                    row.append(answer.get_string_answer())
+                    row.append(answer.string_answer)
                     break
         writer.writerow(row)
     f.close()
@@ -147,12 +153,18 @@ class PlayerAdmin(admin.ModelAdmin):
     search_fields = ['user__username']
 
 
+def clone_fsm(modeladmin, request, queryset):
+    for fsm in queryset:
+        fsm.clone()
+
+
 class FSMAdmin(admin.ModelAdmin):
     model = FSM
     list_display = ['name', 'first_state', 'is_active',
                     'mentors_num', 'mentors_list', 'online_teams_in_last_hour']
     list_filter = ['name']
     search_fields = ['name']
+    actions = [clone_fsm]
 
     def mentors_list(self, obj):
         return ','.join(m.full_name for m in obj.mentors.all())

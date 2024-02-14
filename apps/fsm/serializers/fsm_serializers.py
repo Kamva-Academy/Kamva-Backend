@@ -2,8 +2,10 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import serializers
+from apps.fsm.models import Player
 
 from apps.accounts.serializers import MerchandiseSerializer, AccountSerializer, MentorSerializer
+from apps.fsm.serializers.program_contact_info_serializer import ProgramContactInfoSerializer
 from errors.error_codes import serialize_error
 from apps.fsm.models import Event, RegistrationReceipt, FSM, Edge, Team, RegistrationForm
 from apps.fsm.serializers.paper_serializers import StateSerializer, StateSimpleSerializer
@@ -11,6 +13,7 @@ from apps.fsm.serializers.paper_serializers import StateSerializer, StateSimpleS
 
 class EventSerializer(serializers.ModelSerializer):
     merchandise = MerchandiseSerializer(required=False)
+    program_contact_info = ProgramContactInfoSerializer(required=False)
     is_manager = serializers.SerializerMethodField()
 
     def get_is_manager(self, obj):
@@ -53,7 +56,7 @@ class EventSerializer(serializers.ModelSerializer):
         user = self.context.get('request', None).user
         receipt = RegistrationReceipt.objects.filter(user=user, answer_sheet_of=instance.registration_form).last(
         ) if not isinstance(user, AnonymousUser) else None
-        representation['participants_size'] = len(instance.participants)
+        representation['participants_count'] = len(instance.participants)
         if instance.registration_form:
             representation['has_certificate'] = instance.registration_form.has_certificate
             representation['certificates_ready'] = instance.registration_form.certificates_ready
@@ -88,8 +91,25 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
-        read_only_fields = ['id', 'creator', 'is_approved', 'participants_size', 'user_registration_status',
-                            'is_paid', 'registration_form', 'is_manager']
+        read_only_fields = ['id', 'creator', 'is_approved', 'user_registration_status',
+                            'is_paid', 'registration_form', 'is_manager', 'program_contact_info']
+
+
+class FSMMinimalSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FSM
+        fields = ['id', 'name', 'description', 'cover_page', 'is_active',
+                  'fsm_learning_type', 'fsm_p_type', 'order_in_program']
+
+    def to_representation(self, instance):
+        representation = super(FSMMinimalSerializer,
+                               self).to_representation(instance)
+        user = self.context.get('user', None)
+        representation['players_count'] = len(
+            Player.objects.filter(fsm=instance))
+        representation['is_mentor'] = user in instance.mentors.all()
+        return representation
 
 
 class FSMSerializer(serializers.ModelSerializer):
@@ -97,13 +117,6 @@ class FSMSerializer(serializers.ModelSerializer):
     merchandise = MerchandiseSerializer(required=False)
     mentors = MentorSerializer(many=True, read_only=True)
     first_state = StateSerializer(read_only=True)
-    is_mentor = serializers.SerializerMethodField()
-
-    def get_is_mentor(self, obj):
-        user = self.context.get('user', None)
-        if user in obj.mentors.all():
-            return True
-        return False
 
     def validate(self, attrs):
         event = attrs.get('event', None)
@@ -160,6 +173,7 @@ class FSMSerializer(serializers.ModelSerializer):
         representation = super(FSMSerializer, self).to_representation(instance)
         user = self.context.get('user', None)
         player = user.players.filter(is_active=True, fsm=instance).first()
+        representation['is_mentor'] = user in instance.mentors.all()
         representation['player'] = player.id if player else 'NotStarted'
         representation['state'] = player.current_state.name if player and player.current_state else 'NotStarted'
         representation['last_visit'] = player.last_visit if player else 'NotStarted'

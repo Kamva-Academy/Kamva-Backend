@@ -3,20 +3,10 @@ import csv
 from django.contrib import admin
 from django.http import HttpResponse
 
-from apps.scoring.models import ScoreType, Score, Comment, Condition, Criteria
+from apps.scoring.models import ScoreType, Cost, Reward, Transaction
 
 
-@admin.register(Score)
-class ScoreCustomAdmin(admin.ModelAdmin):
-    list_display = ['value', 'submitted_by']
-    list_filter = []
-    raw_id_fields = []
-
-    def submitted_by(self, obj):
-        return obj.deliverable.deliverer
-
-
-@admin.register(Criteria)
+@admin.register(Cost)
 class CriteriaCustomAdmin(admin.ModelAdmin):
 
     def get_passed_receipts(self, request, queryset):
@@ -45,5 +35,5 @@ class CriteriaCustomAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ScoreType)
-admin.site.register(Comment)
-admin.site.register(Condition)
+admin.site.register(Reward)
+admin.site.register(Transaction)

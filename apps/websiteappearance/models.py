@@ -4,6 +4,7 @@ from django.db import models
 class Banner(models.Model):
     class BannerType(models.TextChoices):
         programs_page = "ProgramsPage"
+        program_page = "ProgramPage"
 
     banner_type = models.CharField(
         max_length=30, default=BannerType.programs_page, choices=BannerType.choices)

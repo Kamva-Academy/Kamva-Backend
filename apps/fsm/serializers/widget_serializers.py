@@ -4,8 +4,10 @@ import datetime
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
-
 from errors.error_codes import serialize_error
+
+from apps.scoring.serializers.cost_serializer import CostSerializer
+from apps.scoring.serializers.reward_serializer import RewardSerializer
 from apps.fsm.models import DetailBoxWidget, Player, Game, Video, Image, TextWidget, Problem, SmallAnswerProblem, MultiChoiceProblem, Choice, UploadFileProblem, BigAnswerProblem, State, Hint, \
     Widget, Team, Aparat, Audio
 from apps.fsm.serializers.answer_serializers import SmallAnswerSerializer, ChoiceSerializer, \
@@ -17,11 +19,15 @@ def add_datetime_to_filename(file):
     file.name = f'{filename}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}{extension}'
     return file
 
+########### WIDGET ###########
+
 
 class WidgetSerializer(serializers.ModelSerializer):
     widget_type = serializers.ChoiceField(
         choices=Widget.WidgetTypes.choices, required=True)
     hints = serializers.SerializerMethodField()
+    cost = CostSerializer(required=False)
+    reward = RewardSerializer(required=False)
 
     def get_hints(self, obj):
         from apps.fsm.serializers.paper_serializers import WidgetHintSerializer
@@ -61,7 +67,8 @@ class WidgetSerializer(serializers.ModelSerializer):
             user = self.context.get('user', None)
 
             # TODO: potentially with BUGS!
-            url = self.context.get('request').get_full_path()
+            url = self.context.get('request').get_full_path(
+            ) if self.context.get('request') else ""
             if "/fsm/player/" in url:
                 matcher = re.search(r'\d+', url)
                 player_id = matcher.group()
@@ -83,6 +90,8 @@ class WidgetSerializer(serializers.ModelSerializer):
     #     read_only_fields = ['id', 'creator', 'duplication_of']
 
 
+########### CONTENT ###########
+
 class GameSerializer(WidgetSerializer):
     def create(self, validated_data):
         return super(GameSerializer, self).create({'widget_type': Widget.WidgetTypes.Game, **validated_data})
@@ -90,7 +99,7 @@ class GameSerializer(WidgetSerializer):
     class Meta:
         model = Game
         fields = ['id', 'name', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link', 'hints']
+                  'creator', 'duplication_of', 'link', 'hints', 'cost', 'reward']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -103,7 +112,7 @@ class VideoSerializer(WidgetSerializer):
     class Meta:
         model = Video
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link', 'hints']
+                  'creator', 'duplication_of', 'link', 'hints', 'cost', 'reward']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -116,7 +125,7 @@ class AudioSerializer(WidgetSerializer):
     class Meta:
         model = Audio
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link', 'hints']
+                  'creator', 'duplication_of', 'link', 'hints', 'cost', 'reward']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -127,7 +136,7 @@ class AparatSerializer(WidgetSerializer):
     class Meta:
         model = Aparat
         fields = ['id', 'name', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'video_id', 'hints']
+                  'creator', 'duplication_of', 'video_id', 'hints', 'cost', 'reward']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -140,7 +149,7 @@ class ImageSerializer(WidgetSerializer):
     class Meta:
         model = Image
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'link', 'hints']
+                  'creator', 'duplication_of', 'link', 'hints', 'cost', 'reward']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -152,7 +161,7 @@ class TextWidgetSerializer(WidgetSerializer):
     class Meta:
         model = TextWidget
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'text', 'hints']
+                  'creator', 'duplication_of', 'text', 'hints', 'cost', 'reward']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
 
@@ -179,32 +188,26 @@ class DetailBoxWidgetSerializer(WidgetSerializer):
     class Meta:
         model = DetailBoxWidget
         fields = ['id', 'name', 'file', 'paper', 'widget_type',
-                  'creator', 'duplication_of', 'title', 'details', 'hints']
+                  'creator', 'duplication_of', 'title', 'details', 'hints', 'cost', 'reward']
         read_only_fields = ['id', 'creator', 'duplication_of', 'details']
 
-
-class ProblemSerializer(WidgetSerializer):
-    class Meta:
-        model = Problem
-        fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'hints']
-        read_only_fields = ['id', 'creator', 'duplication_of']
+########### QUESTIONS ###########
 
 
 class SmallAnswerProblemSerializer(WidgetSerializer):
-    answer = SmallAnswerSerializer(required=False)
+    correct_answer = SmallAnswerSerializer(required=False)
 
     class Meta:
         model = SmallAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'answer', 'solution', 'hints']
+                  'required', 'correct_answer', 'solution', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     @transaction.atomic
     def create(self, validated_data):
-        has_answer = 'answer' in validated_data.keys()
+        has_answer = 'correct_answer' in validated_data.keys()
         if has_answer:
-            answer = validated_data.pop('answer')
+            answer = validated_data.pop('correct_answer')
         instance = super().create(
             {'widget_type': Widget.WidgetTypes.SmallAnswerProblem, **validated_data})
         if has_answer:
@@ -218,12 +221,12 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        has_answer = 'answer' in validated_data.keys()
+        has_answer = 'correct_answer' in validated_data.keys()
         if has_answer:
-            answer = validated_data.pop('answer')
+            answer = validated_data.pop('correct_answer')
         instance = super().update(instance, {**validated_data})
         if has_answer:
-            answer_object = instance.answer
+            answer_object = instance.correct_answer
             if answer_object:
                 answer_object.text = answer['text']
                 answer_object.save()
@@ -234,13 +237,20 @@ class SmallAnswerProblemSerializer(WidgetSerializer):
                     serializer.save()
         return instance
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        user = self.context.get('user')
+        if hasattr(instance.paper, 'fsm') and user and not user in instance.paper.fsm.mentors.all():
+            del representation['correct_answer']
+        return representation
+
 
 class BigAnswerProblemSerializer(WidgetSerializer):
 
     class Meta:
         model = BigAnswerProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'solution', 'hints']
+                  'required', 'solution', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     @transaction.atomic
@@ -256,7 +266,7 @@ class MultiChoiceProblemSerializer(WidgetSerializer):
     class Meta:
         model = MultiChoiceProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'max_choices', 'choices', 'hints']
+                  'required', 'max_choices', 'choices', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     def create(self, validated_data):
@@ -315,7 +325,7 @@ class UploadFileProblemSerializer(WidgetSerializer):
     class Meta:
         model = UploadFileProblem
         fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of', 'text',
-                  'required', 'solution', 'hints']
+                  'required', 'solution', 'hints', 'cost', 'reward', 'be_corrected']
         read_only_fields = ['id', 'creator', 'duplication_of']
 
     def validate_answer(self, answer):
@@ -328,8 +338,8 @@ class UploadFileProblemSerializer(WidgetSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if instance.correct_answer and not instance.paper.is_exam:
-            representation['answer'] = UploadFileAnswerSerializer(
-            ).to_representation(instance.answer)
+            representation['correct_answer'] = UploadFileAnswerSerializer(
+            ).to_representation(instance.correct_answer)
         return representation
 
     @transaction.atomic
@@ -345,7 +355,6 @@ class MockWidgetSerializer(serializers.Serializer):
     AparatSerializer = AparatSerializer(required=False)
     ImageSerializer = ImageSerializer(required=False)
     TextSerializer = TextWidgetSerializer(required=False)
-    # ProblemSerializer = ProblemSerializer(required=False)
     SmallAnswerProblemSerializer = SmallAnswerProblemSerializer(required=False)
     BigAnswerProblemSerializer = BigAnswerProblemSerializer(required=False)
     MultiChoiceProblemSerializer = MultiChoiceProblemSerializer(required=False)

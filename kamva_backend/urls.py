@@ -34,14 +34,11 @@ urlpatterns = [
     path('api/fsm/', include('apps.fsm.urls')),
     path('api/roadmap/', include('apps.roadmap.urls')),
     path('api/websiteappearance/', include('apps.websiteappearance.urls')),
-    # https://pypi.org/project/django-link-shortener/
-    path('s/', include('shortener.urls')),
     path('api/contact-us/', include('apps.contact.urls')),
     path('api/report/', include('apps.report.urls')),
-    # path('api/scoring/', include('apps.scoring.urls')),
-    # path('api/base/', include('apps.base.urls')),
-    # path('api/content/', include('apps.content_widget.urls')),
-    # path('api/question/', include('apps.question_widget.urls')),
+    path('api/scoring/', include('apps.scoring.urls')),
+    # https://pypi.org/project/django-link-shortener/
+    path('s/', include('shortener.urls')),
 ]
 
 urlpatterns += [path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
