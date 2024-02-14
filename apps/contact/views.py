@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from .models import *
 from .seriallizers import ContactMessageSerializers
 from rest_framework import  viewsets
@@ -21,4 +20,3 @@ class ContactMessageView(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data , status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
-# Create your views here.

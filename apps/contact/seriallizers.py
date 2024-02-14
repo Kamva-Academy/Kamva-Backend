@@ -6,4 +6,3 @@ class ContactMessageSerializers(serializers.ModelSerializer):
         model = ContactMessage
         field = ['id', 'object' , 'text', 'email']
     text = serializers.CharField(required=False)
-
