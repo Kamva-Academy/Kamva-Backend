@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'apps.roadmap.apps.RoadmapConfig',
     'apps.contact.apps.ContactConfig',
     'apps.report.apps.ReportConfig',
-    'apps.party.apps.PartyConfig',
 ]
 
 MIDDLEWARE = [
