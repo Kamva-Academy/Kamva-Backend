@@ -15,7 +15,7 @@ from apps.fsm.serializers.answer_serializers import AnswerPolymorphicSerializer,
 from apps.fsm.serializers.widget_serializers import MockWidgetSerializer
 from apps.fsm.serializers.widget_polymorphic import WidgetPolymorphicSerializer
 from apps.scoring.views.apply_scores_on_user import apply_cost, apply_reward
-from correct_answer.main import correct_answer
+from proxies.corrector.main import correct_answer
 
 
 class WidgetViewSet(viewsets.ModelViewSet):
