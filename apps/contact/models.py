@@ -1,0 +1,7 @@
+from django.db import models
+
+class ContactMessage(models.Model):
+    subject = models.TextField()
+    text = models.TextField()
+    # phone = models.CharField(max_length=12)
+    email = models.CharField(max_length=36)

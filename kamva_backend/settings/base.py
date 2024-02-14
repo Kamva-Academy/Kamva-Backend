@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'apps.scoring.apps.ScoringConfig',
     'apps.websiteappearance.apps.WebsiteappearanceConfig',
     'apps.roadmap.apps.RoadmapConfig',
+    'apps.contact.apps.ContactConfig',
+    'apps.report.apps.ReportConfig',
     'apps.party.apps.PartyConfig',
 ]
 
