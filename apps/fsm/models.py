@@ -1,6 +1,10 @@
-from typing import Any
-from apps.accounts.models import *
+import uuid
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models, transaction
+from datetime import datetime
+from polymorphic.models import PolymorphicModel
 from abc import abstractmethod
+from apps.accounts.models import User
 
 from apps.scoring.models import Cost, Reward
 
@@ -306,7 +310,7 @@ class Player(models.Model):
         return self.receipt.team if self.receipt else None
 
     @staticmethod
-    def get_player(player_id: int) -> Player:
+    def get_player(player_id: int):
         return Player.objects.filter(id=player_id).first()
 
     class Meta:

@@ -1,3 +1,4 @@
+import logging
 from rest_framework.exceptions import ParseError
 
 from apps.fsm.models import *

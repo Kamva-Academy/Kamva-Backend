@@ -1,4 +1,5 @@
 import csv
+from datetime import timedelta
 from django.utils import timezone
 
 from django.contrib import admin
@@ -8,7 +9,7 @@ from import_export.admin import ExportActionMixin
 from apps.fsm.models import Choice, DetailBoxWidget, Edge, Paper, ProgramContactInfo, RegistrationForm, Problem, AnswerSheet, RegistrationReceipt, Team, \
     Invitation, CertificateTemplate, Font, FSM, State, WidgetHint, Hint, Widget, Video, Audio, Image, Player, Game, SmallAnswerProblem, \
     SmallAnswer, BigAnswerProblem, BigAnswer, MultiChoiceProblem, MultiChoiceAnswer, Answer, TextWidget, Event, \
-    UploadFileAnswer, UploadFileProblem, PlayerHistory, timedelta, Article, Tag, Aparat
+    UploadFileAnswer, UploadFileProblem, PlayerHistory, Article, Tag, Aparat
 
 from apps.fsm.utils import get_django_file
 

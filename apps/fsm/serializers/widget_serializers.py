@@ -84,11 +84,6 @@ class WidgetSerializer(serializers.ModelSerializer):
                         instance=latest_answer).to_representation(latest_answer)
         return representation
 
-    # class Meta:
-    #     model = Widget
-    #     fields = ['id', 'name', 'paper', 'widget_type', 'creator', 'duplication_of']
-    #     read_only_fields = ['id', 'creator', 'duplication_of']
-
 
 ########### CONTENT ###########
 
