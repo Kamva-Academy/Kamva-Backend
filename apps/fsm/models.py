@@ -4,7 +4,7 @@ from django.db import models, transaction
 from datetime import datetime
 from polymorphic.models import PolymorphicModel
 from abc import abstractmethod
-from apps.accounts.models import User
+from apps.accounts.models import Purchase, User
 
 from apps.scoring.models import Cost, Reward
 
