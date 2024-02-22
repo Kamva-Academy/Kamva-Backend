@@ -6,10 +6,12 @@ from apps.fsm.models import Event
 from apps.fsm.serializers.fsm_serializers import EventSerializer
 from apps.fsm.permissions import IsEventModifier, HasActiveRegistration
 
+
 class EventViewSet(ModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
     my_tags = ['event']
+    filterset_fields = ['party', 'is_private']
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -26,6 +28,3 @@ class EventViewSet(ModelViewSet):
         else:
             permission_classes = [IsEventModifier]
         return [permission() for permission in permission_classes]
-
-    def list(self, request):
-        return Response(data=self.serializer_class(Event.objects.filter(is_private=False), context={'request': request}, many=True).data, status=status.HTTP_200_OK)

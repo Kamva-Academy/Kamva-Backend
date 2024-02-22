@@ -126,6 +126,8 @@ class Event(models.Model):
         Team = "Team"
         Individual = "Individual"
 
+    party = models.UUIDField(null=True, blank=True)
+
     merchandise = models.OneToOneField('accounts.Merchandise', related_name='event', on_delete=models.SET_NULL,
                                        null=True, blank=True)
     registration_form = models.OneToOneField('fsm.RegistrationForm', related_name='event', on_delete=models.SET_NULL,
@@ -175,6 +177,9 @@ class Event(models.Model):
         self.merchandise.delete() if self.merchandise is not None else None
         return super(Event, self).delete(using, keep_parents)
 
+    class Meta:
+        ordering = ['-id']
+
 
 class ProgramContactInfo(models.Model):
     name = models.CharField(max_length=100)
@@ -215,6 +220,8 @@ class FSM(models.Model):
         Team = 'Team'
         Individual = 'Individual'
         Hybrid = 'Hybrid'
+
+    party = models.UUIDField(null=True, blank=True)
 
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, related_name='fsms', default=None, null=True,
                               blank=True)
@@ -425,6 +432,7 @@ class Tag(models.Model):
 
 
 class Article(Paper):
+    party = models.UUIDField(null=True, blank=True)
     name = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     cover_page = models.ImageField(

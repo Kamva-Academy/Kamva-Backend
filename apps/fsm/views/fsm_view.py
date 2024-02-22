@@ -14,7 +14,6 @@ from rest_framework import viewsets
 from apps.accounts.serializers import AccountSerializer
 from apps.accounts.utils import find_user
 from errors.error_codes import serialize_error
-from apps.fsm.filtersets import FSMFilterSet
 from apps.fsm.models import AnswerSheet, RegistrationReceipt, FSM, PlayerHistory, Player, Edge, RegistrationReceipt, Problem
 from apps.fsm.permissions import MentorPermission, HasActiveRegistration
 from apps.fsm.serializers.fsm_serializers import FSMMinimalSerializer, FSMSerializer, KeySerializer, EdgeSerializer, \
@@ -30,9 +29,9 @@ class FSMViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
-    filter_backends = [DjangoFilterBackend, ]
-    filterset_class = FSMFilterSet
     my_tags = ['fsm']
+    filterset_fields = ['party']
+
 
     def get_permissions(self):
         if self.action in ['partial_update', 'update', 'destroy', 'add_mentor', 'get_states', 'get_edges',

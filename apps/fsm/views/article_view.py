@@ -4,6 +4,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.fsm.models import Article
 from apps.fsm.permissions import IsArticleModifier
@@ -14,6 +15,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer
     queryset = Article.objects.all()
     my_tags = ['articles']
+    filterset_fields = ['party']
 
     def get_serializer_class(self):
         try:

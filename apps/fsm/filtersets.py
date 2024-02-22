@@ -1,9 +1,8 @@
 from django.db.models import Q
-from django_filters.rest_framework import FilterSet, ModelMultipleChoiceFilter, DateTimeFromToRangeFilter, \
-    ModelChoiceFilter, NumberFilter, UUIDFilter, BooleanFilter
-from django_filters.widgets import CSVWidget
+from django_filters.rest_framework import FilterSet, DateTimeFromToRangeFilter, \
+    ModelChoiceFilter, NumberFilter
 
-from apps.fsm.models import Answer, Problem, Team, FSM
+from apps.fsm.models import Answer, Team
 
 
 def filter_not_empty(queryset, name, value):
@@ -25,15 +24,6 @@ class AnswerFilterSet(FilterSet):
     class Meta:
         model = Answer
         fields = ['problem', 'is_final_answer', 'created_at', 'answer_type']
-
-
-class FSMFilterSet(FilterSet):
-    registrable = BooleanFilter(
-        field_name='registration_form', method=filter_not_empty)
-
-    class Meta:
-        model = FSM
-        fields = ['event', 'registrable', 'is_active']
 
 
 class TeamFilterSet(FilterSet):
