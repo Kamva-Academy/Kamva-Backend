@@ -30,7 +30,7 @@ class FSMViewSet(viewsets.ModelViewSet):
     queryset = FSM.objects.all()
     serializer_class = FSMSerializer
     my_tags = ['fsm']
-    filterset_fields = ['party']
+    filterset_fields = ['party', 'event']
 
 
     def get_permissions(self):
