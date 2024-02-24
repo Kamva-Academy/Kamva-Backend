@@ -15,7 +15,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer
     queryset = Article.objects.all()
     my_tags = ['articles']
-    filterset_fields = ['party']
+    filterset_fields = ['party', 'is_private']
 
     def get_serializer_class(self):
         try:
@@ -37,9 +37,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
         context.update(
             {'domain': self.request.build_absolute_uri('/api/')[:-5]})
         return context
-
-    def list(self, request):
-        return Response(data=self.serializer_class(Article.objects.filter(is_private=False), context={'request': request}, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: ArticleSerializer})
     @transaction.atomic
