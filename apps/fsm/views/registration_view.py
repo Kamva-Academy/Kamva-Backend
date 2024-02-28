@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from io import StringIO
+from threading import Thread
 
 from django.db.models import Count, F, Q
 from drf_yasg.utils import swagger_auto_schema
@@ -188,25 +189,27 @@ class RegistrationFormAdminViewSet(GenericViewSet):
         participants_list_file = pd.read_excel(
             request.FILES['file'], dtype=str).replace(np.nan, None)
 
-        successful_registered_participants = []
-        for index, participant in participants_list_file.iterrows():
-            # remove None fields
-            participant = {k: v for k, v in participant.items() if v}
-            
-            try:
-                registration_form = self.get_object()
-                participant_user_account = update_or_create_user_account(
-                    **participant)
-                receipt = update_or_create_registration_receipt(
-                    participant_user_account, registration_form)
-                update_or_create_team(
-                    participant.get('group_name'), participant.get('chat_room_link'), receipt, registration_form)
-                successful_registered_participants.append(
-                    participant_user_account.username)
-            except:
-                pass
+        def long_task():
+            for index, participant in participants_list_file.iterrows():
+                # remove None fields
+                participant = {key: value for key,
+                            value in participant.items() if value}
 
-        return Response({'successfully_registered_participants': successful_registered_participants}, status=status.HTTP_200_OK)
+                try:
+                    registration_form = self.get_object()
+                    participant_user_account = update_or_create_user_account(
+                        **participant)
+                    receipt = update_or_create_registration_receipt(
+                        participant_user_account, registration_form)
+                    update_or_create_team(
+                        participant.get('group_name'), participant.get('chat_room_link'), receipt, registration_form)
+                except:
+                    pass
+
+        thread = Thread(target=long_task)
+        thread.start()
+
+        return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     @transaction.atomic

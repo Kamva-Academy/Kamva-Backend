@@ -48,6 +48,7 @@ def update_or_create_user_account(**user_data):
     elif validated_data.get('national_code'):
         user_account = User.objects.filter(
             national_code=validated_data.get('national_code')).first()
+
     if user_account:
         # if user exists, dont change his/her account
         return user_account
