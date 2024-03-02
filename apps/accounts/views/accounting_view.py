@@ -1,4 +1,3 @@
-import logging
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
 from drf_yasg.utils import swagger_auto_schema
@@ -18,8 +17,6 @@ from apps.accounts.serializers import PhoneNumberSerializer, UserSerializer, Ver
 from apps.accounts.utils import find_user
 from errors.error_codes import serialize_error
 from errors.exceptions import ServiceUnavailable
-
-logger = logging.getLogger(__name__)
 
 
 class SendVerificationCode(GenericAPIView):
@@ -122,10 +119,10 @@ class Login(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         data = request.data
         user = find_user(data)
-        serializer = self.get_serializer(data=data)
+        token_serializer = self.get_serializer(data=data)
         try:
-            if serializer.is_valid(raise_exception=True):
-                return Response({'account': AccountSerializer(user).data, **serializer.validated_data},
+            if token_serializer.is_valid(raise_exception=True):
+                return Response({'account': AccountSerializer(user).data, **token_serializer.validated_data},
                                 status=status.HTTP_200_OK)
         except TokenError as e:
             raise InvalidToken(e.args[0])

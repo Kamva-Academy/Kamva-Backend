@@ -29,16 +29,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 # Application definition
 
-INSTALLED_APPS = [
+DEFAULT_APPS = [
+    'corsheaders',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+]
+
+CUSTOM_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'import_export',
-    'corsheaders',
     'drf_yasg',
     'polymorphic',
     'django_extensions',
@@ -55,6 +58,8 @@ INSTALLED_APPS = [
     'apps.contact.apps.ContactConfig',
     'apps.report.apps.ReportConfig',
 ]
+
+INSTALLED_APPS = DEFAULT_APPS + CUSTOM_APPS
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

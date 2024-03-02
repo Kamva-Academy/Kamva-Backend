@@ -1,5 +1,4 @@
-import logging
-
+import uuid
 import pytz
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -9,15 +8,10 @@ from datetime import timedelta, datetime
 from polymorphic.managers import PolymorphicManager
 from polymorphic.models import PolymorphicModel
 
-import uuid
-
-import logging
 
 from apps.accounts.validators import percentage_validator
 from kamva_backend.settings.base import KAVENEGAR_API, SMS_CODE_DELAY, SMS_CODE_LENGTH, VOUCHER_CODE_LENGTH, \
     DISCOUNT_CODE_LENGTH, PURCHASE_UNIQ_CODE_LENGTH
-
-logger = logging.getLogger(__file__)
 
 
 class User(AbstractUser):
