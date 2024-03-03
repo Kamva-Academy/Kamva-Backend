@@ -82,8 +82,8 @@ class AccountSerializer(serializers.ModelSerializer):
             pass
         elif validated_data.get('phone_number'):
             validated_data['username'] = validated_data.get('phone_number')
-        elif validated_data.get('national_code'):
-            validated_data['username'] = validated_data.get('national_code')
+        elif validated_data.get('email'):
+            validated_data['username'] = validated_data.get('email')
         else:
             raise Exception("insufficient data")
 
@@ -149,17 +149,15 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        credentials = {
-            'password': attrs.get('password')
-        }
-        user = User.objects.filter(email=attrs.get('email')).first() \
-            or User.objects.filter(username=attrs.get('username')).first() \
-            or User.objects.filter(phone_number=attrs.get('phone_number')).first()
+        from apps.accounts.utils import find_user
+        user = find_user(attrs)
         if user:
-            credentials['username'] = user.username
             try:
-                return super().validate(credentials)
-            except:
+                return super().validate({
+                    'username': user.username,
+                    'password': attrs.get('password')
+                })
+            except Exception as e:
                 raise AuthenticationFailed(serialize_error('4009'))
         else:
             raise AuthenticationFailed(serialize_error('4006'))

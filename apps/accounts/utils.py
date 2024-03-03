@@ -9,18 +9,27 @@ from apps.fsm.models import RegistrationForm, RegistrationReceipt, Team, AnswerS
 from apps.fsm.serializers.answer_sheet_serializers import MyRegistrationReceiptSerializer
 
 
-def find_user(data):
-    email = data.get('email', None)
-    username = data.get('username', None)
-    phone_number = data.get('phone_number', None)
-    if not username:
-        username = phone_number or email
-        if username:
-            data['username'] = username
-        else:
-            raise ParseError(serialize_error('4007'))
+def generate_tokens_for_user(user):
+    """
+    Generate access and refresh tokens for the given user
+    """
+    serializer = MyTokenObtainPairSerializer()
+    token_data = serializer.get_token(user)
+    access_token = token_data.access_token
+    refresh_token = token_data
+    return access_token, refresh_token
 
-    return get_object_or_404(User, username=username)
+
+def find_user(data):
+    phone_number = data.get('phone_number', -1)
+    email = data.get('email', -1)
+    username = data.get('username', phone_number or email)
+    try:
+        return User.objects.get(Q(email=email) |
+                                Q(username=username) |
+                                Q(phone_number=phone_number))
+    except:
+        return None
 
 
 def find_registration_receipt(user, registration_form):
