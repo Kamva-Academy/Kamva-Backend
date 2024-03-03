@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ParseError
 
-from apps.accounts.serializers import AccountSerializer
+from apps.accounts.serializers import AccountSerializer, MyTokenObtainPairSerializer
 from apps.accounts.models import User
 from errors.error_codes import serialize_error
 from apps.fsm.models import RegistrationForm, RegistrationReceipt, Team, AnswerSheet
