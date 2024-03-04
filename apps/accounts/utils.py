@@ -25,9 +25,9 @@ def find_user(data):
     email = data.get('email', -1)
     username = data.get('username', phone_number or email)
     try:
-        return User.objects.get(Q(email=email) |
-                                Q(username=username) |
-                                Q(phone_number=phone_number))
+        return User.objects.get(Q(username=username) |
+                                Q(phone_number=phone_number) |
+                                Q(email=email))
     except:
         return None
 
