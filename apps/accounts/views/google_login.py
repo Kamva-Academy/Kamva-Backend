@@ -25,7 +25,7 @@ class GoogleLogin(TokenObtainPairView):
         access_token, refresh_token = generate_tokens_for_user(user)
 
         return Response({
-            'user': serializer.data,
+            'user': AccountSerializer(user).data,
             'access': str(access_token),
             'refresh': str(refresh_token)
         }, status=status.HTTP_201_CREATED)
